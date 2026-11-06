@@ -1,0 +1,15 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "TypeScript Quality Check",
+      "trigger": "PostFileSave",
+      "description": "On saving a hand-written .ts/.tsx file, run the project's existing type-check and lint commands and report errors with file paths and line numbers.",
+      "matcher": "^(?!.*(node_modules|[\\\\/]dist[\\\\/]|[\\\\/]build[\\\\/]|[\\\\/]out[\\\\/]|[\\\\/]coverage[\\\\/]|[\\\\/]\\.next[\\\\/]|[\\\\/]\\.turbo[\\\\/]|[\\\\/]\\.kiro[\\\\/]|[\\\\/]generated[\\\\/]|\\.generated\\.|\\.gen\\.)).*(?<!\\.d)\\.(ts|tsx)$",
+      "action": {
+        "type": "agent",
+        "prompt": "A TypeScript/TSX file was just saved. Run a quality check using only what the project already has configured.\n\n1. Discover commands. Read package.json scripts (and tsconfig.json / eslint or biome config) before running anything. Do not invent commands or install tools.\n   - Type-check: prefer an existing script such as \"typecheck\", \"type-check\", \"tsc\" or \"check:types\". If none exists but tsconfig.json does, run `npx --no-install tsc --noEmit`.\n   - Lint: run an existing \"lint\" script (or eslint/biome if configured). If no lint config exists, skip lint and say so.\n2. Run the type-check, then lint, once each, in non-watch mode. Use the package manager indicated by the lockfile.\n3. Report results concisely. List each problem as `path:line:col - message (rule/TS code)`. If everything passes, say so in one line. If no TypeScript tooling is configured, say that and stop.\n4. Read-only: do NOT edit, format, or auto-fix any file. Do not use `--fix`. Do not modify unrelated files. Offer to fix issues only if the user asks.\n5. Avoid recursion: ignore generated or build output (node_modules, dist, build, out, .next, coverage, *.d.ts, *.generated.*). Do not write any files, so this check cannot retrigger itself."
+      }
+    }
+  ]
+}
