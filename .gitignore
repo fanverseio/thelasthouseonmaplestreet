@@ -1,0 +1,40 @@
+# Secrets and local config (never commit)
+.env
+.env.*
+!.env.example
+
+# Generated assets (voice and graphics are produced locally with the asset tooling)
+assets/generated/
+assets/voice/
+apps/client/public/audio/voice/
+apps/client/public/generated/
+
+# Dependencies and build output
+node_modules/
+dist/
+build/
+coverage/
+.vite/
+*.tsbuildinfo
+
+# Server runtime data (usage ledger, sessions)
+data/
+*.sqlite
+*.sqlite-journal
+
+# Blender backups
+*.blend1
+*.blend2
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# NOTE: do NOT ignore .kiro/. The hackathon requires it in the repository.

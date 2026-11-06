@@ -1,0 +1,15 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Canonical Story Consistency",
+      "trigger": "PostFileSave",
+      "description": "On saving story, quest, dialogue, or ending definitions, review them against the approved PRD and steering rules and flag canon contradictions without rewriting anything.",
+      "matcher": "^(?!.*(node_modules|[\\\\/]dist[\\\\/]|[\\\\/]build[\\\\/]|[\\\\/]out[\\\\/]|[\\\\/]coverage[\\\\/]|[\\\\/]\\.next[\\\\/]|[\\\\/]\\.kiro[\\\\/])).*(story|quest|dialog|ending|narrative|cutscene|lore).*\\.(json|ya?ml|md|txt|ts|tsx|js|csv|ink)$",
+      "action": {
+        "type": "agent",
+        "prompt": "A story, quest, dialogue, or ending definition file was just saved. Review the change for canon consistency. This is a read-only review.\n\n1. Find the sources of truth. Look for the approved PRD (search for PRD/product requirements docs, e.g. under docs/, .kiro/specs/, or the repo root) and read the files in .kiro/steering/. If no approved PRD or steering rules exist, say so, review against the canon rules below only, and note that the review is limited. Do not invent canon beyond what is written here or in those documents. If the PRD or steering conflicts with the rules below, flag the conflict instead of choosing silently.\n2. Review only the saved file and its direct dependencies (e.g. quests that reference the changed dialogue or ending). Look at the diff if available (git diff) to focus on what changed.\n3. Check against these canon rules:\n   - Gartner must remain innocent. No text, clue, dialogue, or quest outcome may establish or imply his guilt.\n   - Felix is the first Living Key; Elena is the second. Flag reversed order, a different count, or a conflicting origin.\n   - The Angel and the black-smoke evil are separate entities. Flag any merging, shared identity, or the Angel acting as the evil.\n   - Elena's inherited magic comes from her grandmother's bloodline. Flag any other source.\n   - Exactly two endings exist. Flag a third ending, a removed ending, or an ending split into variants that behave as separate endings.\n   - The good ending must remain achievable regardless of Angel behaviour, morality, or RNG. Flag any gate, flag, or branch on which the good ending depends on Angel choices, a morality score, or random outcomes.\n   - All critical story progression must work in Classic Mode. Flag any critical quest, key item, clue, or ending path that requires Angel AI or LLM input.\n4. Report findings concisely. For each issue: `path:line - rule violated - what the text says - what the PRD/steering/canon says`. Mark each as a contradiction (clear) or a possible concern (ambiguous). If nothing conflicts, say so in one line.\n5. Do NOT rewrite, edit, or reformat any story content, and do not modify other files. You may suggest a fix in the report, but apply changes only if the user explicitly asks."
+      }
+    }
+  ]
+}
