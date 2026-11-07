@@ -3,8 +3,9 @@ import { useRef, useSyncExternalStore } from 'react';
 import { AdditiveBlending, type Group, type MeshBasicMaterial } from 'three';
 import type { EntityId } from '@tlh/shared';
 import { PLACEMENTS } from '../content/world/placements.ts';
+import { sceneOfEntity } from '../content/world/scene-of.ts';
 import type { WorldRuntime } from '../game/world-runtime.ts';
-import { useSettings } from '../store/index.ts';
+import { useGame, useSettings } from '../store/index.ts';
 import type { InteractGlow } from '../store/settings-store.ts';
 
 /**
@@ -60,16 +61,17 @@ function Beacon({ b, mode }: { b: Beacon; mode: Exclude<InteractGlow, 'off'> }) 
 export function PointGlow({ runtime }: { runtime: WorldRuntime }) {
   useSyncExternalStore(runtime.subscribe, () => runtime.version);
   const mode = useSettings((s) => s.interactGlow);
+  const scene = useGame((s) => s.game.scene);
   if (mode === 'off') return null;
 
   const usable: Beacon[] = runtime
     .visibleEntities()
     .filter((e) => !e.id.startsWith('enemy.') && !e.id.startsWith('trg.'))
-    .map((e) => ({ id: e.id, x: e.x, z: e.z, r: e.r, color: USABLE, tall: e.id.startsWith('door.') }));
+    .map((e) => ({ id: e.id, x: e.x, z: e.z, r: e.r, color: USABLE, tall: e.id.startsWith('door.') || e.id.startsWith('seal.') }));
   const taken = new Set(usable.map((u) => u.id));
   const leads: Beacon[] = LEADS.flatMap((id) => {
     const p = PLACEMENTS[id];
-    return p && !taken.has(id) ? [{ id, x: p.x, z: p.z, r: p.r, color: LEAD, tall: false }] : [];
+    return p && !taken.has(id) && sceneOfEntity(id) === scene ? [{ id, x: p.x, z: p.z, r: p.r, color: LEAD, tall: false }] : [];
   });
   return (
     <>

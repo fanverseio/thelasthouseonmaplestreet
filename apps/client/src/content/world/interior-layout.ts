@@ -28,6 +28,9 @@ export const WALLS: readonly Wall[] = [
   wallZ('hall.south', 24, -8, 8),
   wallX('hall.west', -8, -6, 24),
   wallX('hall.east', 8, -6, 24),
+  // Cellar stair landing in front of the ritual door (x -3..3, z -6..-1.5); the cat guards it
+  wallX('stair.west', -3, -6, -1.5),
+  wallX('stair.east', 3, -6, -1.5),
   // Ritual chamber (x -12..12, z -30..-6); door gaps are 3 m wide
   wallZ('chamber.south_w', -6, -12, -1.5),
   wallZ('chamber.south_e', -6, 1.5, 12),
@@ -49,6 +52,20 @@ export const WALLS: readonly Wall[] = [
   wallZ('west.north', -22, -24, -12),
   wallZ('west.south', -14, -24, -12),
   wallX('west.end', -24, -22, -14),
+];
+
+/** Greybox cellar steps on the landing (visual only, no collision): z from the hall edge down to the door. */
+export const STAIR_STEPS: readonly { z: number; shade: string }[] = [
+  { z: -2.3, shade: '#4a3f36' },
+  { z: -3.1, shade: '#3d342d' },
+  { z: -3.9, shade: '#302923' },
+  { z: -4.7, shade: '#241f1a' },
+];
+
+/** Greybox furniture, visual only (the usable props are drawn from the placements by scene/interactables.tsx). */
+export const HALL_FURNITURE: readonly { id: string; x: number; z: number; w: number; d: number; h: number; color: string }[] = [
+  { id: 'rug.hall', x: 0, z: 10, w: 6, d: 14, h: 0.03, color: '#3a1f24' },
+  { id: 'piano', x: -6, z: 20, w: 1.6, d: 0.9, h: 1.1, color: '#1d1a1a' },
 ];
 
 export interface InteriorDoor {

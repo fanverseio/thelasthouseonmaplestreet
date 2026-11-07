@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react';
 import type { EncounterRuntime, EncounterView } from '../game/encounter-runtime.ts';
 import { PLACEMENTS } from '../content/world/placements.ts';
+import { sceneOfEntity } from '../content/world/scene-of.ts';
 import { useGame } from '../store/index.ts';
 
 /** Greybox colours: hostile red, stunned blue-grey, purified green, destroyed leaves only a dark coat. */
@@ -20,11 +21,12 @@ function lookFull(v: EncounterView): { color: string; height: number; width: num
 export function EncounterEnemies({ encounters }: { encounters: EncounterRuntime }) {
   useSyncExternalStore(encounters.subscribe, () => encounters.version);
   const flags = useGame((s) => s.progress.flags);
+  const scene = useGame((s) => s.game.scene);
   return (
     <>
       {encounters.bindings.map((b) => {
         const p = PLACEMENTS[b.entity];
-        if (!p) return null;
+        if (!p || sceneOfEntity(b.entity) !== scene) return null; // only the enemies of the scene on screen
         // Optional (leashed) encounters such as the street fox only exist once their requirements are met.
         if (b.leash !== undefined && !(b.requires ?? []).every((f) => flags.includes(f))) return null;
         const l = look(encounters.view(b.id), b.leash !== undefined ? 0.4 : 1);

@@ -12,7 +12,7 @@ import { PointGlow } from '../scene/glow.tsx';
 import { Hands } from '../scene/hands.tsx';
 import { ExteriorScene } from '../scene/exterior-scene.tsx';
 import { PlayerRig } from '../scene/player-rig.tsx';
-import { loadedLastHouse, preloadLastHouse } from '../services/scene-loader.ts';
+import { loadedLastHouse, loadSceneHook, preloadLastHouse } from '../services/scene-loader.ts';
 import { bindInput } from '../services/input-bindings.ts';
 import { doorCueForFlags, sfx } from '../services/sfx.ts';
 import { GATES } from '../content/world/gates.ts';
@@ -35,7 +35,7 @@ export function GameView() {
   const container = useRef<HTMLDivElement>(null);
   const input = useMemo(() => new InputController(), []);
   // One world runtime per game view: New Game mounts a fresh view, so timers and fired triggers start clean.
-  const { world: runtime, encounters, choices } = useMemo(() => createEncounterWorld({ store: gameStore, onEffect: (e) => sfx.handleEffect(e) }), []);
+  const { world: runtime, encounters, choices } = useMemo(() => createEncounterWorld({ store: gameStore, loadScene: loadSceneHook, onEffect: (e) => sfx.handleEffect(e) }), []);
   useSyncExternalStore(runtime.subscribe, () => runtime.version);
   const skipHold = useMemo(() => createSkipHold(runtime.sequences, ALL_SEQUENCES), [runtime]);
   useEffect(() => attachRuntime(runtime), [runtime]); // autosave reads / Continue restores the runtime state
@@ -126,8 +126,8 @@ export function GameView() {
     <div ref={container} className="game-view" data-testid="game-view" data-phase={phase}>
       <Canvas shadows camera={{ fov: 80, near: 0.1, far: 200, position: [0, 1.65, 0] }} dpr={[1, 2]}>
         {scene === 'last_house' && Interior ? <Interior flags={flags} /> : <ExteriorScene flags={flags} runtime={runtime} />}
-        {scene === 'exterior' && <Interactables runtime={runtime} flags={flags} />}
-        {scene === 'exterior' && <EncounterEnemies encounters={encounters} />}
+        <Interactables runtime={runtime} flags={flags} />
+        <EncounterEnemies encounters={encounters} />
         <PointGlow runtime={runtime} />
         <PlayerRig input={input} runtime={runtime} onOpenLocket={openLocket} skipHold={skipHold} />
         <Hands />
@@ -145,7 +145,7 @@ export function GameView() {
         <Locket line={locket.line} hasNext={locket.hasNext} onNext={nextLocket} onClose={closeLocket} />
       )}
       {phase === 'overlay' && runtime.overlay && <PuzzleOverlay puzzle={runtime.overlay.puzzle} say={sayLine} onClose={closeOverlay} />}
-      {loadingHouse && (
+      {(loadingHouse || runtime.sceneLoading) && (
         <div className="loading-screen" role="status">
           <p>Opening the Last House…</p>
         </div>

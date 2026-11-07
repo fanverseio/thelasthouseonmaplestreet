@@ -54,6 +54,17 @@ describe('interior layout', () => {
     expect(r(-18, -18)).toBe(true);
   });
 
+  it('has a cellar stair landing in front of the ritual door, open from the hall', () => {
+    const r = reach([]);
+    expect(r(0, -1)).toBe(true);
+    expect(r(0, -5)).toBe(true); // the landing, up to the shut door
+    expect(r(0, -7)).toBe(false);
+    expect(r(-5, -3)).toBe(true); // hall corner beside the landing
+    expect(r(-2, -4)).toBe(true);
+    // The landing walls keep the stairs a corridor: from the corner you do not step through the wall into it.
+    expect(r(-3, -4)).toBe(false);
+  });
+
   it('keeps the central seal solid', () => {
     const colliders = interiorColliders(['board_solved', 'seq6_done']);
     const p = moveAndSlide({ x: 0, z: -12 }, { x: 0, z: -12 }, PLAYER_RADIUS, colliders);

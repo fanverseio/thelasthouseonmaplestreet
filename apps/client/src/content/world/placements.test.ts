@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { moveAndSlide } from '../../game/collision.ts';
 import { PLAYER_RADIUS } from '../../game/player.ts';
 import { exteriorColliders } from './exterior-layout.ts';
+import { interiorColliders } from './interior-layout.ts';
 import { createWorldRegistry } from './index.ts';
 import { PLACEMENTS } from './placements.ts';
+import { sceneOfEntity } from './scene-of.ts';
 
 describe('placements', () => {
   const registry = createWorldRegistry();
@@ -22,10 +24,31 @@ describe('placements', () => {
     for (const flags of [[], ['locket_taken']] as const) {
       const colliders = exteriorColliders(flags);
       for (const [id, p] of Object.entries(PLACEMENTS)) {
+        if (sceneOfEntity(id) !== 'exterior') continue;
         const q = moveAndSlide({ x: p.x, z: p.z }, { x: 0, z: 0 }, PLAYER_RADIUS, colliders);
         expect(Math.hypot(q.x - p.x, q.z - p.z), id).toBeLessThan(1e-9);
         expect(p.r, id).toBeGreaterThan(0);
       }
+    }
+  });
+});
+
+describe('Last House placements', () => {
+  it('stand on free ground of the Last House scene, with every door shut and open', () => {
+    for (const flags of [[], ['board_solved'], ['board_solved', 'seq6_done']] as const) {
+      const colliders = interiorColliders(flags);
+      for (const [id, p] of Object.entries(PLACEMENTS)) {
+        if (sceneOfEntity(id) !== 'last_house') continue;
+        const q = moveAndSlide({ x: p.x, z: p.z }, { x: 0, z: 0 }, PLAYER_RADIUS, colliders);
+        expect(Math.hypot(q.x - p.x, q.z - p.z), id).toBeLessThan(1e-9);
+      }
+    }
+  });
+
+  it('places every critical interior and seal entity that has an interaction', () => {
+    for (const id of ['spawn.interior.entry', 'enemy.interior.cat', 'puzzle.interior.board', 'door.interior.ritual', 'seal.ritual.central']) {
+      expect(PLACEMENTS[id as keyof typeof PLACEMENTS], id).toBeDefined();
+      expect(sceneOfEntity(id), id).toBe('last_house');
     }
   });
 });

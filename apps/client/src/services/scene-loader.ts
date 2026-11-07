@@ -26,3 +26,12 @@ export function loadedLastHouse(): InteriorSceneComponent | null {
 export function lastHousePreloadStarted(): boolean {
   return pending !== null;
 }
+
+/**
+ * The `loadScene` hook of the world runtime: null when the scene's code is already here (switch at once),
+ * else the preload promise, which the runtime awaits before it switches (see game/world-runtime.ts enterScene).
+ */
+export function loadSceneHook(scene: string): Promise<unknown> | null {
+  if (scene !== 'last_house' || loaded) return null;
+  return preloadLastHouse();
+}
