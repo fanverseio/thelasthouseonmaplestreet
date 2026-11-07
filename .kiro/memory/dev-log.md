@@ -53,3 +53,6 @@ Classic line selector, locket/subtitle components (not wired into game-view yet)
 
 ## 2026-11-07 | milestone | 3.4 sequence runner (91decb5) pushed; 3.1-3.5 and 3.8 done
 Runner has a 'video' step (clipId + fallbackSeconds; view signals videoPlaying/videoEnded); camera/anim steps removed per author. 284 tests, typecheck clean. Next: 3.6 beat 1 content, which needs a world runtime (placements, interaction table, home interior greybox) - one agent builds it, then 3.7 and 3.9 in parallel.
+
+## 2026-11-07 | milestone | 3.6 Beat 1 playable (82b7e07..8a5e7d5)
+World runtime (game/world-runtime.ts) + data-driven beat files (content/interactions/beatN.ts, content/sequences/beatN.ts, placements.ts); hollow home greybox; P1 hints in sim time; angel_intro lines-only sequence. 305 tests. Gaps: no Playwright Beat 1 (headless chromium has no pointer lock); sequences are not serialised (restart from checkpoint); vo_elena_b1_03 not wired. Adding a beat = data files only. Next: 3.7 (beats 2-3) and 3.9 (beat 4) in parallel.

@@ -96,7 +96,7 @@ Each milestone includes a README sync check (task 9.7 rules).
   - `selectClassicLine` by the order in `docs/angel-persona.md` section 7; locket UI without text input; subtitles for every line; VO playback by line ID with subtitle-only fallback.
   - Verify: unit tests for selection; T ignored before `angel_awake`.
   - _Requirements: 2.5, 10.1, 10.2, 10.4, 18.1, 18.2_
-- [ ] 3.6 Beat 1 content: home, drawer puzzle P1, Angel intro, front door
+- [x] 3.6 Beat 1 content: home, drawer puzzle P1, Angel intro, front door
   - Verify: headless test reaches `home_done`; P1 hints fire on schedule.
   - _Requirements: 2.1-2.7, 7.1, 7.2_
 - [ ] 3.7 Beats 2-3 content: `seq1_empty_street` and `seq2_felix_streetlight` as greybox sequences; `spell_bolt` flag
