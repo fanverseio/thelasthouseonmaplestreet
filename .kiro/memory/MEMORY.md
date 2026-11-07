@@ -15,6 +15,8 @@ Short, durable notes that a future session needs and cannot easily re-derive. Ke
 - Encounters: street fox (skippable), Briggs mini-boss, Watcher of House 66 mini-boss, approach hounds, interior cat, final ritual. Persistent stun at ~30% HP; purify (+) or held-bolt destroy (-); both outcomes drop the progression item.
 - Spells: Bolt after Seq 2, Ward at Briggs' first telegraphed attack, Purify when he is stunned. Felix's 3rd appearance is at the first anchor.
 
+- Cinematics = generated video clips played by a 'video' sequence step; never build cinematics in code (author decision 2026-11-07). API details come later.
+
 ## Gotchas
 - TypeScript is pinned to 6.0.x (typescript-eslint 8 rejects TS 7). TS 6 defaults `types` to [], so set them per tsconfig.
 - Server runs `.ts` directly (Node >=22.18 type stripping): use `.ts` import extensions, `import type`, no enums or parameter properties.

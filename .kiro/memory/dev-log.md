@@ -44,3 +44,12 @@ Author played the greybox: HUD logic approved, look to be polished later. Sectio
 
 ## 2026-11-07 | milestone | Tasks 3.1-3.3 done
 setFlag is the only flag writer (rejects unknown flags, exclusive pairs, missing prerequisites; prerequisites follow the beat-sheet Pre lines). Gates and checkpoints are pure data/lookups (11 checkpoints, event-written ones: new_game, enter:trg.garden.enter, enter:last_house). The game store has setFlag, writeCheckpointForEvent, respawn and an onCheckpoint hook for the save system. Gotcha: stray diag.tmp.mjs/png in the repo root (not ours) make eslint fail; left untouched, not committed.
+
+## 2026-11-07 | spec-change | Cinematics are generated video, not code
+Author decision: do not build cinematics in code (token cost). Cinematics (seq2_felix_streetlight, seq5_felix_mirror, seq6_two_keys, cin_felix_anchor, cin_ending_keeper/broken, angel intro as needed) will be text/image-to-video clips from an API the author will supply later; the game only calls and plays them. Sequence runner gets a 'video' step (clipId + fallbackSeconds so placeholders still run). Supersedes PRD 5.3 'in-engine real-time cinematics only' and cinematic-controller.md camera steps. Docs not yet edited: author to confirm edits to PRD/contracts. Open: API name, auth (key must stay server-side/local .env, never in client), clip storage under apps/client/public/assets/video, hosted vs local generation.
+
+## 2026-11-07 | milestone | 3.5 dialogue (92b540e) and 3.8 encounter stub (6f6d4a4) pushed
+Classic line selector, locket/subtitle components (not wired into game-view yet), voice service (VO path /assets/vo/<id>.mp3, subtitle-only fallback), encounter stub state machine (apply flags in returned order via setFlag). Placeholder line: vo_angel_b4_c0. 3.4 sequence runner still in progress; will switch to a video step per author decision.
+
+## 2026-11-07 | milestone | 3.4 sequence runner (91decb5) pushed; 3.1-3.5 and 3.8 done
+Runner has a 'video' step (clipId + fallbackSeconds; view signals videoPlaying/videoEnded); camera/anim steps removed per author. 284 tests, typecheck clean. Next: 3.6 beat 1 content, which needs a world runtime (placements, interaction table, home interior greybox) - one agent builds it, then 3.7 and 3.9 in parallel.

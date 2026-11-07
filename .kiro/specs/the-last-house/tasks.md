@@ -88,11 +88,11 @@ Each milestone includes a README sync check (task 9.7 rules).
 - [x] 3.3 Checkpoints, autosave hook and respawn data
   - Verify: unit tests for every checkpoint in `docs/beat-sheet.md`.
   - _Requirements: 1.6, 6.8_
-- [ ] 3.4 Sequence runner
+- [x] 3.4 Sequence runner
   - Step types, policies, ownership, queue, skip (hold E 1 s), rollback on interrupt, camera restore, as in `docs/cinematic-controller.md`.
   - Verify: unit tests P14 (skip at every step equals full run) and interrupt rollback.
   - _Requirements: 3.1, 3.3, 3.4, 3.5, 3.7, 3.9_
-- [ ] 3.5 Classic dialogue system, subtitles and the Classic locket
+- [x] 3.5 Classic dialogue system, subtitles and the Classic locket
   - `selectClassicLine` by the order in `docs/angel-persona.md` section 7; locket UI without text input; subtitles for every line; VO playback by line ID with subtitle-only fallback.
   - Verify: unit tests for selection; T ignored before `angel_awake`.
   - _Requirements: 2.5, 10.1, 10.2, 10.4, 18.1, 18.2_
@@ -102,7 +102,7 @@ Each milestone includes a README sync check (task 9.7 rules).
 - [ ] 3.7 Beats 2-3 content: `seq1_empty_street` and `seq2_felix_streetlight` as greybox sequences; `spell_bolt` flag
   - Verify: headless test reaches `seq2_done` and `cp_intersection`.
   - _Requirements: 3.1, 3.8, 5.1_
-- [ ] 3.8 Encounter stub
+- [x] 3.8 Encounter stub
   - Temporary stand-in for any encounter: interact to "weaken", then a purify-or-destroy choice UI; applies the morality delta and the drop. Used by Briggs, Watcher, hounds and cat until Phase 5.
   - Verify: both outcomes lead to the same next flag (P10 on stubs).
   - _Requirements: 6.6, 9.2_
