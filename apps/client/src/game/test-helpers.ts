@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Shared helpers for headless playthrough tests (no React, no Three, no network).
  * `createHeadlessGame` wires the real store, world runtime, encounters, choices, ritual and ending runtimes
  * and gives a teleporting Elena: she is placed next to an entity (movement and collision are covered by the

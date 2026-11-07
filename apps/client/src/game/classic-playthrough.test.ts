@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Task 4.12: headless Classic playthroughs, with the network disabled (P13).
  *  - New Game to BOTH endings, with kind, dark and crossed choices.
  *  - EVERY checkpoint (cp_home_start .. cp_ritual) to BOTH endings, the state rebuilt from flags like a dev start.

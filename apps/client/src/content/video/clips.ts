@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Manifest of the generated cinematic clips (author decision: cinematics are video clips, not built in code).
  * One row per `video` step in content/sequences/. The clips do not exist yet: today each plays as a black
  * placeholder panel for `targetSeconds`. This file is the input for generating them later with a
