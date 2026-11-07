@@ -1,5 +1,6 @@
 import { useEffect, useSyncExternalStore } from 'react';
 import type { EncounterRuntime } from '../game/encounter-runtime.ts';
+import { sfx } from '../services/sfx.ts';
 
 /** Seconds Enter must be held to destroy (a tap must not end a life by accident). */
 const DESTROY_HOLD_MS = 700;
@@ -35,8 +36,11 @@ export function EncounterPanel({ encounters }: { encounters: EncounterRuntime })
     let hold: ReturnType<typeof setTimeout> | null = null;
     const down = (e: KeyboardEvent) => {
       if (e.repeat) return;
-      if (e.code === 'Digit3') encounters.castWard();
-      else if (e.code === 'Digit2') encounters.choose(id, 'purify');
+      if (e.code === 'Digit3') {
+        if (encounters.castWard()) sfx.play('sfx_spell_ward');
+      } else if (e.code === 'Digit2') {
+        if (encounters.choose(id, 'purify').ok) sfx.play('sfx_spell_purify');
+      }
       else if (e.code === 'Enter' && hold === null) hold = setTimeout(() => encounters.choose(id, 'destroy'), DESTROY_HOLD_MS);
     };
     const up = (e: KeyboardEvent) => {

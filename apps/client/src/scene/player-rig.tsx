@@ -6,6 +6,7 @@ import { getCheckpoint } from '../game/checkpoints.ts';
 import { INTERIOR_SPAWN, interiorColliders } from '../content/world/interior-layout.ts';
 import type { InputController } from '../game/input.ts';
 import { createPlayerBody, EYE_HEIGHT, FixedStepper, MOUSE_SENSITIVITY, stepPlayer } from '../game/player.ts';
+import type { SkipHold } from '../game/skip-hold.ts';
 import type { WorldRuntime } from '../game/world-runtime.ts';
 import { preloadLastHouse } from '../services/scene-loader.ts';
 import { gameStore, settingsStore } from '../store/index.ts';
@@ -17,11 +18,11 @@ import { gameStore, settingsStore } from '../store/index.ts';
  */
 function startBody() {
   const cp = getCheckpoint(gameStore.getState().game.checkpointId);
-  const at = cp.scene === 'exterior' ? cp.spawn : HOME_SPAWN;
+  const at = cp.spawn; // every checkpoint has its own spawn, in its own scene's coordinates
   return createPlayerBody(at.x, at.z, at.yaw);
 }
 
-export function PlayerRig({ input, runtime, onOpenLocket }: { input: InputController; runtime: WorldRuntime; onOpenLocket: () => void }) {
+export function PlayerRig({ input, runtime, onOpenLocket, skipHold }: { input: InputController; runtime: WorldRuntime; onOpenLocket: () => void; skipHold?: SkipHold }) {
   // Start at the current checkpoint's spawn (New Game: the home start; dev shortcuts: later ones).
   const body = useRef(startBody());
   const stepper = useMemo(() => new FixedStepper(), []);
@@ -57,6 +58,7 @@ export function PlayerRig({ input, runtime, onOpenLocket }: { input: InputContro
       let steps = 0;
       stepper.advance(opening ? 0 : delta, (dt) => {
         input.tick(dt * 1000);
+        skipHold?.feed(input.state.interactHeldMs); // hold E 1 s skips a skippable cinematic
         // A playing cinematic clip holds the player in place; the world still ticks.
         if (!runtime.video && runtime.sequences.policy.control !== 'limited') stepPlayer(body.current, input.state, dt, { colliders, sensitivity });
         runtime.tick(dt, pose());

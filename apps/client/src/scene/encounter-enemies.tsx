@@ -8,7 +8,8 @@ function look(v: EncounterView, scale = 1): { color: string; height: number; wid
   const l = lookFull(v);
   return { color: l.color, height: l.height * scale, width: l.width * scale };
 }
- lookFull(v: EncounterView): { color: string; height: number; width: number } {
+
+function lookFull(v: EncounterView): { color: string; height: number; width: number } {
   if (v.state === 'resolved') return v.outcome === 'purify' ? { color: '#5a8a5a', height: 1, width: 0.7 } : { color: '#2a2a2a', height: 0.25, width: 0.8 };
   if (v.state === 'stunned') return { color: '#5a6a9a', height: 1.1, width: 0.8 };
   if (v.hostile) return { color: '#b01818', height: 2.2, width: 0.9 };
