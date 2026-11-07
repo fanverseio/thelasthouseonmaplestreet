@@ -1,6 +1,7 @@
 import { Canvas } from '@react-three/fiber';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { InputController } from '../game/input.ts';
+import { attachRuntime } from '../game/save.ts';
 import { TUTORIAL_TEXT } from '../content/interactions/beat2.ts';
 import { createEncounterWorld } from '../game/encounter-runtime.ts';
 import { EncounterEnemies } from '../scene/encounter-enemies.tsx';
@@ -29,6 +30,7 @@ export function GameView() {
   // One world runtime per game view: New Game mounts a fresh view, so timers and fired triggers start clean.
   const { world: runtime, encounters } = useMemo(() => createEncounterWorld({ store: gameStore }), []);
   useSyncExternalStore(runtime.subscribe, () => runtime.version);
+  useEffect(() => attachRuntime(runtime), [runtime]); // autosave reads / Continue restores the runtime state
   const phase = useGame((s) => s.game.phase);
   const flags = useGame((s) => s.progress.flags);
   const scene = useGame((s) => s.game.scene);

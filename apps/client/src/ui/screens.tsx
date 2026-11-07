@@ -1,9 +1,10 @@
 import type { Mode } from '@tlh/shared';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { applyDevStart, isDevStart } from '../game/dev-start.ts';
 import { ensureAudioContext } from '../services/audio-engine.ts';
 import { FOV_MAX, FOV_MIN } from '../store/settings-store.ts';
-import { gameStore, settingsStore, useSettings } from '../store/index.ts';
+import { applySave, canContinue, needsOverwriteConfirm, saveNotice } from '../game/save.ts';
+import { gameStore, saveStorage, settingsStore, useSettings } from '../store/index.ts';
 
 /** Full-screen menu screens: warning, main menu, new game, settings, credits. */
 
@@ -34,11 +35,26 @@ export function WarningScreen() {
 export type MenuView = 'main' | 'new_game' | 'settings' | 'credits';
 
 export function MainMenu({ onView }: { onView: (view: MenuView) => void }) {
+  const saved = useMemo(() => saveStorage.load(), []);
+  const notice = saveNotice(saved);
+  const resume = () => {
+    if (saved.status !== 'ok') return;
+    applySave(gameStore, saved.save); // sets phase 'paused'; the game view asks for pointer lock
+  };
   return (
     <main className="screen" data-testid="main-menu">
       <h1>The Last House on Maple Street</h1>
+      {notice && (
+        <p className="note" role="alert" data-testid="save-notice">
+          {notice}
+        </p>
+      )}
       <nav className="menu-list" aria-label="Main menu">
-        {/* Continue appears when the save system exists (tasks.md section 4). */}
+        {canContinue(saved) && (
+          <button type="button" onClick={resume}>
+            Continue
+          </button>
+        )}
         <button type="button" onClick={() => onView('new_game')}>
           New Game
         </button>
@@ -54,6 +70,8 @@ export function MainMenu({ onView }: { onView: (view: MenuView) => void }) {
 }
 
 export function NewGameScreen({ onBack }: { onBack: () => void }) {
+  const existing = useMemo(() => saveStorage.load(), []);
+  const [confirmed, setConfirmed] = useState(!needsOverwriteConfirm(existing));
   const start = (mode: Mode) => {
     const g = gameStore.getState();
     g.startNewGame(mode);
@@ -62,6 +80,20 @@ export function NewGameScreen({ onBack }: { onBack: () => void }) {
     if (isDevStart(devStart)) applyDevStart(gameStore, devStart);
     g.setPhase('paused'); // the game view asks for pointer lock; the first click resumes
   };
+  if (!confirmed) {
+    return (
+      <main className="screen" data-testid="new-game-confirm">
+        <h1>New Game</h1>
+        <p>Starting a new game will overwrite your saved progress. This cannot be undone.</p>
+        <button type="button" onClick={() => setConfirmed(true)}>
+          Overwrite and continue
+        </button>
+        <button type="button" className="secondary" onClick={onBack}>
+          Back
+        </button>
+      </main>
+    );
+  }
   return (
     <main className="screen" data-testid="new-game-screen">
       <h1>New Game</h1>
@@ -145,8 +177,17 @@ export function SettingsScreen({ onBack }: { onBack: () => void }) {
       </label>
       {confirmReset ? (
         <p>
-          Erase saved progress? <button type="button" onClick={() => setConfirmReset(false)}>Cancel</button>
-          {/* The save system wires the real erase in tasks.md section 4. */}
+          Erase saved progress?{' '}
+          <button
+            type="button"
+            onClick={() => {
+              saveStorage.clear();
+              setConfirmReset(false);
+            }}
+          >
+            Erase
+          </button>{' '}
+          <button type="button" onClick={() => setConfirmReset(false)}>Cancel</button>
         </p>
       ) : (
         <button type="button" className="secondary" onClick={() => setConfirmReset(true)}>

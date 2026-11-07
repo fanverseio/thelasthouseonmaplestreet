@@ -56,6 +56,8 @@ export const SaveFileV1Schema = z.object({
     yaw: z.number(),
   }),
   world: z.record(EntityIdSchema, z.record(z.string(), z.unknown())),
+  /** Optional: client world-runtime snapshot (played lines, hints, fired triggers, timers). Added in task 4.1. */
+  runtime: z.record(z.string(), z.unknown()).optional(),
   angel: z.object({
     summary: z.string().max(1500),
     recent: z.array(ChatTurnSchema).max(10),
