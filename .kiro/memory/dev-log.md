@@ -56,3 +56,6 @@ Runner has a 'video' step (clipId + fallbackSeconds; view signals videoPlaying/v
 
 ## 2026-11-07 | milestone | 3.6 Beat 1 playable (82b7e07..8a5e7d5)
 World runtime (game/world-runtime.ts) + data-driven beat files (content/interactions/beatN.ts, content/sequences/beatN.ts, placements.ts); hollow home greybox; P1 hints in sim time; angel_intro lines-only sequence. 305 tests. Gaps: no Playwright Beat 1 (headless chromium has no pointer lock); sequences are not serialised (restart from checkpoint); vo_elena_b1_03 not wired. Adding a beat = data files only. Next: 3.7 (beats 2-3) and 3.9 (beat 4) in parallel.
+
+## 2026-11-07 | milestone | 3.7 (1aeae40) and 3.9 (290ad9a, 62cde40) pushed: beats 1-4 playable on placeholders
+318 tests, typecheck and build clean. Beat 4 uses game/encounter-runtime.ts (EncounterBinding in content/encounters/index.ts; panel keys 3 Ward, 2 Purify, hold Enter Destroy). Open: street fox trigger is data with a TODO (needs a binding without sequence/ward); seq2 hold-E skip not wired in the view; audio cues only emitted via onEffect (no sound yet); all coordinates guessed, need tuning by eye; sequence progress not serialised. 3.10 M1 review waits for the author playing beats 1-4 (time per beat vs targets).

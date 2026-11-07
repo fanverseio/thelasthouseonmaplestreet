@@ -1,6 +1,6 @@
 # The Last House on Maple Street
 
-> **Project status: foundations (as of 2026-11-07).** The monorepo, dev runner, local API (`/api/health`, `/api/config/status`), shared schemas, tests and repo checks work. **The game is an early greybox:** `npm run dev` opens the photosensitivity warning and main menu; New Game > Classic lets you walk a grey-box Maple Street (no story, enemies or Angel yet). Features marked **Planned, not yet available** do not exist yet. Coding agents: read [For AI Coding Agents](#for-ai-coding-agents) before running anything.
+> **Project status: foundations (as of 2026-11-07).** The monorepo, dev runner, local API (`/api/health`, `/api/config/status`), shared schemas, tests and repo checks work. **The game is an early greybox:** `npm run dev` opens the photosensitivity warning and main menu; New Game > Classic plays beats 1 to 4 on grey boxes: Elena's home, the empty street, Felix at the streetlight and Mr Briggs. Later beats, real art and AI mode are not built yet. Features marked **Planned, not yet available** do not exist yet. Coding agents: read [For AI Coding Agents](#for-ai-coding-agents) before running anything.
 
 A first-person 3D psychological horror game for desktop browsers, built for the **Kiroween 2026** hackathon (category: Costume Contest).
 

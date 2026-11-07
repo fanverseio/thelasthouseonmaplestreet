@@ -99,14 +99,14 @@ Each milestone includes a README sync check (task 9.7 rules).
 - [x] 3.6 Beat 1 content: home, drawer puzzle P1, Angel intro, front door
   - Verify: headless test reaches `home_done`; P1 hints fire on schedule.
   - _Requirements: 2.1-2.7, 7.1, 7.2_
-- [ ] 3.7 Beats 2-3 content: `seq1_empty_street` and `seq2_felix_streetlight` as greybox sequences; `spell_bolt` flag
+- [x] 3.7 Beats 2-3 content: `seq1_empty_street` and `seq2_felix_streetlight` as greybox sequences; `spell_bolt` flag
   - Verify: headless test reaches `seq2_done` and `cp_intersection`.
   - _Requirements: 3.1, 3.8, 5.1_
 - [x] 3.8 Encounter stub
   - Temporary stand-in for any encounter: interact to "weaken", then a purify-or-destroy choice UI; applies the morality delta and the drop. Used by Briggs, Watcher, hounds and cat until Phase 5.
   - Verify: both outcomes lead to the same next flag (P10 on stubs).
   - _Requirements: 6.6, 9.2_
-- [ ] 3.9 Beat 4 content with the stub: `seq3_started` to `seq3_done`, `spell_ward` and `spell_purify` flags, walkie clue
+- [x] 3.9 Beat 4 content with the stub: `seq3_started` to `seq3_done`, `spell_ward` and `spell_purify` flags, walkie clue
   - Verify: headless test reaches `seq3_done` via both outcomes.
   - _Requirements: 5.2, 5.4, 6.6_
 - [ ] 3.10 **M1 (Nov 13)**: vertical slice review
