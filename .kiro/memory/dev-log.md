@@ -27,3 +27,10 @@ Phase 1 committed as e6cb6e1 and pushed to feat/phase1-foundations. Files writte
 Author approved all draft docs and asked for small, frequent commits and pushes. Added headless input, pointer-lock state machine, collision (sub-stepped circle vs AABB/cylinder) and player controller with a 60 Hz FixedStepper (bdb57b4). The views for 2.1 (Click to resume overlay) and 2.2 (useFrame wiring) are not built yet. Task 2.4 (world registry) handed to a subagent.
 ## 2026-11-07 | gotcha | Default node on this machine is v18
 PATH puts nvm Node 18 first, so vitest fails (styleText). Prefix shells with `$env:Path = "C:\Program Files\nodejs;" + $env:Path` (Node 24). No `gh` CLI: open PRs through the GitHub web URL.
+
+## 2026-11-07 | decision | Stage 2 questions and answers
+Q: trigger ID prefix. A (author): keep `trg.zone.name`; `KIND_ID_PREFIX` maps kind `trigger` to `trg`. Do not rename in the manifest.
+Q: build the 3D views (2.6-2.9) without per-step browser checks? A (author): build them now; verify with tests, typecheck and Playwright smoke. Author reviews visually later.
+Open: no `gh` CLI, so the author opens the PR for `feat/phase1-foundations` on GitHub (CI task 1.7 waits for it). Default node is v18; use Node 24 from Program Files in shells.
+Open: gate-to-beat flag cross-check (level manifest section 5 check 2) waits for machine-readable beat data.
+Work state: 2.1-2.5 logic committed (bca796d). Next 2.6 greybox exterior, 2.7 Last House scene, 2.8 HUD/hands, 2.9 phases/menus.
