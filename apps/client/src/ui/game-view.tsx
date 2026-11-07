@@ -91,7 +91,7 @@ export function GameView() {
         <PlayerRig input={input} runtime={runtime} onOpenLocket={openLocket} />
         <Hands />
       </Canvas>
-      {phase === 'playing' && <Hud prompt={runtime.prompt} tutorial={runtime.tutorial ? (TUTORIAL_TEXT[runtime.tutorial] ?? null) : null} />}
+      {phase === 'playing' && <Hud actions={runtime.actions} tutorial={runtime.tutorial ? (TUTORIAL_TEXT[runtime.tutorial] ?? null) : null} />}
       {phase === 'playing' && <div className="crosshair" aria-hidden="true" />}
       {phase === 'playing' && <Subtitles line={runtime.subtitle} />}
       {phase === 'playing' && <EncounterPanel encounters={encounters} />}

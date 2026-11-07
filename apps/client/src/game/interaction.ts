@@ -50,6 +50,29 @@ export function findNearest(
   return best;
 }
 
+/** Every enabled interactable in range (and in front, when `yaw` is given), nearest first, ties by ID. */
+export function findAllInRange(
+  px: number,
+  pz: number,
+  list: readonly Interactable[],
+  range = INTERACT_RANGE,
+  yaw?: number,
+): Hit[] {
+  const hits: Hit[] = [];
+  const fx = yaw === undefined ? 0 : -Math.sin(yaw);
+  const fz = yaw === undefined ? 0 : -Math.cos(yaw);
+  for (const t of list) {
+    if (!t.enabled) continue;
+    const dx = t.x - px;
+    const dz = t.z - pz;
+    const d = Math.hypot(dx, dz);
+    if (d > range) continue;
+    if (yaw !== undefined && d > 0.5 && (dx * fx + dz * fz) / d < Math.cos((100 * Math.PI) / 180)) continue;
+    hits.push({ target: t, distance: d });
+  }
+  return hits.sort((a, b) => a.distance - b.distance || (a.target.id < b.target.id ? -1 : 1));
+}
+
 export type PickupResult = { ok: true; carried: ItemId[] } | { ok: false; reason: 'full' | 'duplicate' };
 
 /** Pick an item up. At most 4 key items, no duplicates. */

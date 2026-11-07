@@ -150,3 +150,12 @@ body,
 .video-placeholder { position: absolute; inset: 0; display: grid; place-content: center; gap: 0.25rem; text-align: center; background: #000; color: var(--muted); z-index: 5; }
 .video-placeholder p { margin: 0; font-size: 1.4rem; }
 .hud-tutorial { position: absolute; top: 66%; left: 50%; transform: translateX(-50%); opacity: 0.85; }
+
+.hud-actions { position: absolute; right: 1.25rem; top: 35%; min-width: 15rem; max-width: 20rem; padding: 0.7rem 0.9rem; background: rgba(7, 8, 12, 0.72); border: 1px solid var(--muted); border-left: 3px solid var(--accent); }
+.hud-actions h2 { margin: 0 0 0.4rem; font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); font-weight: normal; }
+.hud-actions ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.3rem; }
+.hud-actions li { color: var(--muted); }
+.hud-actions li.selected { color: var(--fg); }
+.hud-actions kbd { display: inline-block; min-width: 1.5rem; text-align: center; padding: 0 0.3rem; border: 1px solid var(--muted); font-family: inherit; }
+.hud-actions li.selected kbd { border-color: var(--accent); color: var(--accent); }
+.hud-actions small { display: block; margin-top: 0.5rem; color: var(--muted); }

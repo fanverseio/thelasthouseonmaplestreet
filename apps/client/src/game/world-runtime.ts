@@ -16,7 +16,7 @@ import { PLACEMENTS, type Placement } from '../content/world/placements.ts';
 import type { GameStore } from '../store/game-store.ts';
 import { canOpenLocket, emptyPlayed, markPlayed, selectClassicLine, type LocketPolicy, type PlayedLines } from './dialogue.ts';
 import { highlightsOf, hintLevelOf, initialHintState, stepHint, type HintState } from './hints.ts';
-import { findNearest, INTERACT_RANGE, pickUp, useSocket as consumeSocket, type Hit, type Interactable } from './interaction.ts';
+import { findAllInRange, INTERACT_RANGE, pickUp, useSocket as consumeSocket, type Hit, type Interactable } from './interaction.ts';
 import { createSequenceRunner, type SequenceDef, type SequenceEffect, type SequenceRunner, type SequenceSignal } from './sequences.ts';
 
 export interface PlayerPose {
@@ -84,6 +84,10 @@ export interface WorldRuntime {
   tick(dt: number, pose: PlayerPose): void;
   interact(pose: PlayerPose): InteractResult;
   nearest(pose: PlayerPose): Hit | null;
+  /** Pick the next action in the side panel (Q). No effect with fewer than two actions in range. */
+  cycleAction(): void;
+  /** Actions in range for the side panel, nearest first. selected is the one E will use. */
+  readonly actions: readonly ActionOption[];
   /** The sequence runner asked for / ended a clip: view reports clip state here. */
   signal(signal: SequenceSignal): void;
   /** Speak a dialogue line now, or after sim seconds from now. */
@@ -116,6 +120,12 @@ export interface WorldRuntime {
   subscribe(listener: () => void): () => void;
   getState(): RuntimeState;
   restore(state: RuntimeState): void;
+}
+
+export interface ActionOption {
+  id: EntityId;
+  prompt: string;
+  selected: boolean;
 }
 
 export interface LightFx {
@@ -289,8 +299,42 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
     return out;
   }
 
+  let selectedId: EntityId | null = null;
+  let actionList: ActionOption[] = [];
+
+  function inRange(pose: PlayerPose): Hit[] {
+    return findAllInRange(pose.x, pose.z, interactables(), INTERACT_RANGE, pose.yaw);
+  }
+
+  /** The hit E will use: the panel's selection if still in range, else the nearest. */
+  function pick(hits: Hit[]): Hit | null {
+    return hits.find((h) => h.target.id === selectedId) ?? hits[0] ?? null;
+  }
+
   function nearest(pose: PlayerPose): Hit | null {
-    return findNearest(pose.x, pose.z, interactables(), INTERACT_RANGE, pose.yaw);
+    return pick(inRange(pose));
+  }
+
+  let lastPose: PlayerPose = { x: 0, z: 0, yaw: 0 };
+
+  function cycleAction(): void {
+    const hits = inRange(lastPose);
+    if (hits.length < 2) return;
+    const i = hits.findIndex((h) => h.target.id === pick(hits)?.target.id);
+    selectedId = hits[(i + 1) % hits.length]!.target.id;
+    refreshActions(lastPose);
+  }
+
+  function refreshActions(pose: PlayerPose): void {
+    lastPose = pose;
+    const hits = inRange(pose).slice(0, 4);
+    const chosen = pick(hits)?.target.id ?? null;
+    const next = hits.map((h) => ({ id: h.target.id, prompt: h.target.prompt, selected: h.target.id === chosen }));
+    const same = next.length === actionList.length && next.every((n, i) => n.id === actionList[i]!.id && n.prompt === actionList[i]!.prompt && n.selected === actionList[i]!.selected);
+    if (!same) {
+      actionList = next;
+      changed();
+    }
   }
 
   function highlights(): EntityId[] {
@@ -350,6 +394,7 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
       subtitle = null;
       changed();
     }
+    refreshActions(pose);
     const hit = nearest(pose);
     const next = hit ? `E  ${hit.target.prompt}` : null;
     if (next !== prompt) {
@@ -402,6 +447,10 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
       else say(lineId);
     },
     nearest,
+    cycleAction,
+    get actions() {
+      return actionList;
+    },
     signal: (s) => runner.signal(s),
     visibleEntities() {
       const hl = new Set(highlights());

@@ -41,6 +41,7 @@ export function PlayerRig({ input, runtime, onOpenLocket }: { input: InputContro
       const sensitivity = MOUSE_SENSITIVITY * settings.mouseSensitivity * (settings.invertY ? -1 : 1);
       // E and T are one-frame edges: handle them once per frame, before the fixed steps.
       const pose = () => ({ x: body.current.x, z: body.current.z, yaw: body.current.yaw });
+      if (input.state.cyclePressed) runtime.cycleAction();
       if (input.state.interactPressed) runtime.interact(pose());
       const opening = input.state.locketPressed && runtime.canOpenLocket();
       if (opening) onOpenLocket(); // the phase changes now, so this frame runs no steps

@@ -1,4 +1,5 @@
 import type { ItemId, SpellId } from '@tlh/shared';
+import type { ActionOption } from '../game/world-runtime.ts';
 import { showCarriedRow } from '../game/interaction.ts';
 import { objectiveFor } from '../game/objectives.ts';
 import { useGame } from '../store/index.ts';
@@ -28,7 +29,7 @@ function Bar({ label, value, kind }: { label: string; value: number; kind: 'heal
 }
 
 /** HUD: health, magic, spell, objective, carried items, interaction prompt. Shows no hidden values. */
-export function Hud({ prompt, tutorial }: { prompt?: string | null; tutorial?: string | null }) {
+export function Hud({ actions = [], tutorial }: { actions?: readonly ActionOption[]; tutorial?: string | null }) {
   const hp = useGame((s) => s.player.hp);
   const magic = useGame((s) => s.player.magic);
   const selected = useGame((s) => s.player.selectedSpell);
@@ -39,7 +40,19 @@ export function Hud({ prompt, tutorial }: { prompt?: string | null; tutorial?: s
   return (
     <div className="hud" aria-live="polite">
       <div className="hud-objective">{objectiveFor(flags)}</div>
-      {prompt ? <div className="hud-prompt">{prompt}</div> : null}
+      {actions.length > 0 ? (
+        <aside className="hud-actions" aria-label="Actions">
+          <h2>Actions</h2>
+          <ul>
+            {actions.map((a) => (
+              <li key={a.id} className={a.selected ? 'selected' : undefined} aria-current={a.selected ? 'true' : undefined}>
+                <kbd>{a.selected ? 'E' : ' '}</kbd> {a.prompt}
+              </li>
+            ))}
+          </ul>
+          {actions.length > 1 ? <small>Q: switch action</small> : null}
+        </aside>
+      ) : null}
       {tutorial ? <div className="hud-tutorial">{tutorial}</div> : null}
       <div className="hud-bottom-left">
         <Bar label="Health" value={hp} kind="health" />

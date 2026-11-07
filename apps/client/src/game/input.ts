@@ -13,6 +13,7 @@ export const KEY_BINDINGS = {
   sprint: 'ShiftLeft',
   sprintAlt: 'ShiftRight',
   interact: 'KeyE',
+  cycleAction: 'KeyQ',
   locket: 'KeyT',
   spell1: 'Digit1',
   spell2: 'Digit2',
@@ -32,6 +33,8 @@ export interface InputState {
   lmbHeldMs: number;
   /** One-frame edges, cleared by `endFrame`. */
   interactPressed: boolean;
+  /** Q: switch the selected action in the side panel. */
+  cyclePressed: boolean;
   locketPressed: boolean;
   pausePressed: boolean;
   spellPressed: 1 | 2 | 3 | null;
@@ -51,6 +54,7 @@ export function createInputState(): InputState {
     lmbDown: false,
     lmbHeldMs: 0,
     interactPressed: false,
+    cyclePressed: false,
     locketPressed: false,
     pausePressed: false,
     spellPressed: null,
@@ -71,6 +75,9 @@ export class InputController {
     switch (code) {
       case KEY_BINDINGS.interact:
         s.interactPressed = true;
+        break;
+      case KEY_BINDINGS.cycleAction:
+        s.cyclePressed = true;
         break;
       case KEY_BINDINGS.locket:
         s.locketPressed = true;
@@ -129,6 +136,7 @@ export class InputController {
     s.lookDX = 0;
     s.lookDY = 0;
     s.interactPressed = false;
+    s.cyclePressed = false;
     s.locketPressed = false;
     s.pausePressed = false;
     s.spellPressed = null;
