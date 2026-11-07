@@ -4,7 +4,7 @@ import { PerspectiveCamera } from 'three';
 import { exteriorColliders, HOME_SPAWN } from '../content/world/exterior-layout.ts';
 import { getCheckpoint } from '../game/checkpoints.ts';
 import { INTERIOR_SPAWN, interiorColliders } from '../content/world/interior-layout.ts';
-import type { InputController } from '../game/input.ts';
+import { SPELL_FOR_KEY, type InputController } from '../game/input.ts';
 import { createPlayerBody, EYE_HEIGHT, FixedStepper, MOUSE_SENSITIVITY, stepPlayer } from '../game/player.ts';
 import type { SkipHold } from '../game/skip-hold.ts';
 import type { WorldRuntime } from '../game/world-runtime.ts';
@@ -28,6 +28,7 @@ export function PlayerRig({ input, runtime, onOpenLocket, skipHold }: { input: I
   const stepper = useMemo(() => new FixedStepper(), []);
   const camera = useThree((s) => s.camera);
   const lastScene = useRef(gameStore.getState().game.scene);
+  const lastRespawns = useRef(gameStore.getState().player.respawns);
 
   useFrame((_, delta) => {
     const { phase, scene } = gameStore.getState().game;
@@ -36,6 +37,13 @@ export function PlayerRig({ input, runtime, onOpenLocket, skipHold }: { input: I
       lastScene.current = scene;
       const spawn = scene === 'last_house' ? INTERIOR_SPAWN : HOME_SPAWN;
       body.current = createPlayerBody(spawn.x, spawn.z, spawn.yaw);
+    }
+    const { respawns } = gameStore.getState().player;
+    if (respawns !== lastRespawns.current) {
+      // Death: snap the body to the checkpoint spawn (the store's own pos may already be overwritten by the body sync below).
+      lastRespawns.current = respawns;
+      const at = getCheckpoint(gameStore.getState().game.checkpointId).spawn;
+      body.current = createPlayerBody(at.x, at.z, at.yaw);
     }
     if (scene === 'exterior' && body.current.x < -50) void preloadLastHouse(); // beat 7: preload in the lane
     const settings = settingsStore.getState();
@@ -51,6 +59,7 @@ export function PlayerRig({ input, runtime, onOpenLocket, skipHold }: { input: I
       // E and T are one-frame edges: handle them once per frame, before the fixed steps.
       const pose = () => ({ x: body.current.x, z: body.current.z, yaw: body.current.yaw });
       if (input.state.cyclePressed) runtime.cycleAction();
+      if (input.state.spellPressed) gameStore.getState().selectSpell(SPELL_FOR_KEY[input.state.spellPressed]);
       runtime.setHeld(input.state.interactDown); // hold-E interactions (the ritual anchors) read this
       if (input.state.interactPressed) runtime.interact(pose());
       const opening = input.state.locketPressed && runtime.canOpenLocket();

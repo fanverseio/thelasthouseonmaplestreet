@@ -54,6 +54,8 @@ export interface PlayerSlice {
   spellsUnlocked: SpellId[];
   pos: [number, number, number];
   yaw: number;
+  /** Counts deaths. The view compares it to snap the body to the checkpoint spawn. Not saved. */
+  respawns: number;
 }
 
 export interface PuzzleState {
@@ -99,6 +101,8 @@ export interface GameActions {
   setFlag: (flag: string) => SetFlagResult;
   /** Write the checkpoint tied to a named game event, e.g. enter:last_house. */
   writeCheckpointForEvent: (event: string) => CheckpointDef | null;
+  /** Select a spell (keys 1/2/3). Only an unlocked spell can be selected; returns whether it changed. */
+  selectSpell: (spell: SpellId) => boolean;
   /** Death: back to the last checkpoint with full health and magic. Flags are untouched. */
   respawn: () => void;
   /** Reset everything for a new playthrough in the chosen mode. */
@@ -124,6 +128,7 @@ export function initialGameData(mode: Mode = 'classic'): GameData {
       spellsUnlocked: [],
       pos: [0, 0, 0],
       yaw: 0,
+      respawns: 0,
     },
     progress: { flags: [], morality: { value: 0, history: [] }, carried: [], puzzles: {} },
     world: { entities: {} },
@@ -145,6 +150,9 @@ export function selectGameData(state: GameState): GameData {
   const { game, player, progress, world, angel } = state;
   return { game, player, progress, world, angel };
 }
+
+/** Spells that a progress flag unlocks (the flag is the source of truth, the list is the quick lookup). */
+const SPELL_OF_FLAG: Partial<Record<string, SpellId>> = { spell_bolt: 'arcane_bolt', spell_ward: 'ward', spell_purify: 'purify' };
 
 export interface GameStoreOptions {
   /** Called after a checkpoint is written (the save system hooks in here). */
@@ -170,6 +178,10 @@ export function createGameStore(options: GameStoreOptions = {}) {
         const result = applyFlag(get().progress.flags, flag);
         if (!result.ok || !result.changed) return result;
         set((state) => ({ progress: { ...state.progress, flags: result.flags } }));
+        const unlocked = SPELL_OF_FLAG[flag];
+        if (unlocked && !get().player.spellsUnlocked.includes(unlocked)) {
+          set((state) => ({ player: { ...state.player, spellsUnlocked: [...state.player.spellsUnlocked, unlocked] } }));
+        }
         const cp = checkpointForFlag(flag as Parameters<typeof checkpointForFlag>[0]);
         if (cp) writeCheckpoint(cp);
         return result;
@@ -178,6 +190,12 @@ export function createGameStore(options: GameStoreOptions = {}) {
         const cp = checkpointForEvent(event);
         if (cp) writeCheckpoint(cp);
         return cp;
+      },
+      selectSpell: (spell) => {
+        const p = get().player;
+        if (p.selectedSpell === spell || !p.spellsUnlocked.includes(spell)) return false;
+        set((state) => ({ player: { ...state.player, selectedSpell: spell } }));
+        return true;
       },
       respawn: () => {
         const plan = respawnPlan(get().game.checkpointId);
@@ -189,6 +207,7 @@ export function createGameStore(options: GameStoreOptions = {}) {
             magic: plan.magic,
             pos: [plan.checkpoint.spawn.x, 0, plan.checkpoint.spawn.z],
             yaw: plan.checkpoint.spawn.yaw,
+            respawns: state.player.respawns + 1,
           },
         }));
       },

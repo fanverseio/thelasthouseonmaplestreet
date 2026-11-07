@@ -205,3 +205,6 @@ export function stepPointerLock(state: PointerLockState, event: PointerLockEvent
         : { state, pause: state === 'lost', requestLock: true };
   }
 }
+
+/** Keys 1/2/3 select these spells (the store only accepts unlocked ones). */
+export const SPELL_FOR_KEY = { 1: 'arcane_bolt', 2: 'purify', 3: 'ward' } as const;
