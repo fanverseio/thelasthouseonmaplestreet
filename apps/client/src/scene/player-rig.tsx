@@ -5,14 +5,16 @@ import { exteriorColliders, HOME_SPAWN } from '../content/world/exterior-layout.
 import { INTERIOR_SPAWN, interiorColliders } from '../content/world/interior-layout.ts';
 import type { InputController } from '../game/input.ts';
 import { createPlayerBody, EYE_HEIGHT, FixedStepper, MOUSE_SENSITIVITY, stepPlayer } from '../game/player.ts';
+import type { WorldRuntime } from '../game/world-runtime.ts';
 import { preloadLastHouse } from '../services/scene-loader.ts';
 import { gameStore, settingsStore } from '../store/index.ts';
 
 /**
  * Runs the fixed 60 Hz player step from useFrame and moves the camera. View only:
- * the movement rules live in game/player.ts. The simulation halts unless the phase is `playing`.
+ * the movement rules live in game/player.ts. The simulation (player, world runtime timers, sequences)
+ * halts unless the phase is `playing`, so it freezes while the locket or an overlay is open.
  */
-export function PlayerRig({ input }: { input: InputController }) {
+export function PlayerRig({ input, runtime, onOpenLocket }: { input: InputController; runtime: WorldRuntime; onOpenLocket: () => void }) {
   const body = useRef(createPlayerBody(HOME_SPAWN.x, HOME_SPAWN.z, HOME_SPAWN.yaw));
   const stepper = useMemo(() => new FixedStepper(), []);
   const camera = useThree((s) => s.camera);
@@ -37,11 +39,18 @@ export function PlayerRig({ input }: { input: InputController }) {
       const flags = gameStore.getState().progress.flags;
       const colliders = scene === 'last_house' ? interiorColliders(flags) : exteriorColliders(flags);
       const sensitivity = MOUSE_SENSITIVITY * settings.mouseSensitivity * (settings.invertY ? -1 : 1);
+      // E and T are one-frame edges: handle them once per frame, before the fixed steps.
+      const pose = () => ({ x: body.current.x, z: body.current.z, yaw: body.current.yaw });
+      if (input.state.interactPressed) runtime.interact(pose());
+      const opening = input.state.locketPressed && runtime.canOpenLocket();
+      if (opening) onOpenLocket(); // the phase changes now, so this frame runs no steps
       // Look deltas are applied by the first step of a frame only; edges clear after any step ran.
       let steps = 0;
-      stepper.advance(delta, (dt) => {
+      stepper.advance(opening ? 0 : delta, (dt) => {
         input.tick(dt * 1000);
-        stepPlayer(body.current, input.state, dt, { colliders, sensitivity });
+        // A playing cinematic clip holds the player in place; the world still ticks.
+        if (!runtime.video) stepPlayer(body.current, input.state, dt, { colliders, sensitivity });
+        runtime.tick(dt, pose());
         input.state.lookDX = 0;
         input.state.lookDY = 0;
         steps++;

@@ -145,3 +145,7 @@ body,
 .resume-overlay .screen { background: rgba(7, 8, 12, 0.95); overflow: auto; max-height: 100%; }
 
 .loading-screen { position: absolute; inset: 0; display: grid; place-content: center; background: #000; font-size: 1.4rem; z-index: 5; }
+
+.crosshair { position: absolute; top: 50%; left: 50%; width: 4px; height: 4px; margin: -2px 0 0 -2px; border-radius: 50%; background: rgba(242, 238, 230, 0.8); pointer-events: none; }
+.video-placeholder { position: absolute; inset: 0; display: grid; place-content: center; gap: 0.25rem; text-align: center; background: #000; color: var(--muted); z-index: 5; }
+.video-placeholder p { margin: 0; font-size: 1.4rem; }
