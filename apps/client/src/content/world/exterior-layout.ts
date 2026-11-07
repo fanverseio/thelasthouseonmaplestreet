@@ -8,6 +8,7 @@ import type { EntityId, ProgressFlag } from '@tlh/shared';
 import { aabb, type Collider } from '../../game/collision.ts';
 import { isGateOpen } from '../../game/gates.ts';
 import { GATES } from './gates.ts';
+import { outbuildingColliders } from './grounds-layout.ts';
 import { HOME_START, homeColliders } from './home-layout.ts';
 
 export const MAP_HALF_X = 70;
@@ -63,7 +64,7 @@ export const BOXES: readonly GreyBox[] = [
   // West: Elena's back garden fence and the Last House
   box('fence.back_garden', -66, 12, 0.4, 14, 1.4, '#5a5a4a'),
   box('house.last', -62, 40, 12, 8, 9, '#2a1f2f'),
-  box('outbuilding', -52, 30, 6, 5, 3, '#3a3a2a'),
+  // The outbuilding is hollow: see grounds-layout.ts.
 ];
 
 export interface Veil {
@@ -114,9 +115,15 @@ export function veilIsOpen(veil: Veil, flags: readonly ProgressFlag[]): boolean 
   return veil.opensOn !== null && flags.includes(veil.opensOn);
 }
 
+/** The outbuilding door follows its gate in the manifest (padlock_open). */
+export function outbuildingDoorOpen(flags: readonly ProgressFlag[]): boolean {
+  const gate = GATES.find((g) => g.id === 'door.grounds.outbuilding');
+  return gate !== undefined && isGateOpen(gate, flags);
+}
+
 /** All colliders for the current flags: static walls plus every veil that is still closed. */
 export function exteriorColliders(flags: readonly ProgressFlag[]): Collider[] {
-  const list = [...staticColliders(), ...homeColliders(homeDoorOpen(flags))];
+  const list = [...staticColliders(), ...homeColliders(homeDoorOpen(flags)), ...outbuildingColliders(outbuildingDoorOpen(flags))];
   for (const v of VEILS) {
     if (!veilIsOpen(v, flags)) {
       list.push(aabb(v.x - v.w / 2, v.z - v.d / 2, v.x + v.w / 2, v.z + v.d / 2));

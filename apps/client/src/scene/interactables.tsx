@@ -9,6 +9,8 @@ const COLORS: Record<string, string> = {
   prop: '#b86a1c',
   socket: '#6a4a2a',
   door: '#4a3526',
+  puzzle: '#6a4a2a',
+  seal: '#3b2a66',
 };
 
 function GreyProp({ e }: { e: VisibleEntity }) {
@@ -38,7 +40,7 @@ export function Interactables({ runtime }: { runtime: WorldRuntime; flags: reado
     <>
       {runtime
         .visibleEntities()
-        .filter((e) => !e.id.startsWith('door.') && !e.id.startsWith('enemy.'))
+        .filter((e) => !e.id.startsWith('door.') && !e.id.startsWith('enemy.') && !e.id.startsWith('seal.') && !e.id.startsWith('rune.') && !e.id.startsWith('mirror.'))
         .map((e) => (
           <GreyProp key={e.id} e={e} />
         ))}

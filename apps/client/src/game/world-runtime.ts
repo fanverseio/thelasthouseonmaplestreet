@@ -7,13 +7,15 @@
  * `interact(pose)` when E is pressed. Time is sim time only, so every timer freezes with the sim.
  * To add a beat: add data files (see docs in the task report); this file does not change.
  */
-import { moralityBand, type EntityId, type ProgressFlag } from '@tlh/shared';
+import { moralityBand, type EntityId, type ProgressFlag, type SceneId } from '@tlh/shared';
 import { ALL_INTERACTIONS } from '../content/interactions/index.ts';
-import type { Action, Cond, InteractionContent, InteractionDef } from '../content/interactions/types.ts';
+import type { Action, Cond, EntityCheck, InteractionContent, InteractionDef } from '../content/interactions/types.ts';
 import { getLine } from '../content/dialogue/index.ts';
 import { ALL_SEQUENCES } from '../content/sequences/index.ts';
 import { PLACEMENTS, type Placement } from '../content/world/placements.ts';
+import { sceneOfEntity } from '../content/world/scene-of.ts';
 import type { GameStore } from '../store/game-store.ts';
+import { checkpointForEvent } from './checkpoints.ts';
 import { canOpenLocket, emptyPlayed, markPlayed, selectClassicLine, type LocketPolicy, type PlayedLines } from './dialogue.ts';
 import { highlightsOf, hintLevelOf, initialHintState, stepHint, type HintState } from './hints.ts';
 import { findAllInRange, INTERACT_RANGE, pickUp, useSocket as consumeSocket, type Hit, type Interactable } from './interaction.ts';
@@ -35,6 +37,8 @@ export interface SpokenLine {
 export type InteractResult =
   | { status: 'none' }
   | { status: 'done'; id: EntityId }
+  /** A hold interaction has started; it completes in `tick` while E stays down (see `hold`). */
+  | { status: 'holding'; id: EntityId }
   | { status: 'refused'; id: EntityId; reason: string };
 
 /** What the greybox view draws for an entity that is currently present. */
@@ -74,15 +78,26 @@ export interface WorldRuntimeOptions {
   onEffect?: (effect: SequenceEffect) => void;
   /** An `encounter` action fired. Returns a failure reason, or null on success (game/encounter-runtime.ts). */
   onEncounter?: (op: 'interact', id: string) => string | null;
+  /**
+   * An enterScene action asks for a scene. Return a promise while its code is still loading (the switch waits
+   * for it), or null/undefined when it is ready now. Without this hook the switch is immediate.
+   */
+  loadScene?: (scene: SceneId) => Promise<unknown> | null | undefined;
   /** Called at the end of every tick (the encounter runtime advances here). */
   onTick?: (dt: number, pose: PlayerPose) => void;
   /** True while a hostile enemy is active: the locket's `combat_blocked` policy then applies. */
   inCombat?: () => boolean;
+  /** A `finale` action fired (game/ending.ts). Returns a failure reason, or null on success. */
+  onFinale?: (op: 'choice') => string | null;
 }
 
 export interface WorldRuntime {
   tick(dt: number, pose: PlayerPose): void;
   interact(pose: PlayerPose): InteractResult;
+  /** Tell the runtime whether E is down right now (the view calls this before `interact` and every step). */
+  setHeld(down: boolean): void;
+  /** The running hold interaction (progress 0..1, sim time), or null. */
+  readonly hold: { id: EntityId; progress: number; seconds: number } | null;
   nearest(pose: PlayerPose): Hit | null;
   /** Pick the next action in the side panel (Q). No effect with fewer than two actions in range. */
   cycleAction(): void;
@@ -104,6 +119,8 @@ export interface WorldRuntime {
   readonly subtitle: SpokenLine | null;
   /** Active sequence video clip (placeholder overlay), or null. */
   readonly video: { clipId: string; fallbackSeconds: number } | null;
+  /** The scene an enterScene action is waiting to load (the view shows a loading screen), or null. */
+  readonly sceneLoading: SceneId | null;
   readonly highlights: readonly EntityId[];
   /** Current HUD tutorial prompt id (movement, bolt), or null. */
   readonly tutorial: string | null;
@@ -176,9 +193,12 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
   let subtitle: (SpokenLine & { until: number }) | null = null;
   let video: { clipId: string; fallbackSeconds: number } | null = null;
   let prompt: string | null = null;
+  let sceneLoading: SceneId | null = null;
   let version = 0;
   let overlay: { puzzle: 'p3_padlock' | 'p5_board' } | null = null;
   let spoken: string[] = [];
+  let held = false;
+  let holdState: { id: EntityId; elapsed: number; seconds: number } | null = null;
   const listeners = new Set<() => void>();
 
   const changed = () => {
@@ -188,13 +208,18 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
 
   const progress = () => store.getState().progress;
 
+  const entityIs = (e: EntityCheck): boolean => store.getState().world.entities[e.id]?.[e.key] === e.is;
+
   function holds(c: Cond | undefined): boolean {
     if (!c) return true;
     const { flags, carried } = progress();
     return (
       (c.flags ?? []).every((f) => flags.includes(f)) &&
       !(c.notFlags ?? []).some((f) => flags.includes(f)) &&
-      (c.carried ?? []).every((i) => carried.includes(i))
+      (c.carried ?? []).every((i) => carried.includes(i)) &&
+      (c.entities ?? []).every(entityIs) &&
+      !(c.notEntities ?? []).some(entityIs) &&
+      (c.spell === undefined || (store.getState().player.selectedSpell === c.spell && store.getState().player.spellsUnlocked.includes(c.spell)))
     );
   }
 
@@ -247,6 +272,45 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
     changed();
   }
 
+  /** Is this entity part of the scene that is on screen? (Exterior and Last House share one placement table.) */
+  const inScene = (id: string): boolean => sceneOfEntity(id) === store.getState().game.scene;
+
+  /** Switch scene now: Elena stands at the event checkpoint's spawn, the scene changes, then the checkpoint is written. */
+  function commitScene(scene: SceneId, event: string | undefined): void {
+    const cp = event ? checkpointForEvent(event) : null;
+    if (cp) store.setState((s) => ({ player: { ...s.player, pos: [cp.spawn.x, 0, cp.spawn.z], yaw: cp.spawn.yaw } }));
+    store.getState().setScene(scene);
+    if (event) store.getState().writeCheckpointForEvent(event);
+    selectedId = null;
+    prompt = null;
+    changed();
+  }
+
+  /** `enterScene`: waits for the scene's code (the loader promise) before switching; one switch at a time. */
+  function enterScene(scene: SceneId, event: string | undefined): string | null {
+    if (sceneLoading) return 'scene_loading';
+    if (store.getState().game.scene === scene) return null;
+    const pending = options.loadScene?.(scene);
+    if (!pending) {
+      commitScene(scene, event);
+      return null;
+    }
+    sceneLoading = scene;
+    changed();
+    pending.then(
+      () => {
+        if (sceneLoading !== scene) return;
+        sceneLoading = null;
+        commitScene(scene, event);
+      },
+      () => {
+        sceneLoading = null; // the code failed to load: stay where we are; pressing the door again retries
+        changed();
+      },
+    );
+    return null;
+  }
+
   function closeOverlay(): void {
     if (!overlay) return;
     overlay = null;
@@ -296,6 +360,22 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
         case 'openPuzzle':
           openOverlay(a.puzzle);
           break;
+        case 'enterScene': {
+          const failure = enterScene(a.scene, a.event);
+          if (failure) return failure;
+          break;
+        }
+        case 'setEntity':
+          store.setState((s) => ({
+            world: { ...s.world, entities: { ...s.world.entities, [a.id]: { ...s.world.entities[a.id], [a.key]: a.value } } },
+          }));
+          changed();
+          break;
+        case 'finale': {
+          const failure = options.onFinale?.(a.op) ?? (options.onFinale ? null : 'no_finale_runtime');
+          if (failure) return failure;
+          break;
+        }
         case 'encounter': {
           const failure = options.onEncounter?.(a.op, a.id) ?? (options.onEncounter ? null : 'no_encounter_runtime');
           if (failure) return failure;
@@ -314,7 +394,7 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
     const out: Interactable[] = [];
     for (const d of defs) {
       const p = content.placements[d.id];
-      if (!p || !holds(d.show)) continue;
+      if (!p || !holds(d.show) || !inScene(d.id)) continue;
       const locked = !holds(d.requires);
       if (out.some((o) => o.id === d.id)) continue;
       out.push({ id: d.id, x: p.x, z: p.z, prompt: locked ? (d.lockedPrompt ?? d.prompt) : d.prompt, enabled: true });
@@ -408,7 +488,7 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
     runner.tick(dt);
     // Trigger volumes fire once
     for (const t of triggers) {
-      if (fired.has(t.id)) continue;
+      if (fired.has(t.id) || !inScene(t.id)) continue;
       const p = content.placements[t.id];
       if (!p || Math.hypot(pose.x - p.x, pose.z - p.z) > p.r || !holds(t.requires)) continue;
       fired.add(t.id);
@@ -419,6 +499,14 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
     for (const rule of content.interactions.onFlag ?? []) {
       const key = `flag:${rule.flag}`;
       if (fired.has(key) || !progress().flags.includes(rule.flag)) continue;
+      fired.add(key);
+      if (holds(rule.when)) run(rule.actions);
+    }
+    stepHold(dt);
+    // Condition rules: run once when the condition first holds (rune progress and the like).
+    for (const rule of content.interactions.onCond ?? []) {
+      const key = `cond:${rule.id}`;
+      if (fired.has(key) || !holds(rule.when)) continue;
       fired.add(key);
       run(rule.actions);
     }
@@ -441,8 +529,36 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
     }
   }
 
+  /** Why the running hold must stop, or null while it may go on. */
+  function holdBroken(h: NonNullable<typeof holdState>): boolean {
+    const def = defOf(h.id);
+    const p = content.placements[h.id];
+    if (!held || !def || !def.hold || !p || !holds(def.show) || !holds(def.requires)) return true;
+    if (runner.policy.control === 'locked' || video) return true;
+    return Math.hypot(lastPose.x - p.x, lastPose.z - p.z) > INTERACT_RANGE + p.r;
+  }
+
+  /** Advances the running hold by one sim step; completes it (runs the actions) or cancels it. */
+  function stepHold(dt: number): void {
+    const h = holdState;
+    if (!h) return;
+    if (holdBroken(h)) {
+      holdState = null;
+      changed();
+      return;
+    }
+    h.elapsed += dt;
+    if (h.elapsed >= h.seconds) {
+      holdState = null;
+      run(defOf(h.id)!.actions);
+      advanceHints(0);
+    }
+    changed();
+  }
+
   function interact(pose: PlayerPose): InteractResult {
     runner.signal({ input: 'interact' });
+    if (holdState) return { status: 'holding', id: holdState.id };
     const hit = nearest(pose);
     if (!hit) return { status: 'none' };
     const id = hit.target.id;
@@ -450,6 +566,14 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
     if (!holds(def.requires)) {
       if (def.onRefuse) run(def.onRefuse);
       return { status: 'refused', id, reason: 'requires' };
+    }
+    if (def.hold) {
+      if (runner.policy.control === 'locked' || video) return { status: 'refused', id, reason: 'locked' };
+      held = true; // the press that starts a hold is, by definition, a held key; the view corrects this each step
+      lastPose = pose;
+      holdState = { id, elapsed: 0, seconds: def.hold.seconds };
+      changed();
+      return { status: 'holding', id };
     }
     const failure = run(def.actions);
     advanceHints(0);
@@ -480,6 +604,12 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
   return {
     tick,
     interact,
+    setHeld(down) {
+      held = down;
+    },
+    get hold() {
+      return holdState ? { id: holdState.id, progress: Math.min(1, holdState.elapsed / holdState.seconds), seconds: holdState.seconds } : null;
+    },
     say(lineId, after) {
       if (after && after > 0) scheduled.push({ at: simTime + after, line: lineId });
       else say(lineId);
@@ -496,7 +626,7 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
       return Object.entries(content.placements).flatMap(([id, p]) => {
         const def = defOf(id as EntityId);
         // Only entities that have an interaction are drawn as props; hidden ones are gone.
-        if (!def || !holds(def.show)) return [];
+        if (!def || !holds(def.show) || !inScene(id)) return [];
         return [{ id: id as EntityId, x: p.x, z: p.z, r: p.r, interactive: live.has(id as EntityId), highlighted: hl.has(id as EntityId) }];
       });
     },
@@ -514,6 +644,9 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
     },
     get video() {
       return video;
+    },
+    get sceneLoading() {
+      return sceneLoading;
     },
     get highlights() {
       return highlights();

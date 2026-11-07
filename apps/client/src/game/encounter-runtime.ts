@@ -12,9 +12,13 @@
 import type { EntityId, ProgressFlag, SequenceId } from '@tlh/shared';
 import { ALL_SEQUENCES } from '../content/sequences/index.ts';
 import { PLACEMENTS, type Placement } from '../content/world/placements.ts';
+import { sceneOfEntity } from '../content/world/scene-of.ts';
 import { ENCOUNTER_BINDINGS } from '../content/encounters/index.ts';
 import type { GameStore } from '../store/game-store.ts';
+import type { SaveStorage } from '../services/save-storage.ts';
 import { createChoiceRuntime } from './dialogue-choice.ts';
+import { createEndingRuntime } from './ending.ts';
+import { createRitualRuntime } from './ritual.ts';
 import {
   applyMoralityDelta,
   resolveEncounter,
@@ -168,7 +172,8 @@ export function createEncounterRuntime(options: EncounterRuntimeOptions): Encoun
   function read(id: StubEncounterId): { state: EncounterState; engaged: boolean } {
     const def = STUB_ENCOUNTERS[id];
     const raw = store.getState().world.entities[def.enemyId];
-    const resolvedByFlags = outcomeOf(id) !== null;
+    // A save or dev start whose group flag (enc_approach_resolved, ...) is set agrees with its flags.
+    const resolvedByFlags = outcomeOf(id) !== null || (def.resolvedFlag !== undefined && flags().includes(def.resolvedFlag));
     const state = resolvedByFlags ? 'resolved' : ((raw?.['state'] as EncounterState | undefined) ?? 'idle');
     return { state, engaged: raw?.['engaged'] === true };
   }
@@ -314,6 +319,7 @@ export function createEncounterRuntime(options: EncounterRuntimeOptions): Encoun
       return;
     }
     for (const b of bindings) {
+      if (sceneOfEntity(b.entity) !== store.getState().game.scene) continue; // enemies only act in their own scene
       const cur = read(b.id);
       if (cur.state === 'resolved') continue;
       if (!cur.engaged) {
@@ -366,11 +372,16 @@ export function createEncounterRuntime(options: EncounterRuntimeOptions): Encoun
     hostileActive,
     view,
     active() {
+      // With several enemies engaged at once (the two hounds) a stunned one is offered first, so its
+      // Purify / Destroy choice is never hidden behind a hostile sibling.
+      let first: EncounterView | null = null;
       for (const b of bindings) {
         const v = view(b.id);
-        if (v.engaged && v.state !== 'resolved' && withinLeash(b)) return v;
+        if (!v.engaged || v.state === 'resolved' || !withinLeash(b)) continue;
+        if (v.canChoose) return v;
+        first ??= v;
       }
-      return null;
+      return first;
     },
     bindings,
     get version() {
@@ -396,8 +407,8 @@ export function createEncounterRuntime(options: EncounterRuntimeOptions): Encoun
 }
 
 /** Convenience: a world runtime and an encounter runtime wired together. */
-export function createEncounterWorld(options: WorldRuntimeOptions & { bindings?: readonly EncounterBinding[] }) {
-  const { bindings, ...worldOptions } = options;
+export function createEncounterWorld(options: WorldRuntimeOptions & { bindings?: readonly EncounterBinding[]; storage?: SaveStorage }) {
+  const { bindings, storage, ...worldOptions } = options;
   const encounters = createEncounterRuntime({
     store: options.store,
     ...(bindings && { bindings }),
@@ -405,14 +416,24 @@ export function createEncounterWorld(options: WorldRuntimeOptions & { bindings?:
     ...(options.content?.placements && { placements: options.content.placements }),
   });
   const choices = createChoiceRuntime({ store: options.store });
+  // Beats 11-12: the smoke pressure of the final ritual and the final choice / ending.
+  const ritual = createRitualRuntime({ store: options.store });
+  const ending = createEndingRuntime({
+    store: options.store,
+    ...(storage && { storage }),
+    ...(options.content?.sequences && { sequences: options.content.sequences }),
+  });
   const hooks = encounters.worldHooks;
   const world = createWorldRuntime({
     ...worldOptions,
     onEncounter: hooks.onEncounter,
     onTick: (dt, pose) => {
       hooks.onTick(dt, pose);
+      ritual.tick(dt);
+      ending.tick(dt);
       worldOptions.onTick?.(dt, pose);
     },
+    onFinale: () => ending.open(),
     inCombat: hooks.inCombat,
     onEffect: (e) => {
       hooks.onEffect(e);
@@ -422,5 +443,7 @@ export function createEncounterWorld(options: WorldRuntimeOptions & { bindings?:
   });
   encounters.attach(world);
   choices.attach(world);
-  return { world, encounters, choices };
+  ritual.attach(world);
+  ending.attach(world);
+  return { world, encounters, choices, ritual, ending };
 }

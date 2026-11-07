@@ -56,5 +56,37 @@ export const STREET_FOX_BINDING: EncounterBinding = {
   stunFlags: [],
 }
 
+/**
+ * Beat 9 (beat-sheet.md): the cursed cat guarding the cellar stairs, `enc_interior`. Mandatory, +/-10 morality.
+ * Stub rules only: it engages when Elena comes near, interact weakens it, a short delay stuns it, then purify
+ * or destroy. It never damages Elena. Resolving it sets `enc_interior_resolved`, which unlocks the talking board.
+ */
+export const INTERIOR_CAT_BINDING: EncounterBinding = {
+  id: 'interior_cat',
+  entity: 'enemy.interior.cat',
+  requires: ['runes_done'],
+  approachRange: 4,
+  startLines: ['vo_angel_b9_01'],
+  stunAfter: 2,
+  stunFlags: [],
+};
+
+/**
+ * Beat 7 (beat-sheet.md): the two cursed hounds of `enc_approach`, mandatory, +/-10 morality each. Stub rules
+ * only: two bindings, engaged together by trg.grounds.enter (and again by approach range after a death). Each is
+ * weakened with E, stuns a moment later, then purify or destroy. enc_approach_resolved is set by the stub only
+ * once BOTH are resolved. They never damage Elena.
+ */
+const houseHound = (n: 1 | 2): EncounterBinding => ({
+  id: `hound_${n}`,
+  entity: `enemy.grounds.hound_${n}`,
+  requires: ['lane_open'],
+  approachRange: 5,
+  ...(n === 1 && { startLines: ['vo_angel_b7_02'] }),
+  stunAfter: 1.5,
+  stunFlags: [],
+});
+export const HOUND_BINDINGS: readonly EncounterBinding[] = [houseHound(1), houseHound(2)];
+
 /** Add a beat's encounters by appending a binding here. */
-export const ENCOUNTER_BINDINGS: readonly EncounterBinding[] = [BRIGGS_BINDING, WATCHER_BINDING, STREET_FOX_BINDING];
+export const ENCOUNTER_BINDINGS: readonly EncounterBinding[] = [BRIGGS_BINDING, WATCHER_BINDING, STREET_FOX_BINDING, ...HOUND_BINDINGS, INTERIOR_CAT_BINDING];

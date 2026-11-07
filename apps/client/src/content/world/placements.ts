@@ -4,6 +4,8 @@
  * Later beats only add rows here. Tests check every ID exists in the registry and stands on free ground.
  */
 import type { EntityId } from '@tlh/shared';
+import { LAST_HOUSE_PLACEMENTS } from './last-house-placements.ts';
+import { RITUAL_PLACEMENTS } from './ritual-placements.ts';
 
 export interface Placement {
   x: number;
@@ -12,6 +14,8 @@ export interface Placement {
 }
 
 export const PLACEMENTS: Readonly<Record<EntityId, Placement>> = {
+  ...LAST_HOUSE_PLACEMENTS,
+  ...RITUAL_PLACEMENTS,
   // Beat 1: No. 12 (home-layout.ts has the walls)
   'spawn.home.start': { x: -22, z: 39, r: 0.5 },
   'trg.home.bedroom': { x: -25, z: 39, r: 1.8 },
@@ -55,6 +59,18 @@ export const PLACEMENTS: Readonly<Record<EntityId, Placement>> = {
   'enemy.house66.watcher': { x: -58, z: -28, r: 0.5 },
   'pickup.house66.fence_key': { x: -56.5, z: -28, r: 0.2 },
   'gate.house66.lane': { x: -59.5, z: -23.6, r: 0.75 },
+  // Beat 7: the back lane (x -60, behind the west gardens) and the Last House grounds (outbuilding box x -56..-48, z 27..33)
+  'clue.lane.journal_3': { x: -64.4, z: 10, r: 0.2 },
+  'trg.lane.home_window': { x: -59, z: 6, r: 5 },
+  'trg.grounds.enter': { x: -57, z: 20, r: 4 },
+  'enemy.grounds.hound_1': { x: -58, z: 24, r: 0.5 },
+  'enemy.grounds.hound_2': { x: -54, z: 23.5, r: 0.5 },
+  'puzzle.grounds.padlock': { x: -52, z: 26.5, r: 0.2 },
+  // Beat 8: the antique mirror hangs inside the outbuilding; the three runes sit on its inside walls
+  'mirror.grounds.antique': { x: -52, z: 32.2, r: 0.8 },
+  'rune.grounds.r1': { x: -54.5, z: 27.9, r: 0.3 },
+  'rune.grounds.r2': { x: -49.5, z: 27.9, r: 0.3 },
+  'rune.grounds.r3': { x: -48.8, z: 31.5, r: 0.3 },
 };
 
 export function placementOf(id: EntityId): Placement | undefined {

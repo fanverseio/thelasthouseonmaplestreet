@@ -4,6 +4,7 @@ import type { MeshStandardMaterial, Mesh, PointLight } from 'three';
 import type { EntityId, ProgressFlag } from '@tlh/shared';
 import { useSettings } from '../store/index.ts';
 import { EXTERIOR_LIGHTING } from './lighting.ts';
+import { GroundsScene } from './grounds-scene.tsx';
 import { veilOpacity } from '../game/gates.ts';
 import type { WorldRuntime } from '../game/world-runtime.ts';
 import { PLACEMENTS } from '../content/world/placements.ts';
@@ -158,6 +159,7 @@ export function ExteriorScene({ flags, runtime }: { flags: readonly ProgressFlag
         <SeqLight key={id} id={id} runtime={runtime} />
       ))}
       <WindowShadow runtime={runtime} />
+      <GroundsScene flags={flags} runtime={runtime} />
 
       {STREETLIGHTS.map(([x, z]) => (
         <group key={`${x},${z}`} position={[x, 0, z]}>
