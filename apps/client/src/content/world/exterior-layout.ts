@@ -6,14 +6,17 @@
  */
 import type { EntityId, ProgressFlag } from '@tlh/shared';
 import { aabb, type Collider } from '../../game/collision.ts';
+import { isGateOpen } from '../../game/gates.ts';
+import { GATES } from './gates.ts';
+import { HOME_START, homeColliders } from './home-layout.ts';
 
 export const MAP_HALF_X = 70;
 export const MAP_HALF_Z = 45;
 /** Colliders sit this far inside the fog wall. */
 export const FOG_MARGIN = 2;
 
-/** Elena starts in the hall of No. 12 (home spawn). */
-export const HOME_SPAWN = { x: -20, z: 30, yaw: 0 } as const;
+/** Elena starts in the hall of No. 12, by Felix's bedroom doorway (spawn.home.start). */
+export const HOME_SPAWN = HOME_START;
 
 export interface GreyBox {
   id: string;
@@ -44,7 +47,7 @@ export const BOXES: readonly GreyBox[] = [
   // Middle block: Maple Green (old oak, bandstand, swing, lamp live inside it later).
   box('green', 0, 0, 100, 50, 0.6, '#1d2a1c'),
   // South arc, outer edge
-  box('house.home', -20, 41, 14, 8, 6, '#6b5a4a'),
+  // No. 12 (house.home) is hollow: see home-layout.ts.
   box('house.south_a', 5, 41, 12, 8, 6, '#4f4a45'),
   box('house.south_b', 30, 41, 12, 8, 6, '#4f4a45'),
   // East side: No. 31 (Briggs) and garage
@@ -99,13 +102,19 @@ export function staticColliders(): Collider[] {
   return walls;
 }
 
+/** The front door of No. 12 follows its gate in the manifest (locket_taken). */
+export function homeDoorOpen(flags: readonly ProgressFlag[]): boolean {
+  const gate = GATES.find((g) => g.id === 'door.home.front');
+  return gate !== undefined && isGateOpen(gate, flags);
+}
+
 export function veilIsOpen(veil: Veil, flags: readonly ProgressFlag[]): boolean {
   return veil.opensOn !== null && flags.includes(veil.opensOn);
 }
 
 /** All colliders for the current flags: static walls plus every veil that is still closed. */
 export function exteriorColliders(flags: readonly ProgressFlag[]): Collider[] {
-  const list = staticColliders();
+  const list = [...staticColliders(), ...homeColliders(homeDoorOpen(flags))];
   for (const v of VEILS) {
     if (!veilIsOpen(v, flags)) {
       list.push(aabb(v.x - v.w / 2, v.z - v.d / 2, v.x + v.w / 2, v.z + v.d / 2));

@@ -4,6 +4,7 @@
  * Death respawns at the last checkpoint with full HP and magic; flags never roll back.
  */
 import type { CheckpointId, ProgressFlag, SceneId } from '@tlh/shared';
+import { HOME_PORCH, HOME_START } from '../content/world/home-layout.ts';
 
 export interface CheckpointDef {
   id: CheckpointId;
@@ -19,8 +20,8 @@ export interface CheckpointDef {
 }
 
 export const CHECKPOINTS: readonly CheckpointDef[] = [
-  { id: 'cp_home_start', onFlag: null, onEvent: 'new_game', scene: 'exterior', spawn: { x: -20, z: 30, yaw: 0 }, note: "Felix's bedroom doorway" },
-  { id: 'cp_street', onFlag: 'home_done', onEvent: null, scene: 'exterior', spawn: { x: -20, z: 34, yaw: Math.PI }, note: 'Front porch' },
+  { id: 'cp_home_start', onFlag: null, onEvent: 'new_game', scene: 'exterior', spawn: { ...HOME_START }, note: "Felix's bedroom doorway" },
+  { id: 'cp_street', onFlag: 'home_done', onEvent: null, scene: 'exterior', spawn: { ...HOME_PORCH }, note: 'Front porch, outside the door' },
   { id: 'cp_intersection', onFlag: 'seq2_done', onEvent: null, scene: 'exterior', spawn: { x: 58, z: 30, yaw: 0 }, note: 'Under the streetlight' },
   { id: 'cp_garden', onFlag: null, onEvent: 'enter:trg.garden.enter', scene: 'exterior', spawn: { x: 58, z: 20, yaw: 0 }, note: 'Garden gate (mini-boss reset)' },
   { id: 'cp_garden_after', onFlag: 'seq3_done', onEvent: null, scene: 'exterior', spawn: { x: 58, z: 5, yaw: 0 }, note: 'Garden path' },

@@ -1,6 +1,7 @@
 import { CHECKPOINT_IDS, PROGRESS_FLAGS, type ProgressFlag } from '@tlh/shared';
 import { describe, expect, it } from 'vitest';
 import { exteriorColliders } from '../content/world/exterior-layout.ts';
+import { HOME_BOUNDS } from '../content/world/home-layout.ts';
 import { GATES } from '../content/world/index.ts';
 import { interiorColliders } from '../content/world/interior-layout.ts';
 import { PLAYER_RADIUS } from './player.ts';
@@ -64,6 +65,21 @@ describe('checkpoints', () => {
       const p = moveAndSlide({ x: c.spawn.x, z: c.spawn.z }, { x: 0, z: 0 }, PLAYER_RADIUS, colliders);
       expect(Math.hypot(p.x - c.spawn.x, p.z - c.spawn.z), c.id).toBeLessThan(1e-9);
     }
+  });
+
+  it('starts inside the house and writes the porch checkpoint outside the front door', () => {
+    const start = getCheckpoint('cp_home_start').spawn;
+    const porch = getCheckpoint('cp_street').spawn;
+    expect(start.z).toBeGreaterThan(HOME_BOUNDS.minZ);
+    expect(start.x).toBeGreaterThan(HOME_BOUNDS.minX);
+    expect(porch.z).toBeLessThan(HOME_BOUNDS.minZ);
+    // Walking north from the hall: the shut door stops Elena, the open doorway lets her through.
+    const closed = exteriorColliders([]);
+    const step = moveAndSlide({ x: porch.x, z: HOME_BOUNDS.minZ + 1 }, { x: 0, z: -3 }, PLAYER_RADIUS, closed);
+    expect(step.z).toBeGreaterThan(HOME_BOUNDS.minZ);
+    const open = exteriorColliders(['locket_taken']);
+    const through = moveAndSlide({ x: porch.x, z: HOME_BOUNDS.minZ + 1 }, { x: 0, z: -3 }, PLAYER_RADIUS, open);
+    expect(through.z).toBeLessThan(HOME_BOUNDS.minZ);
   });
 
   it('respawns with full health and magic', () => {

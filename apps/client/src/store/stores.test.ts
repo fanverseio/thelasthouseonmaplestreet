@@ -99,7 +99,7 @@ describe('game store progression', () => {
     store.setState((s) => ({ player: { ...s.player, hp: 0, magic: 3 } }));
     store.getState().respawn();
     const s = store.getState();
-    expect(s.player).toMatchObject({ hp: 100, magic: 100, pos: [-20, 0, 34] });
+    expect(s.player).toMatchObject({ hp: 100, magic: 100, pos: [-19.5, 0, 32.5] });
     expect(s.progress.flags).toEqual(['locket_taken', 'angel_awake', 'home_done']);
   });
 

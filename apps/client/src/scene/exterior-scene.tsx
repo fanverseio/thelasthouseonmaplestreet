@@ -1,5 +1,17 @@
 import type { ProgressFlag } from '@tlh/shared';
-import { BOXES, MAP_HALF_X, MAP_HALF_Z, VEILS, veilIsOpen } from '../content/world/exterior-layout.ts';
+import { BOXES, homeDoorOpen, MAP_HALF_X, MAP_HALF_Z, VEILS, veilIsOpen } from '../content/world/exterior-layout.ts';
+import { HOME_BOUNDS, HOME_FRONT_DOOR, HOME_WALL_HEIGHT, HOME_WALLS, type WallRect } from '../content/world/home-layout.ts';
+
+function WallBox({ r, color }: { r: WallRect; color: string }) {
+  const w = r.maxX - r.minX;
+  const d = r.maxZ - r.minZ;
+  return (
+    <mesh position={[r.minX + w / 2, HOME_WALL_HEIGHT / 2, r.minZ + d / 2]} castShadow receiveShadow>
+      <boxGeometry args={[w, HOME_WALL_HEIGHT, d]} />
+      <meshStandardMaterial color={color} roughness={0.9} />
+    </mesh>
+  );
+}
 
 /** Greybox exterior: debug-coloured boxes, smoke veils, ground, streetlights. View only. */
 const STREETLIGHTS: readonly [number, number][] = [
@@ -37,6 +49,17 @@ export function ExteriorScene({ flags }: { flags: readonly ProgressFlag[] }) {
           <meshStandardMaterial color={b.color} roughness={0.9} />
         </mesh>
       ))}
+
+      {/* No. 12: hollow greybox with a floor, a hall light and a front door that stays shut until its gate opens. */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[(HOME_BOUNDS.minX + HOME_BOUNDS.maxX) / 2, 0.02, (HOME_BOUNDS.minZ + HOME_BOUNDS.maxZ) / 2]} receiveShadow>
+        <planeGeometry args={[HOME_BOUNDS.maxX - HOME_BOUNDS.minX, HOME_BOUNDS.maxZ - HOME_BOUNDS.minZ]} />
+        <meshStandardMaterial color="#2a241f" roughness={1} />
+      </mesh>
+      {HOME_WALLS.map((r) => (
+        <WallBox key={r.id} r={r} color="#6b5a4a" />
+      ))}
+      {!homeDoorOpen(flags) && <WallBox r={HOME_FRONT_DOOR} color="#4a3526" />}
+      <pointLight position={[-20, 2.8, 38]} intensity={4} distance={14} color="#ffcf8a" />
 
       {VEILS.filter((v) => !veilIsOpen(v, flags)).map((v) => (
         <mesh key={v.gate} position={[v.x, 2.5, v.z]}>
