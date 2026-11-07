@@ -37,6 +37,7 @@ export const PLACEMENTS: Readonly<Record<EntityId, Placement>> = {
   'light.street.intersection': { x: 58, z: 27, r: 0.3 },
   'clue.street.candy_bag': { x: 62, z: 32, r: 0.3 },
   'trg.street.fox': { x: 42, z: 28, r: 4 },
+  'enemy.street.fox': { x: 42, z: 31, r: 0.5 },
   // Beat 4: No. 31, Mr Briggs' garden (house x 62-70, z -5..9; garage x 62-70, z 12..20)
   'trg.garden.enter': { x: 58, z: 20, r: 2.5 },
   'enemy.garden.briggs': { x: 57, z: 6, r: 0.5 },

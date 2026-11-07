@@ -20,6 +20,13 @@ export const BEAT2: InteractionContent = {
       show: { flags: ['seq2_done'] },
       actions: [{ do: 'say', line: 'vo_elena_b3_03' }],
     },
+    // The fox: E engages it (again, after a leash reset) or weakens it. Gone once resolved.
+    {
+      id: 'enemy.street.fox',
+      prompt: 'Approach the fox',
+      show: { flags: ['seq2_done'], notFlags: ['enc_street_resolved'] },
+      actions: [{ do: 'encounter', op: 'interact', id: 'street_fox' }],
+    },
   ],
   triggers: [
     { id: 'trg.street.seq1', requires: { flags: ['home_done'] }, actions: [{ do: 'startSequence', sequence: 'seq1_empty_street' }] },
@@ -30,9 +37,13 @@ export const BEAT2: InteractionContent = {
       requires: { flags: ['seq1_done'], notFlags: ['seq2_done'] },
       actions: [{ do: 'startSequence', sequence: 'seq2_felix_streetlight' }],
     },
-    // TODO(encounter-runtime): optional street fox. Start the stub encounter 'street_fox' here once the
-    // encounter runtime hook exists (game/encounter-runtime*, owned by the Beat 4 work). Skipping changes nothing.
-    { id: 'trg.street.fox', requires: { flags: ['seq2_done'] }, actions: [] },
+    // Optional street fox: walking into the volume engages the stub encounter (game/encounter-runtime.ts).
+    // Skipping it (walking on, 20 m leash) changes nothing.
+    {
+      id: 'trg.street.fox',
+      requires: { flags: ['seq2_done'], notFlags: ['enc_street_resolved'] },
+      actions: [{ do: 'encounter', op: 'interact', id: 'street_fox' }],
+    },
   ],
   hints: [],
   onFlag: [

@@ -43,5 +43,18 @@ export const WATCHER_BINDING: EncounterBinding = {
   },
 };
 
+/**
+ * Beat 2-3 (beat-sheet.md): the optional street fox. No sequence, no Ward, no start flag: stub rules only.
+ * Leashed to 20 m (walking away resets it and changes nothing). Purify stays refused until spell_purify.
+ */
+export const STREET_FOX_BINDING: EncounterBinding = {
+  id: 'street_fox',
+  entity: 'enemy.street.fox',
+  requires: ['seq2_done'],
+  leash: 20,
+  stunAfter: 1,
+  stunFlags: [],
+}
+
 /** Add a beat's encounters by appending a binding here. */
-export const ENCOUNTER_BINDINGS: readonly EncounterBinding[] = [BRIGGS_BINDING, WATCHER_BINDING];
+export const ENCOUNTER_BINDINGS: readonly EncounterBinding[] = [BRIGGS_BINDING, WATCHER_BINDING, STREET_FOX_BINDING];

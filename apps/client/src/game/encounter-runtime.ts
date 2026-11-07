@@ -53,6 +53,11 @@ export interface EncounterBinding {
   requires?: readonly ProgressFlag[];
   /** Engages by itself when Elena comes this close (metres). */
   approachRange?: number;
+  /**
+   * Optional encounter: a hostile (not stunned) enemy gives up and resets to idle when Elena is farther than
+   * this (metres). A stunned one stays, but is only offered to the player within this range.
+   */
+  leash?: number;
   startLines?: readonly string[];
   /** Weaken (interact) is refused until this flag is set. */
   weakenRequires?: ProgressFlag;
@@ -155,7 +160,9 @@ export function createEncounterRuntime(options: EncounterRuntimeOptions): Encoun
       const f = def.outcomeFlags[choice];
       if (f && flags().includes(f)) return choice;
     }
-    return null;
+    // Encounters without outcome flags (the street fox) remember the choice in their entity state.
+    const raw = store.getState().world.entities[def.enemyId]?.['outcome'];
+    return raw === 'purify' || raw === 'destroy' ? raw : null;
   }
 
   function read(id: StubEncounterId): { state: EncounterState; engaged: boolean } {
@@ -166,7 +173,7 @@ export function createEncounterRuntime(options: EncounterRuntimeOptions): Encoun
     return { state, engaged: raw?.['engaged'] === true };
   }
 
-  function write(id: StubEncounterId, patch: { state?: EncounterState; engaged?: boolean }): void {
+  function write(id: StubEncounterId, patch: { state?: EncounterState; engaged?: boolean; outcome?: EncounterChoice }): void {
     const key = STUB_ENCOUNTERS[id].enemyId;
     store.setState((s) => ({
       world: { ...s.world, entities: { ...s.world.entities, [key]: { ...s.world.entities[key], ...patch } } },
@@ -270,7 +277,7 @@ export function createEncounterRuntime(options: EncounterRuntimeOptions): Encoun
     store.setState((s) => ({
       progress: { ...s.progress, morality: applyMoralityDelta(s.progress.morality, r.moralityDelta, r.reason, at) },
     }));
-    write(id, { state: r.next });
+    write(id, { state: r.next, outcome: choice });
     stunTimers.delete(id);
     for (const l of b.outcomeLines?.[choice] ?? []) w.say(l.line, l.after);
     return { ok: true };
@@ -315,6 +322,12 @@ export function createEncounterRuntime(options: EncounterRuntimeOptions): Encoun
         if (near && needWorld().sequences.active === null) engage(b);
         continue;
       }
+      if (b.leash !== undefined && cur.state !== 'stunned' && !withinLeash(b)) {
+        telegraphs.delete(b.id);
+        stunTimers.delete(b.id);
+        write(b.id, { state: 'idle', engaged: false });
+        continue;
+      }
       const tele = telegraphs.get(b.id);
       if (tele) {
         tele.left -= dt;
@@ -355,7 +368,7 @@ export function createEncounterRuntime(options: EncounterRuntimeOptions): Encoun
     active() {
       for (const b of bindings) {
         const v = view(b.id);
-        if (v.engaged && v.state !== 'resolved') return v;
+        if (v.engaged && v.state !== 'resolved' && withinLeash(b)) return v;
       }
       return null;
     },
@@ -370,6 +383,12 @@ export function createEncounterRuntime(options: EncounterRuntimeOptions): Encoun
       };
     },
   };
+
+  function withinLeash(b: EncounterBinding): boolean {
+    const place = placements[b.entity];
+    if (b.leash === undefined || !place) return true;
+    return Math.hypot(pose.x - place.x, pose.z - place.z) <= b.leash;
+  }
 
   function hostileActive(): boolean {
     return bindings.some((b) => view(b.id).hostile);

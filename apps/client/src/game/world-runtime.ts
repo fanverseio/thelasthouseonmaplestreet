@@ -500,7 +500,8 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
         return [{ id: id as EntityId, x: p.x, z: p.z, r: p.r, interactive: live.has(id as EntityId), highlighted: hl.has(id as EntityId) }];
       });
     },
-    canOpenLocket: () => canOpenLocket(progress().flags, runner.policy.locket, options.inCombat?.() ?? false),
+    // Outside a sequence, a hostile enemy blocks the locket (combat_blocked), e.g. the street fox.
+    canOpenLocket: () => canOpenLocket(progress().flags, runner.active ? runner.policy.locket : 'combat_blocked', options.inCombat?.() ?? false),
     locketLine,
     get locketPolicy() {
       return runner.policy.locket;
