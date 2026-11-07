@@ -67,7 +67,7 @@ npm run dev
   - The terminal shows `[client] ... Local: http://localhost:5173/` and `[api] Listening on http://127.0.0.1:3000`.
   - `http://localhost:5173` shows the content warning. Continue opens the main menu. `http://localhost:5173/?bootcheck` shows the developer check page with **API: ok**, the AI provider status, WebGL 2 status and a small foggy test scene.
   - `http://127.0.0.1:3000/api/health` returns `{"ok":true,"version":"0.1.0","mode":"local",...}`.
-  - Developer shortcuts (dev server only, never in a built game): open http://localhost:5173/?start=street (outside the house) or ?start=garden (at the intersection with Arcane Bolt) before choosing New Game.
+  - Developer shortcuts (dev server only, never in a built game): open http://localhost:5173/?start=street (outside the house) ?start=garden (at the intersection with Arcane Bolt) or ?start=house66 (outside the shed at No. 40, after Beat 5) before choosing New Game.
 x click the screen to capture the mouse (WASD, Shift, mouse look, Esc to pause).
 - **Stop**: press `Ctrl+C` in the terminal running `npm run dev`. Both services stop. If one service crashes, the runner stops the other.
 - **No `.env` is needed.** Without one, the game runs with default ports and Classic Mode only.

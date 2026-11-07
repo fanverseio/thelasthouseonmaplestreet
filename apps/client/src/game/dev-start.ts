@@ -13,6 +13,12 @@ export const DEV_STARTS = {
     'bed_seen', 'drawing_seen', 'drawer_key_taken', 'locket_taken', 'angel_awake', 'journal_1', 'home_done',
     'seq1_done', 'seq2_done', 'spell_bolt',
   ],
+  /** Outside Gartner's shed after Beat 5 (seq4_done): fuse and House 66 next. */
+  house66: [
+    'bed_seen', 'drawing_seen', 'drawer_key_taken', 'locket_taken', 'angel_awake', 'journal_1', 'home_done',
+    'seq1_done', 'seq2_done', 'spell_bolt', 'seq3_started', 'spell_ward', 'spell_purify', 'briggs_purified',
+    'walkie_found', 'seq3_done', 'seq4_done',
+  ],
 } as const;
 
 export type DevStart = keyof typeof DEV_STARTS;
@@ -29,6 +35,11 @@ export function applyDevStart(store: GameStore, start: DevStart): string[] {
   }
   if (start === 'garden') {
     store.setState((s) => ({ player: { ...s.player, spellsUnlocked: ['arcane_bolt'], selectedSpell: 'arcane_bolt' } }));
+  }
+  if (start === 'house66') {
+    store.setState((s) => ({
+      player: { ...s.player, spellsUnlocked: ['arcane_bolt', 'ward', 'purify'], selectedSpell: 'arcane_bolt' },
+    }));
   }
   // Put the player at the checkpoint just written.
   store.getState().respawn();

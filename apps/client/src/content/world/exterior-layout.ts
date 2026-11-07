@@ -55,9 +55,11 @@ export const BOXES: readonly GreyBox[] = [
   box('garage.no31', 66, 16, 8, 8, 4, '#6a5a3a'),
   // North arc
   box('house.no40', 50, -41, 14, 8, 5, '#3f4a5a'),
+  box('shed.no40', 62, -34, 3, 3, 2.4, '#5a4f3a'), // Gartner's hideout (its door faces south)
   box('house.north_a', 20, -41, 12, 8, 6, '#4f4a45'),
   box('house66', -60, -40, 14, 8, 6, '#4a3f5a'),
   box('fusebox.house66', -52, -36, 1, 1, 1.4, '#c9a227', false),
+  box('yard.house66', -58, -29.5, 20, 12, 0.05, '#242a22', false), // the Watcher's yard, ground only
   // West: Elena's back garden fence and the Last House
   box('fence.back_garden', -66, 12, 0.4, 14, 1.4, '#5a5a4a'),
   box('house.last', -62, 40, 12, 8, 9, '#2a1f2f'),
@@ -80,7 +82,7 @@ export const VEILS: readonly Veil[] = [
   { gate: 'gate.street.veil_garden' as EntityId, opensOn: 'seq2_done', x: 59.5, z: 24, w: 21, d: 1.5 },
   { gate: 'gate.street.veil_north' as EntityId, opensOn: 'seq3_done', x: 59.5, z: -22, w: 21, d: 1.5 },
   { gate: 'gate.street.veil_house66' as EntityId, opensOn: 'seq4_done', x: -12, z: -32.5, w: 1.5, d: 23 },
-  { gate: 'gate.house66.lane' as EntityId, opensOn: 'fence_key_taken', x: -59.5, z: -22, w: 21, d: 1.5 },
+  { gate: 'gate.house66.lane' as EntityId, opensOn: 'lane_open', x: -59.5, z: -22, w: 21, d: 1.5 },
   { gate: 'gate.street.last_house_road' as EntityId, opensOn: null, x: -46, z: 32.5, w: 1.5, d: 23 },
 ];
 

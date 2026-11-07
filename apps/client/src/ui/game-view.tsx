@@ -13,6 +13,7 @@ import { PlayerRig } from '../scene/player-rig.tsx';
 import { loadedLastHouse, preloadLastHouse } from '../services/scene-loader.ts';
 import { bindInput } from '../services/input-bindings.ts';
 import { gameStore, useGame } from '../store/index.ts';
+import { DialogueChoicePanel } from './dialogue-choice.tsx';
 import { EncounterPanel } from './encounter-stub.tsx';
 import { Hud } from './hud.tsx';
 import { Locket } from './locket.tsx';
@@ -29,7 +30,7 @@ export function GameView() {
   const container = useRef<HTMLDivElement>(null);
   const input = useMemo(() => new InputController(), []);
   // One world runtime per game view: New Game mounts a fresh view, so timers and fired triggers start clean.
-  const { world: runtime, encounters } = useMemo(() => createEncounterWorld({ store: gameStore }), []);
+  const { world: runtime, encounters, choices } = useMemo(() => createEncounterWorld({ store: gameStore }), []);
   useSyncExternalStore(runtime.subscribe, () => runtime.version);
   useEffect(() => attachRuntime(runtime), [runtime]); // autosave reads / Continue restores the runtime state
   const phase = useGame((s) => s.game.phase);
@@ -106,6 +107,7 @@ export function GameView() {
       {phase === 'playing' && <div className="crosshair" aria-hidden="true" />}
       {phase === 'playing' && <Subtitles line={runtime.subtitle} />}
       {phase === 'playing' && <EncounterPanel encounters={encounters} />}
+      {phase === 'playing' && <DialogueChoicePanel choices={choices} />}
       {runtime.video && (
         <VideoPlaceholder key={runtime.video.clipId} clipId={runtime.video.clipId} fallbackSeconds={runtime.video.fallbackSeconds} onEnded={videoEnded} />
       )}

@@ -97,7 +97,7 @@ describe('exterior layout', () => {
     expect(r(...NORTH_ARC_WEST)).toBe(true);
     expect(r(...HOUSE66_YARD)).toBe(true);
     expect(r(...BACK_GARDEN)).toBe(false);
-    r = stage(['seq1_done', 'seq2_done', 'seq3_done', 'seq4_done', 'fence_key_taken']);
+    r = stage(['seq1_done', 'seq2_done', 'seq3_done', 'seq4_done', 'lane_open']);
     expect(r(...BACK_GARDEN)).toBe(true);
     expect(r(...LAST_HOUSE_GROUNDS)).toBe(true);
   });

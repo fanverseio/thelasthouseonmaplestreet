@@ -38,7 +38,8 @@ export type SequenceStep =
   | { t: 'fx'; effect: 'smoke' | 'veilRecede' | 'mirrorCrack' | 'runes' | 'glow'; target: EntityId }
   | { t: 'setFlag'; flag: ProgressFlag }
   | { t: 'unlockSpell'; spell: SpellId }
-  | { t: 'prompt'; textId: string; until: 'input' | 'flag'; flag?: ProgressFlag }
+  /** orFlags: with until 'flag', any of these also ends the prompt (a two-way choice). */
+  | { t: 'prompt'; textId: string; until: 'input' | 'flag'; flag?: ProgressFlag; orFlags?: ProgressFlag[] }
   | { t: 'wait'; seconds: number }
   | { t: 'waitFor'; cond: { flag: ProgressFlag } | { trigger: EntityId } | { input: 'interact' } }
   | { t: 'parallel'; steps: SequenceStep[] };
@@ -312,7 +313,7 @@ class Exec {
           this.promptId = step.textId;
           ctx.emit(stepEffect(step)!);
         }
-        const met = step.until === 'flag' ? ctx.hasFlag(step.flag!) : ctx.signals.has('input:interact');
+        const met = step.until === 'flag' ? ctx.hasFlag(step.flag!) || (step.orFlags ?? []).some((f) => ctx.hasFlag(f)) : ctx.signals.has('input:interact');
         if (!met) return 0;
         if (step.until === 'input') ctx.signals.delete('input:interact');
         ctx.emit({ k: 'promptEnd', textId: step.textId });

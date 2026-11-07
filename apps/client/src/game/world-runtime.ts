@@ -364,17 +364,31 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
     return hints.flatMap((h) => highlightsOf(h, hintStates[h.id]!));
   }
 
+  /** Level of the P1 hints only (the Classic locket lines are keyed to P1). */
   function hintLevel(): number {
-    return hints.reduce((m, h) => Math.max(m, hintLevelOf(hintStates[h.id]!)), 0);
+    return hints.reduce((m, h) => (h.puzzle === 'p1_drawer' ? Math.max(m, hintLevelOf(hintStates[h.id]!)) : m), 0);
+  }
+
+  /** A hint with `near` only counts time while Elena is close to that entity. */
+  function hintDt(h: (typeof hints)[number], dt: number): number {
+    if (!h.near) return dt;
+    const p = content.placements[h.near.entity];
+    return p && Math.hypot(lastPose.x - p.x, lastPose.z - p.z) <= h.near.radius ? dt : 0;
   }
 
   /** Puzzle hints: advance by dt sim seconds (0 re-checks the flags right after an interaction). */
   function advanceHints(dt: number): void {
     const before = highlights().join();
     for (const h of hints) {
-      const r = stepHint(h, hintStates[h.id]!, progress().flags, dt);
+      const r = stepHint(h, hintStates[h.id]!, progress().flags, hintDt(h, dt));
       hintStates[h.id] = r.state;
-      for (const step of r.fired) if (step.say) say(step.say);
+      for (const step of r.fired) {
+        if (step.say) say(step.say);
+        if (step.flicker) {
+          lights = { ...lights, [step.flicker]: { effect: 'flicker', at: simTime, seconds: 4 } };
+          changed();
+        }
+      }
     }
     if (highlights().join() !== before) changed();
   }
@@ -390,6 +404,7 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
         if (s.tut) showTutorial(s.tut.textId, s.tut.seconds);
       }
     }
+    lastPose = pose;
     runner.tick(dt);
     // Trigger volumes fire once
     for (const t of triggers) {
@@ -512,6 +527,11 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
       return present;
     },
     sequences: runner,
+    get overlay() {
+      return overlay;
+    },
+    openOverlay,
+    closeOverlay,
     get simTime() {
       return simTime;
     },
@@ -527,11 +547,6 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
         listeners.delete(l);
       };
     },
-    get overlay() {
-      return overlay;
-    },
-    openOverlay,
-    closeOverlay,
     getState: () => ({
       simTime,
       firedTriggers: [...fired],

@@ -25,6 +25,8 @@ describe('dialogue content (beats 1-4)', () => {
   });
 
   it('only placeholder lines are flagged', () => {
-    expect(ALL_LINES.filter((l) => l.placeholder).map((l) => l.id)).toEqual(['vo_angel_b4_c0']);
+    expect(ALL_LINES.filter((l) => l.placeholder).map((l) => l.id)).toEqual(expect.arrayContaining(['vo_angel_b4_c0', 'vo_watcher_b6_06', 'vo_angel_b6_hint1']));
+    // Beat 5 (Gartner) is entirely from the script: none of its lines is invented.
+    expect(ALL_LINES.filter((l) => l.placeholder && l.id.includes('_b5_'))).toEqual([]);
   });
 });

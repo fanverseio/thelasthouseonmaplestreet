@@ -58,13 +58,17 @@ export interface HintStep {
   say?: VoiceLineId;
   /** Entity the view should highlight from this step on. */
   highlight?: EntityId;
+  /** Authored light flicker on this entity (not an Angel action). */
+  flicker?: EntityId;
 }
 
 /** Idle hints for one puzzle (docs/puzzles.md). Active from `startFlag` until `cancelFlag`. */
 export interface HintDef {
   id: string;
   /** The classic-dialogue puzzle id this feeds (hint level = steps fired). */
-  puzzle: 'p1_drawer';
+  puzzle: 'p1_drawer' | 'p2_fuse';
+  /** The clock only runs while Elena is within `radius` metres of this entity's placement. */
+  near?: { entity: EntityId; radius: number };
   startFlag: ProgressFlag;
   cancelFlag: ProgressFlag;
   steps: readonly HintStep[];

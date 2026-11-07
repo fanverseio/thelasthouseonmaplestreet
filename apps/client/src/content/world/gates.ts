@@ -8,7 +8,7 @@ export const GATES: readonly GateDef[] = [
   { id: 'gate.street.veil_north', opensOn: 'seq3_done' },
   { id: 'door.garden.garage', opensOn: 'seq3_done' },
   { id: 'gate.street.veil_house66', opensOn: 'seq4_done' },
-  { id: 'gate.house66.lane', opensOn: 'fence_key_taken' },
+  { id: 'gate.house66.lane', opensOn: 'lane_open' },
   { id: 'door.grounds.outbuilding', opensOn: 'padlock_open' },
   { id: 'door.grounds.last_house_front', opensOn: 'runes_done' },
   { id: 'door.interior.ritual', opensOn: 'board_solved' },

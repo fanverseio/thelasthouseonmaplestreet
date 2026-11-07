@@ -4,7 +4,7 @@ import { applyDevStart, DEV_STARTS, isDevStart } from './dev-start.ts';
 
 describe('dev start', () => {
   it('replays real flags with no rejection and lands on the right checkpoint', () => {
-    for (const [name, checkpoint] of [['street', 'cp_street'], ['garden', 'cp_intersection']] as const) {
+    for (const [name, checkpoint] of [['street', 'cp_street'], ['garden', 'cp_intersection'], ['house66', 'cp_house66']] as const) {
       const store = createGameStore();
       store.getState().startNewGame('classic');
       expect(applyDevStart(store, name)).toEqual([]);

@@ -7,6 +7,8 @@ import type { ProgressFlag } from '@tlh/shared';
 interface Rule {
   when: ProgressFlag;
   text: string;
+  /** The rule only applies once this flag is also set. */
+  needs?: ProgressFlag;
 }
 
 const RULES: readonly Rule[] = [
@@ -17,7 +19,11 @@ const RULES: readonly Rule[] = [
   { when: 'runes_done', text: 'Enter the Last House.' },
   { when: 'padlock_open', text: 'Look into the mirror.' },
   { when: 'lane_open', text: 'Follow the back lane to the Last House.' },
+  { when: 'fence_key_taken', text: 'Unlock the lane gate.' },
+  { when: 'watcher_purified', text: 'Take the fence key.' },
+  { when: 'watcher_destroyed', text: 'Take the fence key.' },
   { when: 'fuse_placed', text: 'Face the Watcher.' },
+  { when: 'fuse_taken', text: 'Bring the fuse to House 66.', needs: 'seq4_done' },
   { when: 'seq4_done', text: 'Find a fuse for House 66.' },
   { when: 'walkie_found', text: 'Find Gartner at No. 40.' },
   { when: 'seq2_done', text: 'Search the garden at No. 31.' },
@@ -33,6 +39,6 @@ export const FIRST_OBJECTIVE = 'Find Felix.';
 
 export function objectiveFor(flags: readonly ProgressFlag[]): string {
   const set = new Set(flags);
-  for (const r of RULES) if (set.has(r.when)) return r.text;
+  for (const r of RULES) if (set.has(r.when) && (!r.needs || set.has(r.needs))) return r.text;
   return FIRST_OBJECTIVE;
 }

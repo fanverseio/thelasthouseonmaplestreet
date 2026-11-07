@@ -44,6 +44,16 @@ export const PLACEMENTS: Readonly<Record<EntityId, Placement>> = {
   'door.garden.garage': { x: 60.9, z: 14, r: 0.5 },
   'pickup.garden.fuse': { x: 60.9, z: 17, r: 0.2 },
   'light.garden.porch': { x: 60.9, z: 2, r: 0.3 },
+  // Beat 5: Gartner's shed behind No. 40 (shed box x 60.5-63.5, z -35.5..-32.5; cp_house66 is at 50, -35)
+  'door.hideout.shed': { x: 62, z: -31.9, r: 0.5 },
+  'npc.hideout.gartner': { x: 64.2, z: -32, r: 0.3 },
+  'clue.hideout.journal_2': { x: 63, z: -31, r: 0.2 },
+  'light.hideout.shed_bulb': { x: 61.2, z: -31.7, r: 0.3 },
+  // Beat 6: House 66 yard (house x -67..-53, z -44..-36; lane veil at z -22)
+  'socket.house66.fusebox': { x: -52, z: -35, r: 0.5 },
+  'enemy.house66.watcher': { x: -58, z: -28, r: 0.5 },
+  'pickup.house66.fence_key': { x: -56.5, z: -28, r: 0.2 },
+  'gate.house66.lane': { x: -59.5, z: -23.6, r: 0.75 },
 };
 
 export function placementOf(id: EntityId): Placement | undefined {

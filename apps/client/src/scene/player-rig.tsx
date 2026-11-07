@@ -58,7 +58,7 @@ export function PlayerRig({ input, runtime, onOpenLocket }: { input: InputContro
       stepper.advance(opening ? 0 : delta, (dt) => {
         input.tick(dt * 1000);
         // A playing cinematic clip holds the player in place; the world still ticks.
-        if (!runtime.video) stepPlayer(body.current, input.state, dt, { colliders, sensitivity });
+        if (!runtime.video && runtime.sequences.policy.control !== 'limited') stepPlayer(body.current, input.state, dt, { colliders, sensitivity });
         runtime.tick(dt, pose());
         input.state.lookDX = 0;
         input.state.lookDY = 0;

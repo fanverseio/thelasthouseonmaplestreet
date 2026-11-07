@@ -14,6 +14,7 @@ import { ALL_SEQUENCES } from '../content/sequences/index.ts';
 import { PLACEMENTS, type Placement } from '../content/world/placements.ts';
 import { ENCOUNTER_BINDINGS } from '../content/encounters/index.ts';
 import type { GameStore } from '../store/game-store.ts';
+import { createChoiceRuntime } from './dialogue-choice.ts';
 import {
   applyMoralityDelta,
   resolveEncounter,
@@ -60,6 +61,8 @@ export interface EncounterBinding {
   /** Set in order when the enemy is stunned. */
   stunFlags: readonly ProgressFlag[];
   telegraph?: TelegraphDef;
+  /** Spoken when the enemy is stunned (after the stun flags are set). */
+  stunLines?: readonly { line: string; after?: number }[];
   /** Leave the stub's drop flags (e.g. walkie_found) to a player interaction instead of setting them. */
   deferDrops?: boolean;
   outcomeLines?: Partial<Record<EncounterChoice, readonly { line: string; after?: number }[]>>;
@@ -232,6 +235,7 @@ export function createEncounterRuntime(options: EncounterRuntimeOptions): Encoun
     write(b.id, { state: r.state });
     for (const f of b.stunFlags) store.getState().setFlag(f);
     store.setState((s) => (s.player.magic >= STUN_MIN_MAGIC ? s : { player: { ...s.player, magic: STUN_MIN_MAGIC } }));
+    for (const l of b.stunLines ?? []) needWorld().say(l.line, l.after);
   }
 
   function interact(id: StubEncounterId): string | null {
@@ -381,6 +385,7 @@ export function createEncounterWorld(options: WorldRuntimeOptions & { bindings?:
     ...(options.content?.sequences && { sequences: options.content.sequences }),
     ...(options.content?.placements && { placements: options.content.placements }),
   });
+  const choices = createChoiceRuntime({ store: options.store });
   const hooks = encounters.worldHooks;
   const world = createWorldRuntime({
     ...worldOptions,
@@ -392,9 +397,11 @@ export function createEncounterWorld(options: WorldRuntimeOptions & { bindings?:
     inCombat: hooks.inCombat,
     onEffect: (e) => {
       hooks.onEffect(e);
+      choices.handleEffect(e);
       worldOptions.onEffect?.(e);
     },
   });
   encounters.attach(world);
-  return { world, encounters };
+  choices.attach(world);
+  return { world, encounters, choices };
 }
