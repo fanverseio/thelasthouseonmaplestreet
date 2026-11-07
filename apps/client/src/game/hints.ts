@@ -49,3 +49,12 @@ export function highlightsOf(def: HintDef, state: HintState): EntityId[] {
 export function hintLevelOf(state: HintState): number {
   return state.cancelled ? 0 : state.fired;
 }
+
+/**
+ * Hint level of one puzzle: how many distinct step times have fired (steps sharing a time are one level,
+ * e.g. the three rune pulses of P4). 0 once cancelled.
+ */
+export function hintLevelFor(def: HintDef, state: HintState): number {
+  if (state.cancelled) return 0;
+  return new Set(def.steps.slice(0, state.fired).map((s) => s.atSeconds)).size;
+}

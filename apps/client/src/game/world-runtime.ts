@@ -7,7 +7,7 @@
  * `interact(pose)` when E is pressed. Time is sim time only, so every timer freezes with the sim.
  * To add a beat: add data files (see docs in the task report); this file does not change.
  */
-import { moralityBand, type EntityId, type ProgressFlag, type SceneId } from '@tlh/shared';
+import { moralityBand, ZONE_IDS, type EntityId, type ProgressFlag, type PuzzleId, type SceneId, type ZoneId } from '@tlh/shared';
 import { ALL_INTERACTIONS } from '../content/interactions/index.ts';
 import type { Action, Cond, EntityCheck, InteractionContent, InteractionDef } from '../content/interactions/types.ts';
 import { getLine } from '../content/dialogue/index.ts';
@@ -17,7 +17,7 @@ import { sceneOfEntity } from '../content/world/scene-of.ts';
 import type { GameStore } from '../store/game-store.ts';
 import { checkpointForEvent } from './checkpoints.ts';
 import { canOpenLocket, emptyPlayed, markPlayed, selectClassicLine, type LocketPolicy, type PlayedLines } from './dialogue.ts';
-import { highlightsOf, hintLevelOf, initialHintState, stepHint, type HintState } from './hints.ts';
+import { highlightsOf, hintLevelFor, initialHintState, stepHint, type HintState } from './hints.ts';
 import { findAllInRange, INTERACT_RANGE, pickUp, useSocket as consumeSocket, type Hit, type Interactable } from './interaction.ts';
 import { createSequenceRunner, type SequenceDef, type SequenceEffect, type SequenceRunner, type SequenceSignal } from './sequences.ts';
 
@@ -164,13 +164,60 @@ export function subtitleSeconds(text: string): number {
   return Math.max(2.5, 1.5 + text.length * 0.055);
 }
 
-/** Which story beat (1-4 have Classic lines) the flags are in. */
+/**
+ * Which story stage (beat 1-12, docs/beat-sheet.md) the flags are in, as the Classic locket sees it.
+ * Beat 3 runs until the cursed neighbour starts; beat 5 starts with Gartner's confession being done;
+ * beat 6 with the fuse placed; 7 with the lane open; 8 with the padlock open; 9 with the runes done;
+ * 10 with the board solved (the seal reveal); 11 with the ritual active; 12 with all anchors restored.
+ */
 export function beatOfFlags(flags: readonly ProgressFlag[]): number {
-  if (flags.includes('seq3_done')) return 5;
-  if (flags.includes('seq2_done')) return 4;
-  if (flags.includes('seq1_done')) return 3;
-  if (flags.includes('home_done')) return 2;
+  const has = (f: ProgressFlag) => flags.includes(f);
+  if (has('anchors_all')) return 12;
+  if (has('ritual_active')) return 11;
+  if (has('board_solved')) return 10;
+  if (has('runes_done')) return 9;
+  if (has('padlock_open')) return 8;
+  if (has('lane_open')) return 7;
+  if (has('fuse_placed')) return 6;
+  if (has('seq4_done')) return 5;
+  if (has('seq3_started')) return 4;
+  if (has('seq1_done')) return 3;
+  if (has('home_done')) return 2;
   return 1;
+}
+
+const ZONE_SET = new Set<string>(ZONE_IDS);
+
+/** Zone of the placement nearest to the player in the loaded scene; falls back to the flags when nothing is near. */
+export function zoneAt(
+  x: number,
+  z: number,
+  scene: SceneId,
+  flags: readonly ProgressFlag[],
+  placements: Readonly<Record<string, Placement>> = PLACEMENTS,
+): ZoneId {
+  let best: ZoneId | null = null;
+  let bestD = Infinity;
+  for (const [id, p] of Object.entries(placements)) {
+    const zone = id.split('.')[1] ?? '';
+    if (!ZONE_SET.has(zone) || sceneOfEntity(id) !== scene) continue;
+    const d = Math.hypot(x - p.x, z - p.z);
+    if (d < bestD) {
+      bestD = d;
+      best = zone as ZoneId;
+    }
+  }
+  if (best) return best;
+  if (scene === 'last_house') return flags.includes('board_solved') ? 'ritual' : 'interior';
+  return flags.includes('home_done') ? 'street' : 'home';
+}
+
+/** P6 hint level: the first anchor not yet restored (north 1, east 2, west 3); 0 outside the ritual. */
+export function anchorHintLevel(flags: readonly ProgressFlag[]): number {
+  if (!flags.includes('ritual_active') || flags.includes('anchors_all')) return 0;
+  if (!flags.includes('anchor_north')) return 1;
+  if (!flags.includes('anchor_east')) return 2;
+  return flags.includes('anchor_west') ? 0 : 3;
 }
 
 export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
@@ -444,9 +491,22 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
     return hints.flatMap((h) => highlightsOf(h, hintStates[h.id]!));
   }
 
-  /** Level of the P1 hints only (the Classic locket lines are keyed to P1). */
-  function hintLevel(): number {
-    return hints.reduce((m, h) => (h.puzzle === 'p1_drawer' ? Math.max(m, hintLevelOf(hintStates[h.id]!)) : m), 0);
+  /** The puzzle in progress with a hint available (latest puzzle wins), for the Classic locket. */
+  function activePuzzle(flags: readonly ProgressFlag[]): { id: PuzzleId; hintLevel: number } | undefined {
+    const found = new Map<PuzzleId, number>();
+    for (const h of hints) found.set(h.puzzle, Math.max(found.get(h.puzzle) ?? 0, hintLevelFor(h, hintStates[h.id]!)));
+    const puzzles = progress().puzzles;
+    for (const id of ['p3_padlock', 'p5_board'] as const) {
+      const s = puzzles[id];
+      if (s && !s.solved) found.set(id, s.hintLevel);
+    }
+    found.set('p6_anchors', anchorHintLevel(flags));
+    const order: PuzzleId[] = ['p6_anchors', 'p5_board', 'p4_runes', 'p3_padlock', 'p2_fuse', 'p1_drawer'];
+    for (const id of order) {
+      const level = found.get(id) ?? 0;
+      if (level > 0) return { id, hintLevel: level };
+    }
+    return undefined;
   }
 
   /** A hint with `near` only counts time while Elena is close to that entity. */
@@ -586,8 +646,8 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
       beat: beatOfFlags(flags),
       band: moralityBand(morality.value),
       flags,
-      zone: flags.includes('home_done') ? ('street' as const) : ('home' as const),
-      ...(hintLevel() > 0 && { puzzle: { id: 'p1_drawer' as const, hintLevel: hintLevel() } }),
+      zone: zoneAt(lastPose.x, lastPose.z, store.getState().game.scene, flags),
+      ...(activePuzzle(flags) && { puzzle: activePuzzle(flags)! }),
       played,
     };
     const pick = selectClassicLine(ctx);

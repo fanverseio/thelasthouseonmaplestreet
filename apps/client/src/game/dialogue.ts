@@ -3,7 +3,7 @@
  * Selection order follows docs/angel-persona.md section 7; locket rules follow docs/beat-sheet.md
  * and docs/input-ux.md section 3.
  */
-import type { MoralityBand, PuzzleId, ProgressFlag, ZoneId } from '@tlh/shared';
+import { knowledgeLevelFromFlags, type MoralityBand, type PuzzleId, type ProgressFlag, type ZoneId } from '@tlh/shared';
 import { CLASSIC_LINES } from '../content/dialogue/classic.ts';
 import type { VoiceLineId } from '../content/dialogue/types.ts';
 
@@ -21,6 +21,8 @@ export interface ClassicLine {
   /** Higher plays first within a tier. */
   priority: number;
   once?: boolean;
+  /** Lowest Angel knowledge level (K0-K6) at which this line may play; unset means K0. */
+  minK?: number;
 }
 
 /** Plain serialisable play counts by line ID. */
@@ -46,6 +48,7 @@ export interface ClassicContext {
 }
 
 function conditionsMet(line: ClassicLine, ctx: ClassicContext): boolean {
+  if ((line.minK ?? 0) > (knowledgeLevelFromFlags(ctx.flags) ?? 0)) return false;
   const w = line.when;
   if (!w) return true;
   if (w.zone !== undefined && w.zone !== ctx.zone) return false;

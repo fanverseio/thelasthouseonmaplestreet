@@ -9,7 +9,7 @@ import { PLACEMENTS } from '../content/world/placements.ts';
 import { createGameStore } from '../store/game-store.ts';
 import { moveAndSlide } from './collision.ts';
 import { PLAYER_RADIUS, SIM_DT } from './player.ts';
-import { createWorldRuntime } from './world-runtime.ts';
+import { createWorldRuntime, zoneAt } from './world-runtime.ts';
 import { validateSequenceDef } from './sequences.ts';
 
 /** A headless Elena: real collision, a speed cap, the runtime ticked every step. */
@@ -291,5 +291,35 @@ describe('Classic locket', () => {
     const first = rt.locketLine();
     expect(first?.line.speaker).toBe('Angel');
     expect(first?.line.lineId).toBe('vo_angel_b1_c1');
+  });
+});
+
+/** The critical path in a valid order (every prerequisite before its flag). */
+const PATH: ProgressFlag[] = [
+  'bed_seen', 'drawing_seen', 'drawer_key_taken', 'locket_taken', 'angel_awake', 'home_done', 'seq1_done', 'seq2_done',
+  'spell_bolt', 'seq3_started', 'spell_ward', 'spell_purify', 'briggs_purified', 'walkie_found', 'seq3_done', 'seq4_done',
+  'fuse_taken', 'fuse_placed', 'watcher_started', 'watcher_purified', 'fence_key_taken', 'lane_open',
+  'enc_approach_resolved', 'padlock_open', 'seq5_done', 'runes_done', 'enc_interior_resolved', 'board_solved', 'seq6_done',
+  'ritual_active',
+];
+
+describe('Classic locket in later beats', () => {
+  it('zoneAt reads the nearest placement of the loaded scene', () => {
+    expect(zoneAt(-57, 20, 'exterior', [])).toBe('grounds');
+    expect(zoneAt(-22, 39, 'exterior', [])).toBe('home');
+  });
+
+  it('beat 7 in the grounds plays the hounds line, then band lines at the right knowledge', () => {
+    const { store, rt } = setup();
+    for (const f of PATH.slice(0, PATH.indexOf('lane_open') + 1)) expect(store.getState().setFlag(f).ok, f).toBe(true);
+    rt.tick(SIM_DT, { x: -57, z: 20 });
+    expect(rt.locketLine()?.line.lineId).toBe('vo_angel_b7_02');
+    expect(rt.locketLine()?.line.lineId).toBe('vo_angel_b7_neutral_c1');
+  });
+
+  it('the ritual hint names the first unrestored anchor', () => {
+    const { store, rt } = setup();
+    for (const f of PATH) expect(store.getState().setFlag(f).ok, f).toBe(true);
+    expect(rt.locketLine()?.line.lineId).toBe('vo_angel_p6_h_north');
   });
 });
