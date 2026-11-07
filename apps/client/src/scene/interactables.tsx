@@ -38,7 +38,7 @@ export function Interactables({ runtime }: { runtime: WorldRuntime; flags: reado
     <>
       {runtime
         .visibleEntities()
-        .filter((e) => !e.id.startsWith('door.'))
+        .filter((e) => !e.id.startsWith('door.') && !e.id.startsWith('enemy.'))
         .map((e) => (
           <GreyProp key={e.id} e={e} />
         ))}

@@ -2,7 +2,8 @@ import { Canvas } from '@react-three/fiber';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { InputController } from '../game/input.ts';
 import { TUTORIAL_TEXT } from '../content/interactions/beat2.ts';
-import { createWorldRuntime } from '../game/world-runtime.ts';
+import { createEncounterWorld } from '../game/encounter-runtime.ts';
+import { EncounterEnemies } from '../scene/encounter-enemies.tsx';
 import { Interactables } from '../scene/interactables.tsx';
 import { Hands } from '../scene/hands.tsx';
 import { ExteriorScene } from '../scene/exterior-scene.tsx';
@@ -10,6 +11,7 @@ import { PlayerRig } from '../scene/player-rig.tsx';
 import { loadedLastHouse, preloadLastHouse } from '../services/scene-loader.ts';
 import { bindInput } from '../services/input-bindings.ts';
 import { gameStore, useGame } from '../store/index.ts';
+import { EncounterPanel } from './encounter-stub.tsx';
 import { Hud } from './hud.tsx';
 import { Locket } from './locket.tsx';
 import { SettingsScreen } from './screens.tsx';
@@ -24,7 +26,7 @@ export function GameView() {
   const container = useRef<HTMLDivElement>(null);
   const input = useMemo(() => new InputController(), []);
   // One world runtime per game view: New Game mounts a fresh view, so timers and fired triggers start clean.
-  const runtime = useMemo(() => createWorldRuntime({ store: gameStore }), []);
+  const { world: runtime, encounters } = useMemo(() => createEncounterWorld({ store: gameStore }), []);
   useSyncExternalStore(runtime.subscribe, () => runtime.version);
   const phase = useGame((s) => s.game.phase);
   const flags = useGame((s) => s.progress.flags);
@@ -85,12 +87,14 @@ export function GameView() {
       <Canvas shadows camera={{ fov: 80, near: 0.1, far: 200, position: [0, 1.65, 0] }} dpr={[1, 2]}>
         {scene === 'last_house' && Interior ? <Interior flags={flags} /> : <ExteriorScene flags={flags} runtime={runtime} />}
         {scene === 'exterior' && <Interactables runtime={runtime} flags={flags} />}
+        {scene === 'exterior' && <EncounterEnemies encounters={encounters} />}
         <PlayerRig input={input} runtime={runtime} onOpenLocket={openLocket} />
         <Hands />
       </Canvas>
       {phase === 'playing' && <Hud prompt={runtime.prompt} tutorial={runtime.tutorial ? (TUTORIAL_TEXT[runtime.tutorial] ?? null) : null} />}
       {phase === 'playing' && <div className="crosshair" aria-hidden="true" />}
       {phase === 'playing' && <Subtitles line={runtime.subtitle} />}
+      {phase === 'playing' && <EncounterPanel encounters={encounters} />}
       {runtime.video && (
         <VideoPlaceholder key={runtime.video.clipId} clipId={runtime.video.clipId} fallbackSeconds={runtime.video.fallbackSeconds} onEnded={videoEnded} />
       )}
