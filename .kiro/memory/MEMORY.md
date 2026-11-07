@@ -3,7 +3,7 @@
 Short, durable notes that a future session needs and cannot easily re-derive. Keep this file under ~80 lines. Newest facts replace stale ones; do not append history here (history goes in `dev-log.md`). Never store secrets, keys, access codes or personal data.
 
 ## Status
-- 2026-11-07: Phase 1 foundations done on `feat/phase1-foundations`, not committed yet. tasks.md 1.7 (CI) stays open until a PR runs green. `npm run dev` shows a boot-check page only.
+- 2026-11-07: Phase 1 foundations committed (e6cb6e1) and pushed to `feat/phase1-foundations`; no PR yet. tasks.md 1.7 (CI) stays open until a PR runs green. `npm run dev` shows a boot-check page only.
 - Next: commit + PR, then tasks.md section 2 (greybox critical path). Draft docs still need author approval before content work (2.4+).
 ## Decisions that are easy to forget
 - Everyone starts at Elena's home. No chapter select, judge start or shortcuts (author decision).
@@ -20,7 +20,7 @@ Short, durable notes that a future session needs and cannot easily re-derive. Ke
 - Server runs `.ts` directly (Node >=22.18 type stripping): use `.ts` import extensions, `import type`, no enums or parameter properties.
 - `packages/shared` must stay free of Node types (browser + server). Put Node-only tests in `apps/server`.
 - PowerShell tool: chaining several long `cmd /c npm ...` calls can drop output; run them one per call.
-- PowerShell: pass commit messages via `git commit -F <file>`; embedded double quotes break `-m`.
+- Commit messages: build in PowerShell, write `commit-msg.tmp` in the repo root, `git commit -F`, delete it. Editor-tool writes to `.git/` or TEMP are not visible to the shell; `-m` breaks on double quotes.
 - The command filter blocks writing the literal dev-server command inside a heredoc; build it from parts when writing docs.
 - Windows paths are case-insensitive. Rename with a two-step `git mv`.
 - `.env` holds real values. Only add or compare variable NAMES; never print values.
