@@ -77,7 +77,7 @@ Each milestone includes a README sync check (task 9.7 rules).
   - Verify: Playwright smoke reaches the menu and starts a Classic game.
   - _Requirements: 4.2, 18.3, 20.1_
 
-- [ ] 3. Progression, gates, sequences and the vertical slice (Nov 10-13)
+- [x] 3. Progression, gates, sequences and the vertical slice (Nov 10-13)
 - [x] 3.1 Progression system
   - Closed flag union, `setFlag` (only writer), exclusive pairs, objective text per beat, knowledge level from flags.
   - Verify: unit tests; setting an unknown flag fails to compile.
@@ -109,41 +109,41 @@ Each milestone includes a README sync check (task 9.7 rules).
 - [x] 3.9 Beat 4 content with the stub: `seq3_started` to `seq3_done`, `spell_ward` and `spell_purify` flags, walkie clue
   - Verify: headless test reaches `seq3_done` via both outcomes.
   - _Requirements: 5.2, 5.4, 6.6_
-- [ ] 3.10 **M1 (Nov 13)**: vertical slice review
+- [x] 3.10 **M1 (Nov 13)**: vertical slice review
   - Play beats 1-4 on placeholders; record time per beat against targets; README sync check.
   - _Requirements: 1.1, 1.5, 21.8_
 
 - [ ] 4. Classic Mode completable (Nov 13-20)
-- [ ] 4.1 Save system
+- [x] 4.1 Save system
   - `SaveStorage`, `LocalStorageSaveStorage` (`tlh.save`), `SaveFileV1` with zod, migration chain, autosave at checkpoints, Continue and New Game (overwrite confirm), corrupt and newer-version handling, Reset progress, finished saves.
   - Verify: unit tests P4 (round trip) and P5 (no key-like data); manual corrupt-save test.
   - _Requirements: 15.1-15.8, 8.8_
-- [ ] 4.2 Puzzle framework and overlays
+- [x] 4.2 Puzzle framework and overlays
   - Puzzle machines, hint schedule, overlay phase with pointer lock release, state kept on close.
   - Verify: unit tests; overlay never loses state.
   - _Requirements: 7.1, 7.2, 7.4_
-- [ ] 4.3 Beat 5: Gartner confession (limited control dialogue, comfort or press choice, journal page 2)
+- [x] 4.3 Beat 5: Gartner confession (limited control dialogue, comfort or press choice, journal page 2)
   - Verify: headless test reaches `seq4_done` via both choices; canon hook review of the dialogue file.
   - _Requirements: 3.1, 9.2_
-- [ ] 4.4 Beat 6 with the Watcher stub: P2 fuse, fence key, lane gate
+- [x] 4.4 Beat 6 with the Watcher stub: P2 fuse, fence key, lane gate
   - Verify: headless test reaches `lane_open` via both outcomes.
   - _Requirements: 6.6, 7.1_
-- [ ] 4.5 Beat 7: lane, `atm_home_window`, hounds stub, P3 padlock overlay
+- [x] 4.5 Beat 7: lane, `atm_home_window`, hounds stub, P3 padlock overlay
   - Verify: headless test reaches `padlock_open`; hints reach the answer.
   - _Requirements: 7.1, 7.2_
-- [ ] 4.6 Beat 8: `seq5_felix_mirror` greybox and P4 mirror runes (mirror render target)
+- [x] 4.6 Beat 8: `seq5_felix_mirror` greybox and P4 mirror runes (mirror render target)
   - Verify: runes visible only in the reflection; headless test reaches `runes_done`.
   - _Requirements: 3.1, 3.8, 7.1_
-- [ ] 4.7 Beat 9: interior, cat stub, P5 talking board (scares, resets, hints)
+- [x] 4.7 Beat 9: interior, cat stub, P5 talking board (scares, resets, hints)
   - Verify: wrong letters never damage; headless test reaches `board_solved`.
   - _Requirements: 7.1, 7.6_
-- [ ] 4.8 Beat 10: `seq6_two_keys` greybox and the central seal state table
+- [x] 4.8 Beat 10: `seq6_two_keys` greybox and the central seal state table
   - Verify: unit test of the four seal states.
   - _Requirements: 8.1, 3.1_
-- [ ] 4.9 Beat 11 ritual stub: anchors by simple interaction, `cin_felix_anchor` placeholder on the first anchor, anchors persist on death
+- [x] 4.9 Beat 11 ritual stub: anchors by simple interaction, `cin_felix_anchor` placeholder on the first anchor, anchors persist on death
   - Verify: headless test reaches `anchors_all`; death keeps anchors.
   - _Requirements: 8.2, 8.3, 8.4_
-- [ ] 4.10 Beat 12: choice overlay with confirm, ending placeholders, credits, finished save
+- [x] 4.10 Beat 12: choice overlay with confirm, ending placeholders, credits, finished save
   - Verify: unit test P8 (ending is a function of the choice only); Continue hidden after the ending.
   - _Requirements: 8.5-8.8_
 - [ ] 4.11 Classic Angel and hint lines for every beat (text first; audio when available)

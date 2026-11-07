@@ -65,3 +65,12 @@ Author: for test play, interactive objects must be easy to see; the final game m
 
 ## 2026-11-07 | decision | Dev-only test shortcuts and brightness
 Author asked to start outside the house and to see more. Added ?start=street and ?start=garden (dev server only, import.meta.env.DEV; replays real flags via setFlag, so checkpoints stay honest; the shipped game still has no shortcuts per the product rules) and a Scene brightness setting (bright default for testing, normal = intended dark mood). Spawn now comes from the current checkpoint.
+
+## 2026-11-07 | milestone | M1 vertical slice accepted by the author
+Author walked beats 1-4 (home, street, garden up to 'Find Gartner at No. 40') and is happy with the logic and flow. Known gaps carried to section 4: street fox trigger, seq2 hold-E skip, no sound playback, coordinates to tune, sequences not serialised. Next: section 4 (saves, Beat 5 Gartner, Beat 6 House 66, ...).
+
+## 2026-11-07 | milestone | 4.1 saves (4a8af0a), 4.2 puzzle overlays (f8de5af), 4.3-4.4 Beats 5-6 (d087e7a) pushed
+Per agent reports: 360 tests, typecheck and build clean (not re-verified by the lead: the verification shell call was auto-declined after an unanswered approval prompt). Saves: tlh.save, Continue/overwrite confirm/corrupt handling; SaveFileV1 gained optional `runtime` (contracts.md needs a line). Puzzles: P3 padlock (code 1966) and P5 board (KEEPER, bonus letter R after 3rd reset) as overlays, not yet placed in the world. Beat 5: choice comfort(+5)/press(-5) via ui/dialogue-choice.tsx. Beat 6: fuse -> fusebox -> Watcher (stub) -> fence key (deferred drop, set on pickup) -> lane gate now opens on lane_open (gates.ts + veil changed). Dev start ?start=house66. Open: placeholder lines vo_angel_b6_hint1 and vo_watcher_b6_06; Classic Angel c1 lines for beats 5-6 not wired; Watcher has no teleports/decoys yet (section 5); fox and seq2 skip still open.
+
+## 2026-11-07 | milestone | Beats 7-12 + fox/skip/sfx pushed (2e29674, 0470c97, 289889b, 66d9e0a, 89636e3, 19eaef9)
+Classic is completable on placeholders to both endings; finished save hides Continue. 459 tests. Dev starts: street, garden, house66, lane, grounds, interior, ritual-door, ritual, ritual-choice. Gotcha: parallel agents in ONE working tree clobber each other's edits and sweep half-done files into commits; run content agents serially or in separate git worktrees. Open: 4.11 Classic lines for beats 5-12, 4.12 full playthroughs, spell switching keys 1/2/3 not wired, view does not move the player body on respawn.
