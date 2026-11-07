@@ -72,3 +72,40 @@ describe('settings updates', () => {
     expect(s.fieldOfView).toBe(FOV_MIN);
   });
 });
+
+describe('game store progression', () => {
+  it('setFlag writes the checkpoint and calls the autosave hook', () => {
+    const seen: string[] = [];
+    const store = createGameStore({ onCheckpoint: (cp) => seen.push(cp.id) });
+    store.getState().startNewGame('classic');
+    for (const f of ['locket_taken', 'angel_awake', 'home_done']) expect(store.getState().setFlag(f).ok).toBe(true);
+    expect(store.getState().game.checkpointId).toBe('cp_street');
+    expect(seen).toEqual(['cp_home_start', 'cp_street']);
+  });
+
+  it('rejected flags change nothing and write no checkpoint', () => {
+    const seen: string[] = [];
+    const store = createGameStore({ onCheckpoint: (cp) => seen.push(cp.id) });
+    expect(store.getState().setFlag('seq2_done').ok).toBe(false);
+    expect(store.getState().setFlag('nonsense').ok).toBe(false);
+    expect(store.getState().progress.flags).toEqual([]);
+    expect(seen).toEqual([]);
+  });
+
+  it('respawn restores health and magic but keeps flags', () => {
+    const store = createGameStore();
+    store.getState().startNewGame('classic');
+    for (const f of ['locket_taken', 'angel_awake', 'home_done']) store.getState().setFlag(f);
+    store.setState((s) => ({ player: { ...s.player, hp: 0, magic: 3 } }));
+    store.getState().respawn();
+    const s = store.getState();
+    expect(s.player).toMatchObject({ hp: 100, magic: 100, pos: [-20, 0, 34] });
+    expect(s.progress.flags).toEqual(['locket_taken', 'angel_awake', 'home_done']);
+  });
+
+  it('entering the Last House writes cp_interior', () => {
+    const store = createGameStore();
+    store.getState().writeCheckpointForEvent('enter:last_house');
+    expect(store.getState().game.checkpointId).toBe('cp_interior');
+  });
+});

@@ -38,3 +38,9 @@ Work state: 2.1-2.5 logic committed (bca796d). Next 2.6 greybox exterior, 2.7 La
 ## 2026-11-07 | milestone | Section 2 greybox built (2.2-2.5, 2.7-2.9 done; 2.1 and 2.6 await manual review)
 Added exterior and interior layouts (data + reachability tests), player rig, HUD, hands, warning/menu/pause screens, lazy Last House scene (separate chunk, preload in the west lane), Playwright smoke (2 tests; needed 
 px playwright install chromium). 187 unit tests. Dev shortcut: /?scene=last_house (dev builds only). /?bootcheck keeps the developer page. Next: section 3 (progression, gates, sequences, vertical slice).
+
+## 2026-11-07 | decision | Greybox and HUD accepted
+Author played the greybox: HUD logic approved, look to be polished later. Section 2 closed (2.1 and 2.6 ticked). Starting section 3.
+
+## 2026-11-07 | milestone | Tasks 3.1-3.3 done
+setFlag is the only flag writer (rejects unknown flags, exclusive pairs, missing prerequisites; prerequisites follow the beat-sheet Pre lines). Gates and checkpoints are pure data/lookups (11 checkpoints, event-written ones: new_game, enter:trg.garden.enter, enter:last_house). The game store has setFlag, writeCheckpointForEvent, respawn and an onCheckpoint hook for the save system. Gotcha: stray diag.tmp.mjs/png in the repo root (not ours) make eslint fail; left untouched, not committed.

@@ -42,8 +42,8 @@ Each milestone includes a README sync check (task 9.7 rules).
   - Verify: `npm run check` passes; a reader can run `npm install` and `npm run dev` from the README alone.
   - _Requirements: 21.1, 21.8, 21.10_
 
-- [ ] 2. Greybox critical path (Nov 8-11)
-- [ ] 2.1 Input module and pointer lock state machine (logic and tests done; manual Chrome/Edge/Firefox check pending)
+- [x] 2. Greybox critical path (Nov 8-11)
+- [x] 2.1 Input module and pointer lock state machine
   - `InputState`, key binding by `event.code`, LMB tap vs hold (200 ms), pause on lock loss, blur and hidden tab, "Click to resume" overlay, no retry loop.
   - Verify: unit tests for the state machine; manual check in Chrome, Edge, Firefox.
   - _Requirements: 4.1, 4.2, 4.3, 4.4_
@@ -62,7 +62,7 @@ Each milestone includes a README sync check (task 9.7 rules).
   - Nearest interactable within 2.5 m, prompt text, E; carried items max 4; items consumed only by their sockets.
   - Verify: unit tests; HUD shows icons only while carrying.
   - _Requirements: 4.5, 7.3, 7.5_
-- [ ] 2.6 Greybox exterior scene (built and collision-tested; author walk-through and screenshot review pending)
+- [x] 2.6 Greybox exterior scene
   - The loop map from `docs/level-manifest.md` section 1 with debug colours, colliders, fog, moonlight and streetlights; the Last House silhouette visible from the start.
   - Verify: walk the whole loop in about 90 s; no gaps in colliders; screenshot for review.
   - _Requirements: 1.1, 19.1, 19.2_
@@ -78,14 +78,14 @@ Each milestone includes a README sync check (task 9.7 rules).
   - _Requirements: 4.2, 18.3, 20.1_
 
 - [ ] 3. Progression, gates, sequences and the vertical slice (Nov 10-13)
-- [ ] 3.1 Progression system
+- [x] 3.1 Progression system
   - Closed flag union, `setFlag` (only writer), exclusive pairs, objective text per beat, knowledge level from flags.
   - Verify: unit tests; setting an unknown flag fails to compile.
   - _Requirements: 1.3, 1.7, 1.8, 11.4_
-- [ ] 3.2 Gates from flags with the veil recede placeholder
+- [x] 3.2 Gates from flags with the veil recede placeholder
   - Verify: content test P9 (every gate opens from a critical-path flag; no `angelUnlock` entity is critical).
   - _Requirements: 1.4_
-- [ ] 3.3 Checkpoints, autosave hook and respawn data
+- [x] 3.3 Checkpoints, autosave hook and respawn data
   - Verify: unit tests for every checkpoint in `docs/beat-sheet.md`.
   - _Requirements: 1.6, 6.8_
 - [ ] 3.4 Sequence runner

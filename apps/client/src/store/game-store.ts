@@ -14,6 +14,8 @@ import {
   type SpellId,
 } from '@tlh/shared';
 import { createStore } from 'zustand/vanilla';
+import { checkpointForEvent, checkpointForFlag, respawnPlan, type CheckpointDef } from '../game/checkpoints.ts';
+import { setFlag as applyFlag, type SetFlagResult } from '../game/progression.ts';
 
 /**
  * Game state store: serialisable data only, grouped by slice.
@@ -93,6 +95,12 @@ export interface GameData {
 export interface GameActions {
   setPhase: (phase: GamePhase) => void;
   setScene: (scene: SceneId) => void;
+  /** The only way to change progress. Writes a checkpoint (and calls the autosave hook) when one is due. */
+  setFlag: (flag: string) => SetFlagResult;
+  /** Write the checkpoint tied to a named game event, e.g. enter:last_house. */
+  writeCheckpointForEvent: (event: string) => CheckpointDef | null;
+  /** Death: back to the last checkpoint with full health and magic. Flags are untouched. */
+  respawn: () => void;
   /** Reset everything for a new playthrough in the chosen mode. */
   startNewGame: (mode: Mode) => void;
 }
@@ -138,13 +146,54 @@ export function selectGameData(state: GameState): GameData {
   return { game, player, progress, world, angel };
 }
 
-export function createGameStore() {
-  return createStore<GameState>()((set) => ({
-    ...initialGameData(),
-    setPhase: (phase) => set((state) => ({ game: { ...state.game, phase } })),
-    setScene: (scene) => set((state) => ({ game: { ...state.game, scene } })),
-    startNewGame: (mode) => set(() => ({ ...initialGameData(mode), game: { ...initialGameData(mode).game, phase: 'playing' } })),
-  }));
+export interface GameStoreOptions {
+  /** Called after a checkpoint is written (the save system hooks in here). */
+  onCheckpoint?: (checkpoint: CheckpointDef, state: GameState) => void;
+}
+
+export function createGameStore(options: GameStoreOptions = {}) {
+  return createStore<GameState>()((set, get) => {
+    const writeCheckpoint = (cp: CheckpointDef) => {
+      set((state) => ({ game: { ...state.game, checkpointId: cp.id } }));
+      options.onCheckpoint?.(cp, get());
+    };
+    return {
+      ...initialGameData(),
+      setPhase: (phase) => set((state) => ({ game: { ...state.game, phase } })),
+      setScene: (scene) => set((state) => ({ game: { ...state.game, scene } })),
+      startNewGame: (mode) => {
+        set(() => ({ ...initialGameData(mode), game: { ...initialGameData(mode).game, phase: 'playing' } }));
+        const cp = checkpointForEvent('new_game');
+        if (cp) writeCheckpoint(cp);
+      },
+      setFlag: (flag) => {
+        const result = applyFlag(get().progress.flags, flag);
+        if (!result.ok || !result.changed) return result;
+        set((state) => ({ progress: { ...state.progress, flags: result.flags } }));
+        const cp = checkpointForFlag(flag as Parameters<typeof checkpointForFlag>[0]);
+        if (cp) writeCheckpoint(cp);
+        return result;
+      },
+      writeCheckpointForEvent: (event) => {
+        const cp = checkpointForEvent(event);
+        if (cp) writeCheckpoint(cp);
+        return cp;
+      },
+      respawn: () => {
+        const plan = respawnPlan(get().game.checkpointId);
+        set((state) => ({
+          game: { ...state.game, scene: plan.checkpoint.scene },
+          player: {
+            ...state.player,
+            hp: plan.hp,
+            magic: plan.magic,
+            pos: [plan.checkpoint.spawn.x, 0, plan.checkpoint.spawn.z],
+            yaw: plan.checkpoint.spawn.yaw,
+          },
+        }));
+      },
+    };
+  });
 }
 
 export type GameStore = ReturnType<typeof createGameStore>;
