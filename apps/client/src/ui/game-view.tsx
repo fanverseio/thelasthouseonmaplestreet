@@ -3,7 +3,9 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import { InputController } from '../game/input.ts';
 import { attachRuntime } from '../game/save.ts';
 import { TUTORIAL_TEXT } from '../content/interactions/beat2.ts';
+import { ALL_SEQUENCES } from '../content/sequences/index.ts';
 import { createEncounterWorld } from '../game/encounter-runtime.ts';
+import { createSkipHold } from '../game/skip-hold.ts';
 import { EncounterEnemies } from '../scene/encounter-enemies.tsx';
 import { Interactables } from '../scene/interactables.tsx';
 import { PointGlow } from '../scene/glow.tsx';
@@ -12,6 +14,8 @@ import { ExteriorScene } from '../scene/exterior-scene.tsx';
 import { PlayerRig } from '../scene/player-rig.tsx';
 import { loadedLastHouse, preloadLastHouse } from '../services/scene-loader.ts';
 import { bindInput } from '../services/input-bindings.ts';
+import { doorCueForFlags, sfx } from '../services/sfx.ts';
+import { GATES } from '../content/world/gates.ts';
 import { gameStore, useGame } from '../store/index.ts';
 import { DialogueChoicePanel } from './dialogue-choice.tsx';
 import { EncounterPanel } from './encounter-stub.tsx';
@@ -19,6 +23,7 @@ import { Hud } from './hud.tsx';
 import { Locket } from './locket.tsx';
 import { PuzzleOverlay } from './puzzle-overlay.tsx';
 import { SettingsScreen } from './screens.tsx';
+import { SkipRing } from './skip-ring.tsx';
 import { Subtitles, type SubtitleLine } from './subtitles.tsx';
 import { VideoPlaceholder } from './video-placeholder.tsx';
 
@@ -30,8 +35,9 @@ export function GameView() {
   const container = useRef<HTMLDivElement>(null);
   const input = useMemo(() => new InputController(), []);
   // One world runtime per game view: New Game mounts a fresh view, so timers and fired triggers start clean.
-  const { world: runtime, encounters, choices } = useMemo(() => createEncounterWorld({ store: gameStore }), []);
+  const { world: runtime, encounters, choices } = useMemo(() => createEncounterWorld({ store: gameStore, onEffect: (e) => sfx.handleEffect(e) }), []);
   useSyncExternalStore(runtime.subscribe, () => runtime.version);
+  const skipHold = useMemo(() => createSkipHold(runtime.sequences, ALL_SEQUENCES), [runtime]);
   useEffect(() => attachRuntime(runtime), [runtime]); // autosave reads / Continue restores the runtime state
   const phase = useGame((s) => s.game.phase);
   const flags = useGame((s) => s.progress.flags);
@@ -70,6 +76,29 @@ export function GameView() {
     });
   }, [input]);
 
+  // Placeholder sounds the runtime does not emit: a door-opening flag (creak) and the Arcane Bolt (LMB).
+  useEffect(() => {
+    const doorFlags = GATES.filter((g) => g.id.startsWith('door.') && g.opensOn).map((g) => g.opensOn as string);
+    let prev = gameStore.getState().progress.flags;
+    const unsub = gameStore.subscribe((s) => {
+      const next = s.progress.flags;
+      if (next === prev) return;
+      const cue = doorCueForFlags(prev, next, doorFlags);
+      prev = next;
+      if (cue) sfx.play(cue);
+    });
+    const el = container.current;
+    const down = (e: MouseEvent) => {
+      const s = gameStore.getState();
+      if (e.button === 0 && s.game.phase === 'playing' && s.progress.flags.includes('spell_bolt')) sfx.play('sfx_spell_bolt');
+    };
+    el?.addEventListener('mousedown', down);
+    return () => {
+      unsub();
+      el?.removeEventListener('mousedown', down);
+    };
+  }, []);
+
   const openLocket = useCallback(() => {
     const next = runtime.locketLine();
     if (!next) return;
@@ -100,7 +129,7 @@ export function GameView() {
         {scene === 'exterior' && <Interactables runtime={runtime} flags={flags} />}
         {scene === 'exterior' && <EncounterEnemies encounters={encounters} />}
         <PointGlow runtime={runtime} />
-        <PlayerRig input={input} runtime={runtime} onOpenLocket={openLocket} />
+        <PlayerRig input={input} runtime={runtime} onOpenLocket={openLocket} skipHold={skipHold} />
         <Hands />
       </Canvas>
       {phase === 'playing' && <Hud actions={runtime.actions} tutorial={runtime.tutorial ? (TUTORIAL_TEXT[runtime.tutorial] ?? null) : null} />}
@@ -108,6 +137,7 @@ export function GameView() {
       {phase === 'playing' && <Subtitles line={runtime.subtitle} />}
       {phase === 'playing' && <EncounterPanel encounters={encounters} />}
       {phase === 'playing' && <DialogueChoicePanel choices={choices} />}
+      {phase === 'playing' && <SkipRing skip={skipHold} />}
       {runtime.video && (
         <VideoPlaceholder key={runtime.video.clipId} clipId={runtime.video.clipId} fallbackSeconds={runtime.video.fallbackSeconds} onEnded={videoEnded} />
       )}
