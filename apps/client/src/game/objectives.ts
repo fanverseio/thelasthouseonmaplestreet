@@ -12,10 +12,15 @@ interface Rule {
 }
 
 const RULES: readonly Rule[] = [
+  { when: 'game_finished', text: 'Take Felix home.' },
+  { when: 'ending_keeper', text: 'Walk Felix out of the Last House.' },
+  { when: 'ending_broken', text: 'Get Felix out of the Last House.' },
   { when: 'anchors_all', text: 'Make your choice at the seal.' },
+  { when: 'felix3_done', text: 'Restore the remaining anchors.' },
   { when: 'ritual_active', text: 'Restore the three anchors.' },
   { when: 'seq6_done', text: 'Activate the seal.' },
   { when: 'board_solved', text: 'Approach the seal.' },
+  { when: 'enc_interior_resolved', text: 'Solve the talking board.' },
   { when: 'runes_done', text: 'Enter the Last House.' },
   { when: 'seq5_done', text: 'Find the three runes in the mirror.' },
   { when: 'padlock_open', text: 'Look into the mirror.' },
