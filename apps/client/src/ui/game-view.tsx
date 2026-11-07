@@ -1,10 +1,12 @@
 import { Canvas } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
 import { InputController } from '../game/input.ts';
+import { Hands } from '../scene/hands.tsx';
 import { ExteriorScene } from '../scene/exterior-scene.tsx';
 import { PlayerRig } from '../scene/player-rig.tsx';
 import { bindInput } from '../services/input-bindings.ts';
 import { gameStore, useGame } from '../store/index.ts';
+import { Hud } from './hud.tsx';
 
 /**
  * The playable view: canvas, input wiring and the "Click to resume" overlay.
@@ -37,7 +39,9 @@ export function GameView() {
       <Canvas shadows camera={{ fov: 80, near: 0.1, far: 200, position: [0, 1.65, 0] }} dpr={[1, 2]}>
         <ExteriorScene flags={flags} />
         <PlayerRig input={input} />
+        <Hands />
       </Canvas>
+      {phase === 'playing' && <Hud />}
       {phase !== 'playing' && (
         <div className="resume-overlay" role="dialog" aria-label="Paused">
           <p>Click to resume</p>

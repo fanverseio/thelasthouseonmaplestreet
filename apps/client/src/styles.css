@@ -113,3 +113,21 @@ body,
   font: inherit;
   cursor: pointer;
 }
+
+.hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  font-size: 1rem;
+  text-shadow: 0 1px 3px #000;
+}
+.hud-objective { position: absolute; top: 1rem; left: 1.25rem; max-width: 40ch; }
+.hud-prompt { position: absolute; top: 58%; left: 50%; transform: translateX(-50%); }
+.hud-bottom-left { position: absolute; left: 1.25rem; bottom: 1.25rem; display: grid; gap: 0.4rem; }
+.hud-bar { width: 14rem; height: 0.7rem; border: 1px solid var(--muted); background: rgba(0, 0, 0, 0.5); }
+.hud-bar-fill { height: 100%; }
+.hud-bar-health .hud-bar-fill { background: #b5483a; }
+.hud-bar-magic .hud-bar-fill { background: #5a86c9; }
+.hud-spell { position: absolute; bottom: 1.25rem; left: 50%; transform: translateX(-50%); }
+.hud-carried { position: absolute; right: 1.25rem; bottom: 1.25rem; display: flex; gap: 0.5rem; list-style: none; margin: 0; padding: 0; font-size: 1.5rem; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
