@@ -110,6 +110,14 @@ export function SettingsScreen({ onBack }: { onBack: () => void }) {
         Head bob
       </label>
       <label className="row">
+        Highlight interactive things
+        <select value={s.interactGlow} onChange={(e) => update({ interactGlow: e.target.value as typeof s.interactGlow })}>
+          <option value="bright">Bright (testing)</option>
+          <option value="subtle">Subtle</option>
+          <option value="off">Off</option>
+        </select>
+      </label>
+      <label className="row">
         Graphics
         <select value={s.graphicsPreset} onChange={(e) => update({ graphicsPreset: e.target.value as typeof s.graphicsPreset })}>
           <option value="low">Low</option>

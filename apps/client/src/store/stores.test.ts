@@ -109,3 +109,12 @@ describe('game store progression', () => {
     expect(store.getState().game.checkpointId).toBe('cp_interior');
   });
 });
+
+describe('interact glow setting', () => {
+  it('defaults to bright for testing and can be switched', () => {
+    const store = createSettingsStore();
+    expect(store.getState().interactGlow).toBe('bright');
+    store.getState().updateSettings({ interactGlow: 'subtle' });
+    expect(store.getState().interactGlow).toBe('subtle');
+  });
+});

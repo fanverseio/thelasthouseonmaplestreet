@@ -7,6 +7,10 @@ import { createStore } from 'zustand/vanilla';
 export const GRAPHICS_PRESETS = ['low', 'medium', 'high'] as const;
 export type GraphicsPreset = (typeof GRAPHICS_PRESETS)[number];
 
+/** Testing aid: glow on interactive things. The final game may keep it subtle or off. */
+export const INTERACT_GLOWS = ['off', 'subtle', 'bright'] as const;
+export type InteractGlow = (typeof INTERACT_GLOWS)[number];
+
 export interface SettingsData {
   volume: { master: number; music: number; sfx: number; ambience: number; voice: number };
   mouseSensitivity: number;
@@ -15,6 +19,7 @@ export interface SettingsData {
   graphicsPreset: GraphicsPreset;
   reduceFlashing: boolean;
   headBob: boolean;
+  interactGlow: InteractGlow;
   subtitleSize: 'normal' | 'large';
   warningAcknowledged: boolean;
 }
@@ -32,6 +37,7 @@ export function defaultSettings(): SettingsData {
     // On by default once the photosensitivity warning is confirmed (docs/input-ux.md section 10).
     reduceFlashing: true,
     headBob: true,
+    interactGlow: 'bright',
     subtitleSize: 'normal',
     warningAcknowledged: false,
   };

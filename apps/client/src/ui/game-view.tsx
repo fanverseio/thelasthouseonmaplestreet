@@ -5,6 +5,7 @@ import { TUTORIAL_TEXT } from '../content/interactions/beat2.ts';
 import { createEncounterWorld } from '../game/encounter-runtime.ts';
 import { EncounterEnemies } from '../scene/encounter-enemies.tsx';
 import { Interactables } from '../scene/interactables.tsx';
+import { PointGlow } from '../scene/glow.tsx';
 import { Hands } from '../scene/hands.tsx';
 import { ExteriorScene } from '../scene/exterior-scene.tsx';
 import { PlayerRig } from '../scene/player-rig.tsx';
@@ -88,6 +89,7 @@ export function GameView() {
         {scene === 'last_house' && Interior ? <Interior flags={flags} /> : <ExteriorScene flags={flags} runtime={runtime} />}
         {scene === 'exterior' && <Interactables runtime={runtime} flags={flags} />}
         {scene === 'exterior' && <EncounterEnemies encounters={encounters} />}
+        <PointGlow runtime={runtime} />
         <PlayerRig input={input} runtime={runtime} onOpenLocket={openLocket} />
         <Hands />
       </Canvas>
