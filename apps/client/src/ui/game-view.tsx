@@ -16,6 +16,7 @@ import { gameStore, useGame } from '../store/index.ts';
 import { EncounterPanel } from './encounter-stub.tsx';
 import { Hud } from './hud.tsx';
 import { Locket } from './locket.tsx';
+import { PuzzleOverlay } from './puzzle-overlay.tsx';
 import { SettingsScreen } from './screens.tsx';
 import { Subtitles, type SubtitleLine } from './subtitles.tsx';
 import { VideoPlaceholder } from './video-placeholder.tsx';
@@ -62,7 +63,7 @@ export function GameView() {
       onLockChange: (state, pause) => {
         const s = gameStore.getState();
         if (state === 'locked') {
-          if (s.game.phase !== 'locket') s.setPhase('playing'); // a click inside the locket must not resume play
+          if (s.game.phase !== 'locket' && s.game.phase !== 'overlay') s.setPhase('playing'); // a click inside the locket must not resume play
         } else if (pause && s.game.phase === 'playing') s.setPhase('paused');
       },
     });
@@ -83,6 +84,12 @@ export function GameView() {
     const next = runtime.locketLine();
     if (next) setLocket(next);
   }, [runtime]);
+  // An overlay puzzle freezes the sim and releases pointer lock (Esc/close then shows "Click to resume").
+  useEffect(() => {
+    if (phase === 'overlay' && document.pointerLockElement) document.exitPointerLock();
+  }, [phase]);
+  const closeOverlay = useCallback(() => runtime.closeOverlay(), [runtime]);
+  const sayLine = useCallback((id: string) => runtime.say(id), [runtime]);
   const videoEnded = useCallback((clipId: string) => runtime.signal({ videoEnded: clipId }), [runtime]);
 
   return (
@@ -105,12 +112,13 @@ export function GameView() {
       {phase === 'locket' && locket && (
         <Locket line={locket.line} hasNext={locket.hasNext} onNext={nextLocket} onClose={closeLocket} />
       )}
+      {phase === 'overlay' && runtime.overlay && <PuzzleOverlay puzzle={runtime.overlay.puzzle} say={sayLine} onClose={closeOverlay} />}
       {loadingHouse && (
         <div className="loading-screen" role="status">
           <p>Opening the Last House…</p>
         </div>
       )}
-      {phase !== 'playing' && phase !== 'locket' && !showSettings && (
+      {phase !== 'playing' && phase !== 'locket' && phase !== 'overlay' && !showSettings && (
         <div className="resume-overlay" role="dialog" aria-label="Paused">
           <p>Click to resume</p>
           <small>WASD move · Shift sprint · mouse look · Esc pause</small>

@@ -26,7 +26,9 @@ export type Action =
   /** Writes the checkpoint tied to a named event, e.g. `enter:trg.garden.enter`. */
   | { do: 'checkpoint'; event: string }
   /** Hands the press to the encounter runtime (game/encounter-runtime.ts): engage or weaken. */
-  | { do: 'encounter'; op: 'interact'; id: string };
+  | { do: 'encounter'; op: 'interact'; id: string }
+  /** Opens an overlay puzzle (phase 'overlay'; the view releases pointer lock). State is kept on close. */
+  | { do: 'openPuzzle'; puzzle: 'p3_padlock' | 'p5_board' };
 
 export interface InteractionDef {
   id: EntityId;

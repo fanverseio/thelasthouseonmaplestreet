@@ -112,6 +112,12 @@ export interface WorldRuntime {
   /** Entities a sequence has spawned and not despawned (e.g. the window shadow). */
   readonly present: ReadonlySet<EntityId>;
   readonly sequences: SequenceRunner;
+  /** The open overlay puzzle, or null. While set the phase is 'overlay' and the sim is frozen. */
+  readonly overlay: { puzzle: 'p3_padlock' | 'p5_board' } | null;
+  /** Open an overlay puzzle (same as the `openPuzzle` action). */
+  openOverlay(puzzle: 'p3_padlock' | 'p5_board'): void;
+  /** Close the overlay: phase becomes 'paused' (then "Click to resume"). Puzzle state stays in the store. */
+  closeOverlay(): void;
   readonly simTime: number;
   /** Every line spoken so far, in order (capped); handy for tests and the journal later. */
   readonly spoken: readonly string[];
@@ -171,6 +177,7 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
   let video: { clipId: string; fallbackSeconds: number } | null = null;
   let prompt: string | null = null;
   let version = 0;
+  let overlay: { puzzle: 'p3_padlock' | 'p5_board' } | null = null;
   let spoken: string[] = [];
   const listeners = new Set<() => void>();
 
@@ -234,6 +241,19 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
     changed();
   }
 
+  function openOverlay(puzzle: 'p3_padlock' | 'p5_board'): void {
+    overlay = { puzzle };
+    store.getState().setPhase('overlay');
+    changed();
+  }
+
+  function closeOverlay(): void {
+    if (!overlay) return;
+    overlay = null;
+    store.getState().setPhase('paused');
+    changed();
+  }
+
   /** Runs actions in order; stops at the first failure and returns its reason. */
   function run(actions: readonly Action[]): string | null {
     for (const a of actions) {
@@ -272,6 +292,9 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
         }
         case 'checkpoint':
           store.getState().writeCheckpointForEvent(a.event);
+          break;
+        case 'openPuzzle':
+          openOverlay(a.puzzle);
           break;
         case 'encounter': {
           const failure = options.onEncounter?.(a.op, a.id) ?? (options.onEncounter ? null : 'no_encounter_runtime');
@@ -504,6 +527,11 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
         listeners.delete(l);
       };
     },
+    get overlay() {
+      return overlay;
+    },
+    openOverlay,
+    closeOverlay,
     getState: () => ({
       simTime,
       firedTriggers: [...fired],
