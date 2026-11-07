@@ -1,5 +1,6 @@
 import type { Mode } from '@tlh/shared';
 import { useState } from 'react';
+import { applyDevStart, isDevStart } from '../game/dev-start.ts';
 import { ensureAudioContext } from '../services/audio-engine.ts';
 import { FOV_MAX, FOV_MIN } from '../store/settings-store.ts';
 import { gameStore, settingsStore, useSettings } from '../store/index.ts';
@@ -56,6 +57,9 @@ export function NewGameScreen({ onBack }: { onBack: () => void }) {
   const start = (mode: Mode) => {
     const g = gameStore.getState();
     g.startNewGame(mode);
+    // Developer test shortcut (dev builds only): ?start=street or ?start=garden.
+    const devStart = import.meta.env.DEV ? new URLSearchParams(window.location.search).get('start') : null;
+    if (isDevStart(devStart)) applyDevStart(gameStore, devStart);
     g.setPhase('paused'); // the game view asks for pointer lock; the first click resumes
   };
   return (
@@ -108,6 +112,13 @@ export function SettingsScreen({ onBack }: { onBack: () => void }) {
       <label className="row">
         <input type="checkbox" checked={s.headBob} onChange={(e) => update({ headBob: e.target.checked })} />
         Head bob
+      </label>
+      <label className="row">
+        Scene brightness
+        <select value={s.testBrightness} onChange={(e) => update({ testBrightness: e.target.value as typeof s.testBrightness })}>
+          <option value="bright">Bright (testing)</option>
+          <option value="normal">Normal (dark)</option>
+        </select>
       </label>
       <label className="row">
         Highlight interactive things

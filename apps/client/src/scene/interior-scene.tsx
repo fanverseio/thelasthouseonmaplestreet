@@ -1,13 +1,16 @@
 import type { ProgressFlag } from '@tlh/shared';
+import { useSettings } from '../store/index.ts';
+import { INTERIOR_LIGHTING } from './lighting.ts';
 import { DOORS, doorIsOpen, SEAL_POSITION, WALL_HEIGHT, WALLS } from '../content/world/interior-layout.ts';
 
 /** Greybox Last House: walls, doors, the central seal. Loaded lazily (see services/scene-loader.ts). */
 export default function InteriorScene({ flags }: { flags: readonly ProgressFlag[] }) {
+  const light = INTERIOR_LIGHTING[useSettings((s) => s.testBrightness)];
   return (
     <>
-      <color attach="background" args={['#050507']} />
-      <fogExp2 attach="fog" args={['#07070a', 0.08]} />
-      <ambientLight intensity={0.18} />
+      <color attach="background" args={[light.background]} />
+      <fogExp2 attach="fog" args={[light.fogColor, light.fogDensity]} />
+      <ambientLight intensity={light.ambient} />
       <pointLight position={[0, 2.8, 14]} intensity={9} distance={18} color="#ffb35c" />
       <pointLight position={[0, 2.8, 0]} intensity={7} distance={16} color="#ffb35c" />
       <pointLight position={[0, 2.8, -18]} intensity={10} distance={22} color="#7fa0ff" />

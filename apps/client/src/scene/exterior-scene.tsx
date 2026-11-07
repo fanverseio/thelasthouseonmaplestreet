@@ -2,6 +2,8 @@ import { useFrame } from '@react-three/fiber';
 import { useRef, useState, useSyncExternalStore } from 'react';
 import type { MeshStandardMaterial, Mesh, PointLight } from 'three';
 import type { EntityId, ProgressFlag } from '@tlh/shared';
+import { useSettings } from '../store/index.ts';
+import { EXTERIOR_LIGHTING } from './lighting.ts';
 import { veilOpacity } from '../game/gates.ts';
 import type { WorldRuntime } from '../game/world-runtime.ts';
 import { PLACEMENTS } from '../content/world/placements.ts';
@@ -105,14 +107,15 @@ function VeilWall({ v, open }: { v: Veil; open: boolean }) {
 }
 
 export function ExteriorScene({ flags, runtime }: { flags: readonly ProgressFlag[]; runtime?: WorldRuntime }) {
+  const light = EXTERIOR_LIGHTING[useSettings((s) => s.testBrightness)];
   return (
     <>
-      <color attach="background" args={['#07080c']} />
-      <fogExp2 attach="fog" args={['#0b0d14', 0.045]} />
-      <ambientLight intensity={0.25} />
+      <color attach="background" args={[light.background]} />
+      <fogExp2 attach="fog" args={[light.fogColor, light.fogDensity]} />
+      <ambientLight intensity={light.ambient} />
       <directionalLight
         position={[-30, 50, 20]}
-        intensity={0.7}
+        intensity={light.sun}
         color="#9fb4d8"
         castShadow
         shadow-mapSize={[2048, 2048]}

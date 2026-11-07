@@ -2,6 +2,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { useMemo, useRef } from 'react';
 import { PerspectiveCamera } from 'three';
 import { exteriorColliders, HOME_SPAWN } from '../content/world/exterior-layout.ts';
+import { getCheckpoint } from '../game/checkpoints.ts';
 import { INTERIOR_SPAWN, interiorColliders } from '../content/world/interior-layout.ts';
 import type { InputController } from '../game/input.ts';
 import { createPlayerBody, EYE_HEIGHT, FixedStepper, MOUSE_SENSITIVITY, stepPlayer } from '../game/player.ts';
@@ -14,8 +15,15 @@ import { gameStore, settingsStore } from '../store/index.ts';
  * the movement rules live in game/player.ts. The simulation (player, world runtime timers, sequences)
  * halts unless the phase is `playing`, so it freezes while the locket or an overlay is open.
  */
+function startBody() {
+  const cp = getCheckpoint(gameStore.getState().game.checkpointId);
+  const at = cp.scene === 'exterior' ? cp.spawn : HOME_SPAWN;
+  return createPlayerBody(at.x, at.z, at.yaw);
+}
+
 export function PlayerRig({ input, runtime, onOpenLocket }: { input: InputController; runtime: WorldRuntime; onOpenLocket: () => void }) {
-  const body = useRef(createPlayerBody(HOME_SPAWN.x, HOME_SPAWN.z, HOME_SPAWN.yaw));
+  // Start at the current checkpoint's spawn (New Game: the home start; dev shortcuts: later ones).
+  const body = useRef(startBody());
   const stepper = useMemo(() => new FixedStepper(), []);
   const camera = useThree((s) => s.camera);
   const lastScene = useRef(gameStore.getState().game.scene);

@@ -59,3 +59,9 @@ World runtime (game/world-runtime.ts) + data-driven beat files (content/interact
 
 ## 2026-11-07 | milestone | 3.7 (1aeae40) and 3.9 (290ad9a, 62cde40) pushed: beats 1-4 playable on placeholders
 318 tests, typecheck and build clean. Beat 4 uses game/encounter-runtime.ts (EncounterBinding in content/encounters/index.ts; panel keys 3 Ward, 2 Purify, hold Enter Destroy). Open: street fox trigger is data with a TODO (needs a binding without sequence/ward); seq2 hold-E skip not wired in the view; audio cues only emitted via onEffect (no sound yet); all coordinates guessed, need tuning by eye; sequence progress not serialised. 3.10 M1 review waits for the author playing beats 1-4 (time per beat vs targets).
+
+## 2026-11-07 | decision | Testing glow on interactables (setting, not final art)
+Author: for test play, interactive objects must be easy to see; the final game may keep this subtle/off and keep some things plain or hidden on purpose. Implemented as setting interactGlow (off|subtle|bright, default bright) in Settings; gold beacon on usable things and doors, pale blue on lead lights/windows (scene/glow.tsx). Also added the Actions side panel (Q switches, E uses). Revisit the default before release.
+
+## 2026-11-07 | decision | Dev-only test shortcuts and brightness
+Author asked to start outside the house and to see more. Added ?start=street and ?start=garden (dev server only, import.meta.env.DEV; replays real flags via setFlag, so checkpoints stay honest; the shipped game still has no shortcuts per the product rules) and a Scene brightness setting (bright default for testing, normal = intended dark mood). Spawn now comes from the current checkpoint.

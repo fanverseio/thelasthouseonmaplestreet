@@ -11,6 +11,11 @@ export type GraphicsPreset = (typeof GRAPHICS_PRESETS)[number];
 export const INTERACT_GLOWS = ['off', 'subtle', 'bright'] as const;
 export type InteractGlow = (typeof INTERACT_GLOWS)[number];
 
+/** Testing aid: how dark the scenes are. The mood setting is 
+ormal. */
+export const TEST_BRIGHTNESS = ['normal', 'bright'] as const;
+export type TestBrightness = (typeof TEST_BRIGHTNESS)[number];
+
 export interface SettingsData {
   volume: { master: number; music: number; sfx: number; ambience: number; voice: number };
   mouseSensitivity: number;
@@ -20,6 +25,7 @@ export interface SettingsData {
   reduceFlashing: boolean;
   headBob: boolean;
   interactGlow: InteractGlow;
+  testBrightness: TestBrightness;
   subtitleSize: 'normal' | 'large';
   warningAcknowledged: boolean;
 }
@@ -38,6 +44,7 @@ export function defaultSettings(): SettingsData {
     reduceFlashing: true,
     headBob: true,
     interactGlow: 'bright',
+    testBrightness: 'bright',
     subtitleSize: 'normal',
     warningAcknowledged: false,
   };
