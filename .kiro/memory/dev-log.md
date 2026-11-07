@@ -22,3 +22,8 @@ tasks.md 1.1-1.6 and 1.8 done on branch feat/phase1-foundations; 1.7 (CI) waits 
 TypeScript pinned to 6.0.3: typescript-eslint 8.72.1 rejects TS 7 (ERESOLVE). TS 6 defaults `types` to [], so each tsconfig lists its types. Node >=22.18 is required: the server runs .ts via built-in type stripping (no build step; imports need .ts extensions, no enums). packages/shared has no Node types on purpose (it runs in the browser); Node-only tests go in apps/server.
 ## 2026-11-07 | gotcha | Writing commit messages
 Phase 1 committed as e6cb6e1 and pushed to feat/phase1-foundations. Files written by the editor tool into .git/ or $env:TEMP were not visible to the shell, and the command filter blocks any shell text containing the dev-server command. Working method: build the message in PowerShell (split that command into parts), write commit-msg.tmp in the repo root, git commit -F, then delete it.
+
+## 2026-11-07 | milestone | Draft docs approved; tasks 2.1-2.3 logic done
+Author approved all draft docs and asked for small, frequent commits and pushes. Added headless input, pointer-lock state machine, collision (sub-stepped circle vs AABB/cylinder) and player controller with a 60 Hz FixedStepper (bdb57b4). The views for 2.1 (Click to resume overlay) and 2.2 (useFrame wiring) are not built yet. Task 2.4 (world registry) handed to a subagent.
+## 2026-11-07 | gotcha | Default node on this machine is v18
+PATH puts nvm Node 18 first, so vitest fails (styleText). Prefix shells with `$env:Path = "C:\Program Files\nodejs;" + $env:Path` (Node 24). No `gh` CLI: open PRs through the GitHub web URL.

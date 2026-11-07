@@ -4,7 +4,7 @@ Short, durable notes that a future session needs and cannot easily re-derive. Ke
 
 ## Status
 - 2026-11-07: Phase 1 foundations committed (e6cb6e1) and pushed to `feat/phase1-foundations`; no PR yet. tasks.md 1.7 (CI) stays open until a PR runs green. `npm run dev` shows a boot-check page only.
-- Next: commit + PR, then tasks.md section 2 (greybox critical path). Draft docs still need author approval before content work (2.4+).
+- 2026-11-07: Draft docs APPROVED. Tasks 2.1-2.3 logic done (input, collision, player; bdb57b4). 2.4 world registry with a subagent. Next: 2.5, then views 2.6-2.9. No PR yet (no `gh`; author opens it on GitHub).
 ## Decisions that are easy to forget
 - Everyone starts at Elena's home. No chapter select, judge start or shortcuts (author decision).
 - Good ending = Elena takes over the seal's duty from Felix and leaves with him. Bad ending = seal broken, evil escapes. Ending depends only on the final choice.
@@ -25,6 +25,7 @@ Short, durable notes that a future session needs and cannot easily re-derive. Ke
 - Windows paths are case-insensitive. Rename with a two-step `git mv`.
 - `.env` holds real values. Only add or compare variable NAMES; never print values.
 
+- Default `node` on this machine is v18: prefix shells with `$env:Path = "C:\Program Files\nodejs;" + $env:Path`.
+
 ## Pending author approvals
-- Draft docs: beat sheet, level manifest, puzzles, combat tuning, Angel persona, side quests, scripts, asset manifest.
 - `@gltf-transform/cli` dev dependency; ElevenLabs and image-tool licence terms.
