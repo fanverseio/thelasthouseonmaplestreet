@@ -8,36 +8,36 @@ Milestones: **M1 Nov 13** vertical slice (beats 1-4, placeholders, encounter stu
 Each milestone includes a README sync check (task 9.7 rules).
 
 - [ ] 1. Foundations (Nov 6-8)
-- [ ] 1.1 Scaffold the npm workspaces monorepo
-  - Root `package.json` with workspaces `apps/client`, `apps/server`, `packages/shared`; `engines.node >=22`; exact pinned versions; strict `tsconfig.base.json`; ESLint and Prettier configs.
+- [x] 1.1 Scaffold the npm workspaces monorepo
+  - Root `package.json` with workspaces `apps/client`, `apps/server`, `packages/shared`; `engines.node >=22.18.0`; exact pinned versions; strict `tsconfig.base.json`; ESLint and Prettier configs.
   - Dependencies limited to those named in `.kiro/steering/tech.md` (React, React DOM, three, @react-three/fiber, @react-three/drei, @react-three/postprocessing, zustand, zod, vite, @vitejs/plugin-react, typescript, vitest, eslint, prettier, @playwright/test, @upstash/redis). Any other dependency needs approval.
   - Verify: `npm install` succeeds on a clean clone; `npm ls --depth=0` shows only approved packages.
   - _Requirements: 21.3, 21.4_
-- [ ] 1.2 Create package scripts and the dev runner
+- [x] 1.2 Create package scripts and the dev runner
   - Scripts: `dev`, `build`, `preview`, `test` (`vitest --run`), `test:e2e`, `typecheck`, `lint`, `check`.
   - `scripts/dev.mjs`: spawns the Vite dev server (port `CLIENT_PORT`, default 5173) and the local API (port `PORT`, default 3000) as child processes, prefixes logs `[client]`/`[api]`, stops both on Ctrl+C or if either exits, works on Windows, macOS and Linux, no extra dependency.
   - Vite proxies `/api` to `http://127.0.0.1:3000`.
   - Verify: `npm run dev` opens both ports; Ctrl+C leaves no orphan process (check the ports are free afterwards).
   - _Requirements: 21.3, 21.4_
-- [ ] 1.3 Local API server skeleton with `GET /api/health` and `GET /api/config/status`
+- [x] 1.3 Local API server skeleton with `GET /api/health` and `GET /api/config/status`
   - `apps/server/src/local.ts` (Node `http`, bound to 127.0.0.1) calling shared handlers in `apps/server/src/handlers/`.
   - Verify: `curl http://127.0.0.1:3000/api/health` returns `{ ok: true, mode: "local" }`; handler unit tests pass.
   - _Requirements: 17.1, 21.6_
-- [ ] 1.4 Shared zod schemas
+- [x] 1.4 Shared zod schemas
   - `packages/shared/src/`: IDs, `ProgressFlag`, `SaveFileV1`, API request and error shapes, `AngelWorldAction`, as in `docs/contracts.md`.
   - Verify: schema unit tests accept the examples and reject malformed ones.
   - _Requirements: 1.3, 11.2, 12.1, 15.1_
-- [ ] 1.5 Zustand slices skeleton (`game`, `player`, `progress`, `world`, `angel`, `settings`)
+- [x] 1.5 Zustand slices skeleton (`game`, `player`, `progress`, `world`, `angel`, `settings`)
   - Verify: store unit tests; slices hold only serialisable data.
   - _Requirements: 1.3, 15.1_
-- [ ] 1.6 Repo checks
+- [x] 1.6 Repo checks
   - `scripts/check-secrets.mjs` (scans staged changes for key-like patterns), `scripts/check-readme-sync.mjs` (every `package.json` script and every env name read in code appears in the README and `.env.example`), wired into `npm run check`.
   - Verify: a planted fake key in a staged test file fails the check; removing it passes.
   - _Requirements: 21.8, 22.4_
 - [ ] 1.7 CI workflow (GitHub Actions): install, typecheck, lint, test, check
   - Verify: a pull request shows all jobs green.
   - _Requirements: 21.4, 22.4_
-- [ ] 1.8 README sync for Phase 1
+- [x] 1.8 README sync for Phase 1
   - Replace "Planned, not yet available" with real commands for everything that now exists; keep the label on the rest.
   - Verify: `npm run check` passes; a reader can run `npm install` and `npm run dev` from the README alone.
   - _Requirements: 21.1, 21.8, 21.10_

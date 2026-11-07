@@ -1,0 +1,14 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Record Development Memory",
+      "trigger": "PostTaskExec",
+      "description": "After a spec task completes, record a short memory entry only if something worth remembering happened.",
+      "action": {
+        "type": "agent",
+        "prompt": "A spec task just completed. Decide whether anything from this task belongs in project memory, following .kiro/steering/memory.md. Record only if one of these is true: a decision was made, a milestone in tasks.md was reached, a non-obvious gotcha was found and fixed, a spec/steering/contract changed, an approach failed twice, or work is being handed off unfinished. If none apply, do nothing and say nothing. If one applies: (1) append a single 2-5 line entry to .kiro/memory/dev-log.md in the documented format (date, type, short title, what, why, follow-up); never edit earlier entries. (2) If the fact matters for future sessions, update .kiro/memory/MEMORY.md by replacing stale lines, keeping it under about 80 lines. Never write secrets, API keys, access codes, .env values, cookies or personal data; refer to variables by name only. Do not commit or push. Do not change any other file."
+      }
+    }
+  ]
+}

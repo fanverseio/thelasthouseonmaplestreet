@@ -1,0 +1,75 @@
+:root {
+  color-scheme: dark;
+  --bg: #07080c;
+  --fg: #e8e2d6;
+  --muted: #9a958c;
+  --ok: #8fd19e;
+  --bad: #f08a7a;
+  --accent: #c9a24a;
+  font-family: Georgia, 'Times New Roman', serif;
+  background: var(--bg);
+  color: var(--fg);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+}
+
+.boot {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-height: 100%;
+}
+
+.boot__panel {
+  padding: 1.5rem 2rem;
+  max-width: 48rem;
+}
+
+.boot__panel h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1.75rem;
+  letter-spacing: 0.02em;
+}
+
+.boot__panel p {
+  margin: 0.25rem 0 1rem;
+  color: var(--muted);
+}
+
+.boot__status {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.35rem 1rem;
+  margin: 0;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.95rem;
+}
+
+.boot__status dt {
+  color: var(--muted);
+}
+
+.boot__status dd {
+  margin: 0;
+}
+
+.status--ok {
+  color: var(--ok);
+}
+
+.status--bad {
+  color: var(--bad);
+}
+
+.boot__scene {
+  min-height: 18rem;
+  border-top: 1px solid #1b1d26;
+}

@@ -1,0 +1,16 @@
+{
+  "name": "@tlh/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/local.ts",
+    "watch": "node --watch src/local.ts",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@tlh/shared": "*",
+    "@upstash/redis": "1.41.0",
+    "zod": "4.6.7"
+  }
+}

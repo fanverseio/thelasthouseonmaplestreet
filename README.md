@@ -1,6 +1,6 @@
 # The Last House on Maple Street
 
-> **Project status: specification phase (as of 2026-11-06).** The design specs, steering rules and creative drafts are written. **No application code exists yet.** Every setup command below is marked **Planned, not yet available** until it really exists. Coding agents: read [For AI Coding Agents](#for-ai-coding-agents) before running anything.
+> **Project status: foundations (as of 2026-11-07).** The monorepo, dev runner, local API (`/api/health`, `/api/config/status`), shared schemas, tests and repo checks work. **The game itself is not playable yet:** `npm run dev` opens a developer boot-check page. Features marked **Planned, not yet available** do not exist yet. Coding agents: read [For AI Coding Agents](#for-ai-coding-agents) before running anything.
 
 A first-person 3D psychological horror game for desktop browsers, built for the **Kiroween 2026** hackathon (category: Costume Contest).
 
@@ -40,19 +40,17 @@ React, Vite, TypeScript, Three.js with React Three Fiber, Zustand, zod, Node.js,
 
 ## Prerequisites
 
-| Tool    | Version                                      | Notes                               |
-| ------- | -------------------------------------------- | ----------------------------------- |
-| Node.js | 24 LTS recommended, 22 minimum               | Check with `node -v`                |
-| npm     | 10 or newer (ships with Node)                | Check with `npm -v`                 |
-| Git     | any recent version                           |                                     |
-| Browser | Desktop Chrome, Edge or Firefox with WebGL 2 | Safari and mobile are not supported |
-| OS      | Windows 10/11, macOS, Linux                  |                                     |
+| Tool    | Version                                      | Notes                                   |
+| ------- | -------------------------------------------- | --------------------------------------- |
+| Node.js | 24 LTS recommended, 22.18 minimum            | Check with `node -v` (`.nvmrc` says 24) |
+| npm     | 10 or newer (ships with Node)                | Check with `npm -v`                     |
+| Git     | any recent version                           |                                         |
+| Browser | Desktop Chrome, Edge or Firefox with WebGL 2 | Safari and mobile are not supported     |
+| OS      | Windows 10/11, macOS, Linux                  |                                         |
 
 No other global tools are needed. Blender, ElevenLabs and image generation are only needed to _create_ assets, not to run the game.
 
 ## Quick start
-
-**Planned, not yet available.** These commands will work once section 1 (Foundations) of `.kiro/specs/the-last-house/tasks.md` lands.
 
 ```bash
 git clone https://github.com/fanverseio/thelasthouseonmaplestreet.git
@@ -65,9 +63,13 @@ npm run dev
   - the game client (Vite) on **http://localhost:5173**
   - the local API server on **http://127.0.0.1:3000** (the client proxies `/api` to it)
 - Open **http://localhost:5173** in a desktop browser.
-- **Verify it is running**: the photosensitivity warning appears, then the main menu. `http://127.0.0.1:3000/api/health` returns `{"ok":true,"mode":"local",...}`.
-- **Stop**: press `Ctrl+C` in the terminal running `npm run dev`. Both services stop.
-- **No `.env` is needed for Classic Story Mode.**
+- **Verify it is running**:
+  - The terminal shows `[client] ... Local: http://localhost:5173/` and `[api] Listening on http://127.0.0.1:3000`.
+  - `http://localhost:5173` shows the boot-check page with **API: ok**, the AI provider status, WebGL 2 status and a small foggy test scene.
+  - `http://127.0.0.1:3000/api/health` returns `{"ok":true,"version":"0.1.0","mode":"local",...}`.
+  - _Planned, not yet available:_ the photosensitivity warning and the main menu replace the boot-check page in task 2.9.
+- **Stop**: press `Ctrl+C` in the terminal running `npm run dev`. Both services stop. If one service crashes, the runner stops the other.
+- **No `.env` is needed.** Without one, the game runs with default ports and Classic Mode only.
 
 ## Environment configuration
 
@@ -101,19 +103,19 @@ Never commit `.env` (it is git-ignored). Never paste real keys into issues, logs
 
 This section is for any coding agent with terminal and file access (Kiro, Claude Code, Cursor, Copilot, Codex, Aider or similar). Nothing here requires Kiro.
 
-**Check the current state first.** If there is no `package.json` at the repository root, the project is still in the specification phase. Do not invent commands, scaffold the app or install packages. Tell the user the game cannot be run yet, and point them to `.kiro/specs/the-last-house/tasks.md`.
+**Check the current state first.** Read the project status at the top of this file and the checkboxes in `.kiro/specs/the-last-house/tasks.md`. Only features that exist can be run; anything marked **Planned, not yet available** cannot. Do not scaffold missing parts or invent commands to fill the gap; report what is missing instead.
 
-When code exists, follow these steps in order:
+Follow these steps in order:
 
 1. **Read** this `README.md`, then `.kiro/specs/the-last-house/PRD.md`, `.kiro/specs/the-last-house/ARCHITECTURE.md`, `.kiro/specs/the-last-house/tasks.md`, and the relevant files in `.kiro/steering/` (`product.md`, `tech.md`, `structure.md`).
 2. **Inspect before acting**: read the `package.json` scripts, `.env.example`, the workspace folders and the lockfile. Only use scripts that actually exist.
-3. **Check the tools**: `node -v` (22 or newer, 24 recommended) and `npm -v` (10 or newer). If Node is too old, tell the user how to upgrade; do not change project files to work around it.
-4. **Install only if needed**: if `node_modules` is missing or the lockfile changed, run `npm install`. Do not delete `node_modules` or the lockfile unless an install error requires it, and say so.
+3. **Check the tools**: `node -v` (22.18 or newer, 24 recommended; the server runs TypeScript directly, which needs 22.18+) and `npm -v` (10 or newer). If Node is too old, tell the user how to upgrade; do not change project files to work around it.
+4. **Install only if needed**: if `node_modules` is missing or `package-lock.json` changed, run `npm install` (or `npm ci` for a clean, exact install). Do not delete `node_modules` or the lockfile unless an install error requires it, and say so.
 5. **Environment**: if `.env` does not exist and the user wants AI mode, copy `.env.example` to `.env`. **Never overwrite an existing `.env`.** Never print, log or commit its values.
 6. **Credentials**: Classic Mode needs none; start it without asking. For AI mode, ask the user for their provider protocol, base URL, model and API key. Never invent credentials, and never use keys found elsewhere on the machine. `LLM_PROTOCOL=mock` lets you test AI mode with no key.
 7. **Run** `npm run dev`. It is long-running: start it as a background process if your environment supports that, or ask the user to run it in their own terminal.
 8. **Diagnose ordinary setup errors** (port in use, missing dependency, wrong Node version, proxy errors) using [Troubleshooting](#troubleshooting). Do not change the approved architecture, gameplay, specs or steering to make setup pass.
-9. **Verify**: `http://127.0.0.1:3000/api/health` returns `ok: true`, and `http://localhost:5173` shows the warning screen, then the menu.
+9. **Verify**: `http://127.0.0.1:3000/api/health` returns `ok: true`, and `http://localhost:5173` shows the boot-check page with **API: ok**. Optionally run `npm run typecheck`, `npm run lint`, `npm test` and `npm run check`; all should pass.
 10. **Report** to the user: the local game URL, which services are running and on which ports, whether AI mode is configured, and anything still missing.
 11. **Never** deploy, publish, commit or push as part of setup.
 
@@ -127,11 +129,12 @@ Two ways to configure a provider locally:
 2. **In `.env`**: set `LLM_PROTOCOL`, `LLM_BASE_URL`, `LLM_MODEL`, `LLM_API_KEY`, then restart `npm run dev`.
 
 Supported protocols (any provider that speaks them):
-| Protocol | API format | Example base URLs (check your provider's current docs) |
-|---|---|---|
-| `openai` | OpenAI Chat Completions | `https://api.deepseek.com`, `https://api.x.ai/v1`, `https://api.minimax.io/v1` |
-| `anthropic` | Anthropic Messages | `https://api.deepseek.com/anthropic` |
-| `mock` | No network; scripted replies | (none) |
+
+| Protocol    | API format                   | Example base URLs (check your provider's current docs)                         |
+| ----------- | ---------------------------- | ------------------------------------------------------------------------------ |
+| `openai`    | OpenAI Chat Completions      | `https://api.deepseek.com`, `https://api.x.ai/v1`, `https://api.minimax.io/v1` |
+| `anthropic` | Anthropic Messages           | `https://api.deepseek.com/anthropic`                                           |
+| `mock`      | No network; scripted replies | (none)                                                                         |
 
 Base URLs must use `https://`, or `http://localhost` / `http://127.0.0.1` for a model server on your own machine.
 
@@ -157,47 +160,60 @@ Base URLs must use `https://`, or `http://localhost` / `http://127.0.0.1` for a 
 ## Project structure
 
 ```
-api/                        Vercel Function entry points (hosted)          [planned]
-apps/client/                Game client (Vite + React + R3F)               [planned]
-  public/assets/            Final game assets (committed)                  [planned]
-  src/game/                 Headless game systems (no React/Three imports) [planned]
-  src/scene/  src/ui/       3D view components; HUD, menus, locket         [planned]
-  src/content/              Authored data: world, flags, beats, dialogue   [planned]
-apps/server/src/            Shared API handlers, LLM adapters, limits      [planned]
-packages/shared/            zod schemas and types shared by client/server  [planned]
-scripts/                    Dev runner and repo checks                     [planned]
-tools/                      Asset generation and access-code tools         [planned]
+apps/client/                Game client (Vite + React + R3F)
+  src/ui/                   Boot check now; HUD, menus, locket later
+  src/scene/                3D view components (test scene now)
+  src/store/                Zustand stores (game state, settings)
+  src/services/             API client
+  src/game/                 Headless game systems (no React/Three imports)  [planned]
+  src/content/              Authored data: world, flags, beats, dialogue    [planned]
+  public/assets/            Final game assets (committed)                   [planned]
+  e2e/                      Playwright browser tests                        [planned]
+apps/server/src/            Local API server and shared request handlers
+  handlers/                 health, config/status (access, chat, tts later)
+  local.ts                  Local server entry point (port 3000)
+packages/shared/src/        zod schemas and types shared by client, server and saves
+scripts/                    dev.mjs (runs both services), check-secrets.mjs, check-readme-sync.mjs
+api/                        Vercel Function entry points (hosted)           [planned]
+tools/                      Asset generation and access-code tools          [planned]
 assets/src/  assets/raw/    Blender sources; raw generator output (ignored)
-.kiro/steering/             Always-on project rules (product, tech, structure, canon, story flow)
+.github/workflows/ci.yml    CI: typecheck, lint, test, check, build
+.kiro/steering/             Always-on project rules (product, tech, structure, canon, story flow, memory)
 .kiro/specs/the-last-house/ PRD, architecture, requirements, design, tasks, docs/
 .kiro/hooks/                Kiro agent hooks
+.kiro/memory/               Development memory (decisions, gotchas, handoffs)
 ```
 
-Tests will live next to the code they test (`*.test.ts`) plus Playwright tests in `apps/client/e2e/`.
+Unit tests live next to the code they test (`*.test.ts`, `*.test.mjs`). Playwright tests will live in `apps/client/e2e/`.
 
 ## Testing and troubleshooting
 
-### Scripts (planned, not yet available)
+### Scripts
 
-| Command             | What it does                                      |
-| ------------------- | ------------------------------------------------- |
-| `npm run dev`       | Client on 5173 and API on 3000                    |
-| `npm run build`     | Production build of the client and server         |
-| `npm run preview`   | Serve the production build locally                |
-| `npm test`          | Unit, content and headless tests (`vitest --run`) |
-| `npm run test:e2e`  | Playwright browser smoke tests                    |
-| `npm run typecheck` | TypeScript checks for all workspaces              |
-| `npm run lint`      | ESLint                                            |
-| `npm run check`     | Secret scan and README/env sync checks            |
+These match `package.json` exactly (`npm run check` fails if they drift).
 
-This table will be updated to match `package.json` exactly when the scripts exist.
+| Command             | What it does                                                                            |
+| ------------------- | --------------------------------------------------------------------------------------- |
+| `npm run dev`       | Client on 5173 and API on 3000, with `[client]`/`[api]` log prefixes; Ctrl+C stops both |
+| `npm run build`     | Production build of the client into `apps/client/dist`                                  |
+| `npm run preview`   | Serve the production client build locally (static files only, no API)                   |
+| `npm test`          | Unit tests for shared, server, client stores and scripts (`vitest --run`)               |
+| `npm run test:e2e`  | Playwright browser tests (none yet, so it passes; no browsers needed until then)        |
+| `npm run typecheck` | TypeScript checks for the root configs and every workspace                              |
+| `npm run lint`      | ESLint for the whole repository                                                         |
+| `npm run check`     | Secret scan of tracked and staged files, plus the README/`.env.example` sync check      |
+
+To scan only staged files before a commit: `node scripts/check-secrets.mjs --staged`.
 
 ### Troubleshooting
 
 | Problem                                              | Fix                                                                                                         |
 | ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
 | `EADDRINUSE` on 3000 or 5173                         | Another process uses the port. Stop it, or set `PORT` / `CLIENT_PORT` in `.env`.                            |
-| `node: command not found`, or syntax errors on start | Install Node 24 LTS (22 minimum).                                                                           |
+| `node: command not found`, or syntax errors on start | Install Node 24 LTS (22.18 minimum). `[dev] Node ... is too old` means the same.                            |
+| `[dev] Dependencies are missing`                     | Run `npm install` in the repository root.                                                                   |
+| `[api] Configuration error: ...`                     | A value in `.env` is invalid (for example `APP_MODE` or `PORT`); the message names it.                      |
+| `npm install` fails with `ERESOLVE`                  | Use the pinned versions in `package.json` and `npm ci`; do not add `--force` or `--legacy-peer-deps`.       |
 | Black screen                                         | Your browser or GPU lacks WebGL 2. Use desktop Chrome, Edge or Firefox and update graphics drivers.         |
 | No sound                                             | Click once on the warning screen; browsers block audio until you interact.                                  |
 | Mouse look stops after Esc                           | Expected: click the game to resume. Browsers block re-locking the mouse for about a second.                 |
@@ -212,8 +228,15 @@ Settings -> Reset progress. Or, in the browser devtools console on the game page
 
 ### Smoke-test checklist
 
+Works now:
+
 - [ ] `npm run dev` starts both services with no errors.
-- [ ] `/api/health` returns `ok: true`.
+- [ ] `/api/health` returns `ok: true`, directly on port 3000 and through the client at `http://localhost:5173/api/health`.
+- [ ] The boot-check page shows **API: ok** and **WebGL 2: available**, and the foggy test scene renders.
+- [ ] `npm run typecheck`, `npm run lint`, `npm test` and `npm run check` all pass.
+
+Planned, not yet available:
+
 - [ ] The warning screen and main menu appear; audio starts after the first click.
 - [ ] New Game -> Classic starts in Felix's bedroom; WASD, mouse look and E work.
 - [ ] The locket can be found and opened with T.

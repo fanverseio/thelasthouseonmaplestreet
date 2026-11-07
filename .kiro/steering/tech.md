@@ -3,7 +3,7 @@ inclusion: always
 ---
 # Tech Stack and Conventions
 
-- Monorepo (npm workspaces): `apps/client`, `apps/server`, `packages/shared`. Node 24 LTS recommended, Node 22 minimum. npm 10+.
+- Monorepo (npm workspaces): `apps/client`, `apps/server`, `packages/shared`. Node 24 LTS recommended, Node 22.18 minimum (the local server runs `.ts` files with Node's built-in type stripping). npm 10+. TypeScript is 6.0.x because typescript-eslint 8 does not support TypeScript 7 yet.
 - Client: React + Vite + TypeScript (strict), Three.js via React Three Fiber + drei, Zustand, @react-three/postprocessing. Plain WebAudio.
 - Server: TypeScript request handlers in `apps/server/src/handlers/`, shared by two entry points: Vercel Functions in `/api` (hosted) and a small Node `http` server (local, port 3000).
 - LLM: generic adapters for the OpenAI Chat Completions format and the Anthropic Messages format, configured by protocol, base URL, model and key. A `mock` protocol works with no key. No vendor-specific adapters.

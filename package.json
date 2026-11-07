@@ -1,0 +1,43 @@
+{
+  "name": "the-last-house-on-maple-street",
+  "version": "0.1.0",
+  "private": true,
+  "description": "First-person 3D psychological horror game for the browser. Kiroween 2026.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22.18.0",
+    "npm": ">=10"
+  },
+  "workspaces": [
+    "apps/client",
+    "apps/server",
+    "packages/shared"
+  ],
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "build": "npm run build --workspace @tlh/client",
+    "preview": "npm run preview --workspace @tlh/client",
+    "test": "vitest --run",
+    "test:e2e": "playwright test --pass-with-no-tests",
+    "typecheck": "tsc -p tsconfig.json && npm run typecheck --workspaces --if-present",
+    "lint": "eslint .",
+    "check": "node scripts/check-secrets.mjs && node scripts/check-readme-sync.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@playwright/test": "1.65.0",
+    "@types/node": "24.12.0",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@types/three": "0.187.0",
+    "@vitejs/plugin-react": "6.2.1",
+    "eslint": "10.14.0",
+    "globals": "17.14.0",
+    "prettier": "3.9.10",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.1",
+    "vite": "8.3.6",
+    "vitest": "5.1.0"
+  }
+}

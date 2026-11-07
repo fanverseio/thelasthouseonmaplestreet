@@ -15,7 +15,7 @@ Version 2 (2026-11-06). Detailed contracts: `docs/contracts.md`. Angel detail: `
 | Validation | zod in `packages/shared` |
 | Tests | Vitest (`vitest --run`), Playwright |
 | Assets | Blender -> GLB (meshopt, KTX2); committed under `apps/client/public/assets/` |
-| Runtime versions | Node 24 LTS recommended, Node 22 minimum, npm 10+ (verify against Vercel's supported Node versions when Phase 0 lands) |
+| Runtime versions | Node 24 LTS recommended, Node 22.18 minimum (built-in TypeScript type stripping), npm 10+. Verify Vercel's supported Node versions before deploying |
 
 ## 2. Repository layout
 See `.kiro/steering/structure.md`. Summary:
