@@ -42,6 +42,8 @@ export interface InputState {
   lmbReleased: boolean;
   /** Hold E (ms), used to skip cinematics. */
   interactHeldMs: number;
+  /** E is down right now (hold interactions read it every step). */
+  interactDown: boolean;
 }
 
 export function createInputState(): InputState {
@@ -61,6 +63,7 @@ export function createInputState(): InputState {
     lmbTap: false,
     lmbReleased: false,
     interactHeldMs: 0,
+    interactDown: false,
   };
 }
 
@@ -160,6 +163,7 @@ export class InputController {
     s.moveZ = (d.has(KEY_BINDINGS.forward) ? 1 : 0) - (d.has(KEY_BINDINGS.back) ? 1 : 0);
     s.moveX = (d.has(KEY_BINDINGS.right) ? 1 : 0) - (d.has(KEY_BINDINGS.left) ? 1 : 0);
     s.sprint = d.has(KEY_BINDINGS.sprint) || d.has(KEY_BINDINGS.sprintAlt);
+    s.interactDown = d.has(KEY_BINDINGS.interact);
   }
 }
 

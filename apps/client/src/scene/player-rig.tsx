@@ -51,6 +51,7 @@ export function PlayerRig({ input, runtime, onOpenLocket, skipHold }: { input: I
       // E and T are one-frame edges: handle them once per frame, before the fixed steps.
       const pose = () => ({ x: body.current.x, z: body.current.z, yaw: body.current.yaw });
       if (input.state.cyclePressed) runtime.cycleAction();
+      runtime.setHeld(input.state.interactDown); // hold-E interactions (the ritual anchors) read this
       if (input.state.interactPressed) runtime.interact(pose());
       const opening = input.state.locketPressed && runtime.canOpenLocket();
       if (opening) onOpenLocket(); // the phase changes now, so this frame runs no steps
@@ -58,6 +59,7 @@ export function PlayerRig({ input, runtime, onOpenLocket, skipHold }: { input: I
       let steps = 0;
       stepper.advance(opening ? 0 : delta, (dt) => {
         input.tick(dt * 1000);
+        runtime.setHeld(input.state.interactDown);
         skipHold?.feed(input.state.interactHeldMs); // hold E 1 s skips a skippable cinematic
         // A playing cinematic clip holds the player in place; the world still ticks.
         if (!runtime.video && runtime.sequences.policy.control !== 'limited') stepPlayer(body.current, input.state, dt, { colliders, sensitivity });

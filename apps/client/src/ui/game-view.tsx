@@ -16,12 +16,14 @@ import { loadedLastHouse, loadSceneHook, preloadLastHouse } from '../services/sc
 import { bindInput } from '../services/input-bindings.ts';
 import { doorCueForFlags, sfx } from '../services/sfx.ts';
 import { GATES } from '../content/world/gates.ts';
-import { gameStore, useGame } from '../store/index.ts';
+import { gameStore, saveStorage, useGame } from '../store/index.ts';
 import { DialogueChoicePanel } from './dialogue-choice.tsx';
+import { EndingChoicePanel } from './ending-choice.tsx';
 import { EncounterPanel } from './encounter-stub.tsx';
 import { Hud } from './hud.tsx';
 import { Locket } from './locket.tsx';
 import { PuzzleOverlay } from './puzzle-overlay.tsx';
+import { HoldBar, SmokeStrike } from './ritual-hud.tsx';
 import { SettingsScreen } from './screens.tsx';
 import { SkipRing } from './skip-ring.tsx';
 import { Subtitles, type SubtitleLine } from './subtitles.tsx';
@@ -35,7 +37,7 @@ export function GameView() {
   const container = useRef<HTMLDivElement>(null);
   const input = useMemo(() => new InputController(), []);
   // One world runtime per game view: New Game mounts a fresh view, so timers and fired triggers start clean.
-  const { world: runtime, encounters, choices } = useMemo(() => createEncounterWorld({ store: gameStore, loadScene: loadSceneHook, onEffect: (e) => sfx.handleEffect(e) }), []);
+  const { world: runtime, encounters, choices, ritual, ending } = useMemo(() => createEncounterWorld({ store: gameStore, storage: saveStorage, loadScene: loadSceneHook, onEffect: (e) => sfx.handleEffect(e) }), []);
   useSyncExternalStore(runtime.subscribe, () => runtime.version);
   const skipHold = useMemo(() => createSkipHold(runtime.sequences, ALL_SEQUENCES), [runtime]);
   useEffect(() => attachRuntime(runtime), [runtime]); // autosave reads / Continue restores the runtime state
@@ -137,6 +139,9 @@ export function GameView() {
       {phase === 'playing' && <Subtitles line={runtime.subtitle} />}
       {phase === 'playing' && <EncounterPanel encounters={encounters} />}
       {phase === 'playing' && <DialogueChoicePanel choices={choices} />}
+      {phase === 'playing' && <HoldBar runtime={runtime} />}
+      {phase === 'playing' && <SmokeStrike ritual={ritual} />}
+      {phase === 'overlay' && <EndingChoicePanel ending={ending} />}
       {phase === 'playing' && <SkipRing skip={skipHold} />}
       {runtime.video && (
         <VideoPlaceholder key={runtime.video.clipId} clipId={runtime.video.clipId} fallbackSeconds={runtime.video.fallbackSeconds} onEnded={videoEnded} />

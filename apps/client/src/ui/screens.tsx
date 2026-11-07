@@ -1,6 +1,7 @@
 import type { Mode } from '@tlh/shared';
 import { useMemo, useState } from 'react';
 import { applyDevStart, isDevStart } from '../game/dev-start.ts';
+import { ENDING_TEXT, type EndingChoice } from '../game/ending.ts';
 import { ensureAudioContext } from '../services/audio-engine.ts';
 import { FOV_MAX, FOV_MIN } from '../store/settings-store.ts';
 import { applySave, canContinue, needsOverwriteConfirm, saveNotice } from '../game/save.ts';
@@ -201,13 +202,21 @@ export function SettingsScreen({ onBack }: { onBack: () => void }) {
   );
 }
 
-export function CreditsScreen({ onBack }: { onBack: () => void }) {
+/** `ending` is set when the credits follow an ending: the end card shows and Back returns to the main menu. */
+export function CreditsScreen({ onBack, ending = null }: { onBack: () => void; ending?: EndingChoice | null }) {
+  const card = ending ? ENDING_TEXT.endCards[ending] : null;
   return (
     <main className="screen" data-testid="credits-screen">
+      {card && (
+        <section data-testid="end-card" aria-label="The ending">
+          <h2>{card.title}</h2>
+          <p>{card.text}</p>
+        </section>
+      )}
       <h1>Credits</h1>
       <p>The Last House on Maple Street. A Kiroween 2026 entry.</p>
       <button type="button" onClick={onBack}>
-        Back
+        {ending ? 'Main menu' : 'Back'}
       </button>
     </main>
   );

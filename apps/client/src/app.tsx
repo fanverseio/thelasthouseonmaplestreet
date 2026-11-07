@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { endingOfFlags } from './game/ending.ts';
 import { useGame, gameStore, settingsStore } from './store/index.ts';
 import { BootCheck } from './ui/boot-check.tsx';
 import { GameView } from './ui/game-view.tsx';
@@ -9,6 +10,7 @@ const IN_GAME = new Set(['playing', 'paused', 'locket', 'overlay', 'sequence']);
 /** Routes by game phase: boot -> warning -> menu -> game. `?bootcheck` shows the developer check page. */
 export function App() {
   const phase = useGame((s) => s.game.phase);
+  const flags = useGame((s) => s.progress.flags);
   const [view, setView] = useState<MenuView>('main');
   const developerPage = new URLSearchParams(window.location.search).has('bootcheck');
 
@@ -25,6 +27,8 @@ export function App() {
   if (developerPage) return <BootCheck />;
   if (IN_GAME.has(phase)) return <GameView />;
   if (phase === 'warning') return <WarningScreen />;
+  // After an ending: credits with the ending's name, then the main menu (the save is finished, so no Continue).
+  if (phase === 'credits') return <CreditsScreen ending={endingOfFlags(flags)} onBack={() => gameStore.getState().setPhase('menu')} />;
   if (phase === 'menu') {
     if (view === 'new_game') return <NewGameScreen onBack={() => setView('main')} />;
     if (view === 'settings') return <SettingsScreen onBack={() => setView('main')} />;
