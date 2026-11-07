@@ -74,3 +74,6 @@ Per agent reports: 360 tests, typecheck and build clean (not re-verified by the 
 
 ## 2026-11-07 | milestone | Beats 7-12 + fox/skip/sfx pushed (2e29674, 0470c97, 289889b, 66d9e0a, 89636e3, 19eaef9)
 Classic is completable on placeholders to both endings; finished save hides Continue. 459 tests. Dev starts: street, garden, house66, lane, grounds, interior, ritual-door, ritual, ritual-choice. Gotcha: parallel agents in ONE working tree clobber each other's edits and sweep half-done files into commits; run content agents serially or in separate git worktrees. Open: 4.11 Classic lines for beats 5-12, 4.12 full playthroughs, spell switching keys 1/2/3 not wired, view does not move the player body on respawn.
+
+## 2026-11-07 | handoff | Classic completable on placeholders; playtest plan ready
+4.1-4.12 done (617 tests, typecheck, build, check, e2e green; lint only diag.tmp.mjs). Author tests in one go from .kiro/specs/the-last-house/docs/playtest-plan.md (293 step ids, Q1-Q31 with defaults, results table). Video clip manifest with text-to-video prompts: apps/client/src/content/video/clips.ts. Next after author results: 4.13 M2 review, then section 5 combat (real HP so death can happen), settings persistence (Q23), sound/music. Known: nothing can reduce HP to 0 yet; several settings do nothing yet; encounter panel says LMB but keys are 2/hold Enter.

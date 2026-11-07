@@ -146,10 +146,10 @@ Each milestone includes a README sync check (task 9.7 rules).
 - [x] 4.10 Beat 12: choice overlay with confirm, ending placeholders, credits, finished save
   - Verify: unit test P8 (ending is a function of the choice only); Continue hidden after the ending.
   - _Requirements: 8.5-8.8_
-- [ ] 4.11 Classic Angel and hint lines for every beat (text first; audio when available)
+- [x] 4.11 Classic Angel and hint lines for every beat (text first; audio when available)
   - Verify: content test: every beat has `any` lines; from beat 4, at least 2 lines per band; every hint level has a line.
   - _Requirements: 10.2, 10.3_
-- [ ] 4.12 Headless Classic playthroughs and content suite
+- [x] 4.12 Headless Classic playthroughs and content suite
   - Scripted playthroughs to both endings from every checkpoint with network disabled (P13); line ID and asset reference checks.
   - Verify: `npm test` green.
   - _Requirements: 1.1, 8.7, 10.4_
