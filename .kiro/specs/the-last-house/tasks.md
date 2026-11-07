@@ -1,0 +1,375 @@
+# Implementation Plan
+
+Planning started 2026-11-06. **Feature complete 2026-11-30. Submit by 2026-12-04 2:00 PM PT** (aim for 2026-12-03).
+Order follows the agreed priorities: (1) greybox critical path, (2) triggers and unlocks, (3) Classic completable, (4) combat, purification and ritual, (5) cinematics and horror, (6) AI-Enhanced Mode, (7) polish. Hosting, assets and writing run alongside.
+Every task lists the requirements it satisfies (`requirements.md`) and how to verify it. Tests run with `vitest --run` through the `npm test` script created in task 1.2. **No gameplay code is written until the author has reviewed the specs.**
+
+Milestones: **M1 Nov 13** vertical slice (beats 1-4, placeholders, encounter stub, Classic locket, sequence runner). **M2 Nov 20** Classic completable start to finish. **M3 Nov 24** combat, ritual and cinematics complete. **M4 Nov 27** AI mode and hosted demo; asset freeze. **M5 Nov 30** feature freeze.
+Each milestone includes a README sync check (task 9.7 rules).
+
+- [ ] 1. Foundations (Nov 6-8)
+- [ ] 1.1 Scaffold the npm workspaces monorepo
+  - Root `package.json` with workspaces `apps/client`, `apps/server`, `packages/shared`; `engines.node >=22`; exact pinned versions; strict `tsconfig.base.json`; ESLint and Prettier configs.
+  - Dependencies limited to those named in `.kiro/steering/tech.md` (React, React DOM, three, @react-three/fiber, @react-three/drei, @react-three/postprocessing, zustand, zod, vite, @vitejs/plugin-react, typescript, vitest, eslint, prettier, @playwright/test, @upstash/redis). Any other dependency needs approval.
+  - Verify: `npm install` succeeds on a clean clone; `npm ls --depth=0` shows only approved packages.
+  - _Requirements: 21.3, 21.4_
+- [ ] 1.2 Create package scripts and the dev runner
+  - Scripts: `dev`, `build`, `preview`, `test` (`vitest --run`), `test:e2e`, `typecheck`, `lint`, `check`.
+  - `scripts/dev.mjs`: spawns the Vite dev server (port `CLIENT_PORT`, default 5173) and the local API (port `PORT`, default 3000) as child processes, prefixes logs `[client]`/`[api]`, stops both on Ctrl+C or if either exits, works on Windows, macOS and Linux, no extra dependency.
+  - Vite proxies `/api` to `http://127.0.0.1:3000`.
+  - Verify: `npm run dev` opens both ports; Ctrl+C leaves no orphan process (check the ports are free afterwards).
+  - _Requirements: 21.3, 21.4_
+- [ ] 1.3 Local API server skeleton with `GET /api/health` and `GET /api/config/status`
+  - `apps/server/src/local.ts` (Node `http`, bound to 127.0.0.1) calling shared handlers in `apps/server/src/handlers/`.
+  - Verify: `curl http://127.0.0.1:3000/api/health` returns `{ ok: true, mode: "local" }`; handler unit tests pass.
+  - _Requirements: 17.1, 21.6_
+- [ ] 1.4 Shared zod schemas
+  - `packages/shared/src/`: IDs, `ProgressFlag`, `SaveFileV1`, API request and error shapes, `AngelWorldAction`, as in `docs/contracts.md`.
+  - Verify: schema unit tests accept the examples and reject malformed ones.
+  - _Requirements: 1.3, 11.2, 12.1, 15.1_
+- [ ] 1.5 Zustand slices skeleton (`game`, `player`, `progress`, `world`, `angel`, `settings`)
+  - Verify: store unit tests; slices hold only serialisable data.
+  - _Requirements: 1.3, 15.1_
+- [ ] 1.6 Repo checks
+  - `scripts/check-secrets.mjs` (scans staged changes for key-like patterns), `scripts/check-readme-sync.mjs` (every `package.json` script and every env name read in code appears in the README and `.env.example`), wired into `npm run check`.
+  - Verify: a planted fake key in a staged test file fails the check; removing it passes.
+  - _Requirements: 21.8, 22.4_
+- [ ] 1.7 CI workflow (GitHub Actions): install, typecheck, lint, test, check
+  - Verify: a pull request shows all jobs green.
+  - _Requirements: 21.4, 22.4_
+- [ ] 1.8 README sync for Phase 1
+  - Replace "Planned, not yet available" with real commands for everything that now exists; keep the label on the rest.
+  - Verify: `npm run check` passes; a reader can run `npm install` and `npm run dev` from the README alone.
+  - _Requirements: 21.1, 21.8, 21.10_
+
+- [ ] 2. Greybox critical path (Nov 8-11)
+- [ ] 2.1 Input module and pointer lock state machine
+  - `InputState`, key binding by `event.code`, LMB tap vs hold (200 ms), pause on lock loss, blur and hidden tab, "Click to resume" overlay, no retry loop.
+  - Verify: unit tests for the state machine; manual check in Chrome, Edge, Firefox.
+  - _Requirements: 4.1, 4.2, 4.3, 4.4_
+- [ ] 2.2 Fixed-step loop and player controller
+  - 60 Hz accumulator in `useFrame`; walk 4 m/s, sprint 7 m/s; pitch clamp; FOV setting.
+  - Verify: headless unit tests for movement at varying frame rates give the same positions.
+  - _Requirements: 4.1_
+- [ ] 2.3 Collision (static AABB and cylinder, wall sliding)
+  - Verify: unit tests for corners, slides and no tunnelling at sprint speed.
+  - _Requirements: 4.1_
+- [ ] 2.4 World registry and entity content
+  - `content/world/*.ts` for every entity in `docs/level-manifest.md`; startup validation of ID pattern, kind, capabilities, critical, owner.
+  - Verify: content test fails on a bad ID, an unknown capability or `angelUnlock` on a critical entity.
+  - _Requirements: 1.4, 12.3, 12.4, 19.2_
+- [ ] 2.5 Interaction, pickups, sockets and carried items
+  - Nearest interactable within 2.5 m, prompt text, E; carried items max 4; items consumed only by their sockets.
+  - Verify: unit tests; HUD shows icons only while carrying.
+  - _Requirements: 4.5, 7.3, 7.5_
+- [ ] 2.6 Greybox exterior scene
+  - The loop map from `docs/level-manifest.md` section 1 with debug colours, colliders, fog, moonlight and streetlights; the Last House silhouette visible from the start.
+  - Verify: walk the whole loop in about 90 s; no gaps in colliders; screenshot for review.
+  - _Requirements: 1.1, 19.1, 19.2_
+- [ ] 2.7 Greybox Last House scene, lazy loading and loading screen
+  - Verify: the interior loads on entering; preload starts in the lane; the loading screen shows progress.
+  - _Requirements: 19.1_
+- [ ] 2.8 HUD skeleton and placeholder first-person hands
+  - Verify: health, magic, objective, spell icon and name; no morality number anywhere (grep test on UI strings).
+  - _Requirements: 4.5, 4.6, 4.7_
+- [ ] 2.9 Phases and menus skeleton
+  - boot, warning (photosensitivity and content), menu (Continue, New Game with mode choice, Settings, Credits), pause; AudioContext created after the first click.
+  - Verify: Playwright smoke reaches the menu and starts a Classic game.
+  - _Requirements: 4.2, 18.3, 20.1_
+
+- [ ] 3. Progression, gates, sequences and the vertical slice (Nov 10-13)
+- [ ] 3.1 Progression system
+  - Closed flag union, `setFlag` (only writer), exclusive pairs, objective text per beat, knowledge level from flags.
+  - Verify: unit tests; setting an unknown flag fails to compile.
+  - _Requirements: 1.3, 1.7, 1.8, 11.4_
+- [ ] 3.2 Gates from flags with the veil recede placeholder
+  - Verify: content test P9 (every gate opens from a critical-path flag; no `angelUnlock` entity is critical).
+  - _Requirements: 1.4_
+- [ ] 3.3 Checkpoints, autosave hook and respawn data
+  - Verify: unit tests for every checkpoint in `docs/beat-sheet.md`.
+  - _Requirements: 1.6, 6.8_
+- [ ] 3.4 Sequence runner
+  - Step types, policies, ownership, queue, skip (hold E 1 s), rollback on interrupt, camera restore, as in `docs/cinematic-controller.md`.
+  - Verify: unit tests P14 (skip at every step equals full run) and interrupt rollback.
+  - _Requirements: 3.1, 3.3, 3.4, 3.5, 3.7, 3.9_
+- [ ] 3.5 Classic dialogue system, subtitles and the Classic locket
+  - `selectClassicLine` by the order in `docs/angel-persona.md` section 7; locket UI without text input; subtitles for every line; VO playback by line ID with subtitle-only fallback.
+  - Verify: unit tests for selection; T ignored before `angel_awake`.
+  - _Requirements: 2.5, 10.1, 10.2, 10.4, 18.1, 18.2_
+- [ ] 3.6 Beat 1 content: home, drawer puzzle P1, Angel intro, front door
+  - Verify: headless test reaches `home_done`; P1 hints fire on schedule.
+  - _Requirements: 2.1-2.7, 7.1, 7.2_
+- [ ] 3.7 Beats 2-3 content: `seq1_empty_street` and `seq2_felix_streetlight` as greybox sequences; `spell_bolt` flag
+  - Verify: headless test reaches `seq2_done` and `cp_intersection`.
+  - _Requirements: 3.1, 3.8, 5.1_
+- [ ] 3.8 Encounter stub
+  - Temporary stand-in for any encounter: interact to "weaken", then a purify-or-destroy choice UI; applies the morality delta and the drop. Used by Briggs, Watcher, hounds and cat until Phase 5.
+  - Verify: both outcomes lead to the same next flag (P10 on stubs).
+  - _Requirements: 6.6, 9.2_
+- [ ] 3.9 Beat 4 content with the stub: `seq3_started` to `seq3_done`, `spell_ward` and `spell_purify` flags, walkie clue
+  - Verify: headless test reaches `seq3_done` via both outcomes.
+  - _Requirements: 5.2, 5.4, 6.6_
+- [ ] 3.10 **M1 (Nov 13)**: vertical slice review
+  - Play beats 1-4 on placeholders; record time per beat against targets; README sync check.
+  - _Requirements: 1.1, 1.5, 21.8_
+
+- [ ] 4. Classic Mode completable (Nov 13-20)
+- [ ] 4.1 Save system
+  - `SaveStorage`, `LocalStorageSaveStorage` (`tlh.save`), `SaveFileV1` with zod, migration chain, autosave at checkpoints, Continue and New Game (overwrite confirm), corrupt and newer-version handling, Reset progress, finished saves.
+  - Verify: unit tests P4 (round trip) and P5 (no key-like data); manual corrupt-save test.
+  - _Requirements: 15.1-15.8, 8.8_
+- [ ] 4.2 Puzzle framework and overlays
+  - Puzzle machines, hint schedule, overlay phase with pointer lock release, state kept on close.
+  - Verify: unit tests; overlay never loses state.
+  - _Requirements: 7.1, 7.2, 7.4_
+- [ ] 4.3 Beat 5: Gartner confession (limited control dialogue, comfort or press choice, journal page 2)
+  - Verify: headless test reaches `seq4_done` via both choices; canon hook review of the dialogue file.
+  - _Requirements: 3.1, 9.2_
+- [ ] 4.4 Beat 6 with the Watcher stub: P2 fuse, fence key, lane gate
+  - Verify: headless test reaches `lane_open` via both outcomes.
+  - _Requirements: 6.6, 7.1_
+- [ ] 4.5 Beat 7: lane, `atm_home_window`, hounds stub, P3 padlock overlay
+  - Verify: headless test reaches `padlock_open`; hints reach the answer.
+  - _Requirements: 7.1, 7.2_
+- [ ] 4.6 Beat 8: `seq5_felix_mirror` greybox and P4 mirror runes (mirror render target)
+  - Verify: runes visible only in the reflection; headless test reaches `runes_done`.
+  - _Requirements: 3.1, 3.8, 7.1_
+- [ ] 4.7 Beat 9: interior, cat stub, P5 talking board (scares, resets, hints)
+  - Verify: wrong letters never damage; headless test reaches `board_solved`.
+  - _Requirements: 7.1, 7.6_
+- [ ] 4.8 Beat 10: `seq6_two_keys` greybox and the central seal state table
+  - Verify: unit test of the four seal states.
+  - _Requirements: 8.1, 3.1_
+- [ ] 4.9 Beat 11 ritual stub: anchors by simple interaction, `cin_felix_anchor` placeholder on the first anchor, anchors persist on death
+  - Verify: headless test reaches `anchors_all`; death keeps anchors.
+  - _Requirements: 8.2, 8.3, 8.4_
+- [ ] 4.10 Beat 12: choice overlay with confirm, ending placeholders, credits, finished save
+  - Verify: unit test P8 (ending is a function of the choice only); Continue hidden after the ending.
+  - _Requirements: 8.5-8.8_
+- [ ] 4.11 Classic Angel and hint lines for every beat (text first; audio when available)
+  - Verify: content test: every beat has `any` lines; from beat 4, at least 2 lines per band; every hint level has a line.
+  - _Requirements: 10.2, 10.3_
+- [ ] 4.12 Headless Classic playthroughs and content suite
+  - Scripted playthroughs to both endings from every checkpoint with network disabled (P13); line ID and asset reference checks.
+  - Verify: `npm test` green.
+  - _Requirements: 1.1, 8.7, 10.4_
+- [ ] 4.13 **M2 (Nov 20)**: Classic complete on placeholders
+  - Full manual playthrough; record total time; README sync check.
+  - _Requirements: 1.1, 21.8_
+
+- [ ] 5. Combat, purification and the final ritual (Nov 14-24)
+- [ ] 5.1 Spell config and Arcane Bolt (tap and charged), pooled projectiles
+  - Verify: unit tests for costs, cooldowns, charge time; tap on a stunned enemy deals 0.
+  - _Requirements: 5.5, 5.6_
+- [ ] 5.2 Ward and Purify (channel, range, refund, rune and anchor targets) with unlock hooks
+  - Verify: unit tests; unlock order matches `docs/combat-tuning.md`.
+  - _Requirements: 5.1-5.5_
+- [ ] 5.3 Enemy FSM, steering, leash, stun floor, persistent stun, magic floor on stun
+  - Verify: unit tests P16; stunned enemies deal no damage.
+  - _Requirements: 6.2-6.5_
+- [ ] 5.4 Morality system (deltas, clamp, bands, history) and outcome wiring
+  - Verify: property test P1; no morality reads in progression code (static test).
+  - _Requirements: 9.1-9.3, 9.5_
+- [ ] 5.5 Death and respawn rules
+  - Verify: unit tests: flags kept, resolved enemies kept, active mini-boss reset.
+  - _Requirements: 6.8_
+- [ ] 5.6 Street fox (skippable; stunned without Purify stays stunned)
+  - Verify: skipping changes nothing; morality only on resolution.
+  - _Requirements: 6.9_
+- [ ] 5.7 Mr Briggs mini-boss replaces the stub (scripted first attack capped at 30 HP, Ward prompt, phase 2 slam, smoke puff)
+  - Verify: unit tests for the cap and phases; playtest about 3 min.
+  - _Requirements: 5.2, 5.3, 6.1_
+- [ ] 5.8 The Watcher mini-boss replaces the stub (abilities layer: teleport to nodes, decoys, voice at HP)
+  - Verify: unit tests for node-only teleports and decoy thresholds; playtest about 3 min.
+  - _Requirements: 6.7_
+- [ ] 5.9 Hounds and cat replace the stubs
+  - _Requirements: 6.1, 6.10_
+- [ ] 5.10 Final ritual: smoke director and the three anchor mechanics replace the stub
+  - Verify: unit tests for pressure scaling and anchor progress keeping; magic never blocks an anchor.
+  - _Requirements: 8.2, 8.4, 6.10_
+- [ ] 5.11 Combat feedback: hit reactions, hand animations, VFX and SFX hooks
+  - _Requirements: 4.6, 19.3_
+
+- [ ] 6. Cinematics and horror (Nov 17-24)
+- [ ] 6.1 Camera shots, look clamp, restore, skip ring UI
+  - _Requirements: 3.4, 3.7_
+- [ ] 6.2 `seq1_empty_street` full (flicker chain, silence, footsteps, window shadow, veil)
+  - _Requirements: 3.1_
+- [ ] 6.3 `seq2_felix_streetlight` (<= 25 s)
+  - _Requirements: 3.1, 3.8_
+- [ ] 6.4 `seq3_cursed_neighbour` transformation presentation
+  - _Requirements: 3.1_
+- [ ] 6.5 `seq4_gartner_confession` framing (dialogue cap 120 s)
+  - _Requirements: 3.1_
+- [ ] 6.6 `seq5_felix_mirror` (<= 30 s) with the crack
+  - _Requirements: 3.1, 3.8_
+- [ ] 6.7 `seq6_two_keys` (<= 45 s)
+  - _Requirements: 3.1_
+- [ ] 6.8 `cin_felix_anchor` (<= 20 s), both endings (<= 30 s), credits
+  - _Requirements: 3.8, 8.6_
+- [ ] 6.9 Atmosphere library and `atm_home_window` (whispers, shadows, doors, footsteps, flicker, smoke)
+  - _Requirements: 3.1_
+- [ ] 6.10 Forced-control budget test (P11) and interrupt tests on real sequences
+  - Verify: `npm test` fails if the sum exceeds 180 s.
+  - _Requirements: 3.5, 3.6_
+- [ ] 6.11 Locket visuals per morality and reduce-flashing
+  - Verify: visual review per band; flicker rate capped with the setting on.
+  - _Requirements: 9.4, 20.2_
+- [ ] 6.12 **M3 (Nov 24)**: combat, ritual and cinematics complete; README sync check
+  - _Requirements: 3.1, 21.8_
+
+- [ ] 7. AI-Enhanced Mode (Nov 18-27). Promoted from `refinement/angel-world-actions` (AWA-01..14)
+- [ ] 7.1 In-memory usage store and handler wiring for local mode
+  - _Requirements: 17.1_
+- [ ] 7.2 LLM adapters `openai`, `anthropic`, `mock` with the structured-output chain and error classification
+  - Verify: recorded-fixture tests for both protocols; no live calls in CI.
+  - _Requirements: 17.3, 17.4, 17.5_
+- [ ] 7.3 `POST`/`DELETE /api/config/llm` (local only), base URL rules, memory-only key, redaction
+  - Verify: tests that the key never appears in logs or responses; hosted mode returns 404 (P12).
+  - _Requirements: 17.1, 17.2, 17.6, 17.7_
+- [ ] 7.4 Prompt builder and canon filter
+  - Verify: golden prompt tests P15; deny-pattern tests.
+  - _Requirements: 11.4-11.7_
+- [ ] 7.5 `POST /api/angel/chat` with output validation, stock fallbacks and error mapping
+  - _Requirements: 11.2, 11.6, 14.1_
+- [ ] 7.6 Angel director and AI locket UI (text box, thinking state, 8 s timeout, `aiStatus`, backoff, recovery note)
+  - Verify: integration tests with `MockAdapter` failure scripts (P7).
+  - _Requirements: 11.1-11.3, 14.1-14.7_
+- [ ] 7.7 Memory: snapshot builder, event log, deterministic summary
+  - _Requirements: 11.2, 11.8_
+- [ ] 7.8 AWA-01: action schema, union and parser
+  - _Requirements: 12.1, 12.2_
+- [ ] 7.9 AWA-02/03: capability metadata validation and the typed action config
+  - _Requirements: 12.3, 12.6_
+- [ ] 7.10 AWA-04/05: `world-effects` module and the restricted `AngelEffectApi`
+  - _Requirements: 12.8, 12.11_
+- [ ] 7.11 AWA-06: action ledger in the `angel` slice and the save
+  - _Requirements: 12.9_
+- [ ] 7.12 AWA-07/08: validation context and validator checks
+  - Verify: one table-driven test per `RejectionReason`; deep-equal state after rejection (P3).
+  - _Requirements: 12.3-12.7_
+- [ ] 7.13 AWA-09/13: story-safety check and the seeded reachability property test (P2, 1,000 runs)
+  - _Requirements: 12.11, 8.7_
+- [ ] 7.14 AWA-10/11: dispatcher (queue, re-validate on locket close, discard on degrade) and director integration
+  - _Requirements: 12.8, 12.10_
+- [ ] 7.15 AWA-12: adversarial and prompt-injection tests
+  - _Requirements: 12.11, 11.6_
+- [ ] 7.16 Side quest templates and engine (P6)
+  - _Requirements: 13.1-13.3_
+- [ ] 7.17 Glitch scheduler and lines
+  - _Requirements: 13.4-13.6_
+- [ ] 7.18 Mode selection UI: Classic, AI local (env provider or form), AI hosted (code entry)
+  - _Requirements: 16.1, 17.1_
+- [ ] 7.19 AWA-14: integration with three distinct actions plus failure and recovery; manual checklist
+  - _Requirements: 12, 14_
+- [ ] 7.20 Optional live TTS route and playback (flag, cap) **(cut list 1)**
+  - _Requirements: 18.4_
+
+- [ ] 8. Hosted demo on Vercel (Nov 23-27)
+- [ ] 8.1 Upstash usage store with the `KV_*` env fallback; fail closed
+  - _Requirements: 16.7_
+- [ ] 8.2 `tools/hash-access-code.mjs` and `POST /api/access/redeem` (constant-time compare, throttling)
+  - _Requirements: 16.2-16.4_
+- [ ] 8.3 Signed session cookie and session store (TTL)
+  - _Requirements: 16.2_
+- [ ] 8.4 Quotas, rate, concurrency and the spend ceiling
+  - Verify: server tests for each limit; refresh and cookie clearing do not reset per-code quotas.
+  - _Requirements: 16.5, 16.6_
+- [ ] 8.5 Vercel entry points, `vercel.json` (build, output, `maxDuration` 30 s), security headers, CORS, body limit
+  - _Requirements: 16.8, 22.3_
+- [ ] 8.6 Deploy and run the hosted checklist in `docs/hosting-ops.md` section 8
+  - _Requirements: 16, 23.2_
+- [ ] 8.7 Generate 8 access codes; store only hashes in Vercel env; keep plain codes for the Devpost form
+  - _Requirements: 16.3, 23.2_
+- [ ] 8.8 **M4 (Nov 27)**: AI mode and the hosted demo live; asset freeze; README sync check
+  - _Requirements: 16, 21.8_
+
+- [ ] 9. Polish, performance and README (Nov 24-30)
+- [ ] 9.1 Swap greybox for final assets by entity ID; `tools/check-assets.mjs` clean
+  - _Requirements: 19.2, 19.5_
+- [ ] 9.2 Lighting, fog, post-processing, LUTs, quality presets, low-preset suggestion
+  - _Requirements: 19.3, 19.4_
+- [ ] 9.3 Audio mix: buses, beds, VO, ducking, volume settings
+  - _Requirements: 18.5_
+- [ ] 9.4 Performance pass (instancing, pooling, draw calls, KTX2, interior preload)
+  - Verify: 60 fps mid-range, 30 fps integrated at low, measured and recorded.
+  - _Requirements: 19.3_
+- [ ] 9.5 Settings complete and accessibility checks
+  - _Requirements: 20.2-20.4_
+- [ ] 9.6 Pacing pass with priority polish on beats 1-5 (playtest times vs targets)
+  - _Requirements: 1.5_
+- [ ] 9.7 README complete and verified against the real repo; `CREDITS.md` complete
+  - Every documented command run once; troubleshooting entries from real errors met during development; `npm run check` passes.
+  - _Requirements: 19.6, 21.1-21.8_
+- [ ] 9.8 **M5 (Nov 30)**: feature freeze
+  - _Requirements: 23.5_
+
+- [ ] 10. Stabilisation and submission (Nov 30-Dec 4)
+- [ ] 10.1 Manual playthroughs: Classic good and bad, AI good and bad, AI outage mid-game, hosted session expiry
+  - _Requirements: 14, 8_
+- [ ] 10.2 Browser matrix (desktop Chrome, Edge, Firefox) and an integrated-GPU check
+  - _Requirements: 19.3_
+- [ ] 10.3 Playwright smoke suite against the hosted build
+  - _Requirements: 16.1_
+- [ ] 10.4 Fresh-clone setup test
+  - On Windows plus one other OS if available: clone into an empty folder, ask a coding agent "Read the README.md, inspect the project, install the required dependencies, configure the local environment, and run The Last House on Maple Street locally." Record every step, error and fix; update the README; repeat until it passes with no undocumented steps. Then confirm AI mode works with real local credentials.
+  - _Requirements: 21.6, 21.7, 21.9_
+- [ ] 10.5 Secret scan of the full git history; rotate any exposed key
+  - _Requirements: 22.4_
+- [ ] 10.6 Demo video under 3 minutes (both endings, the Angel, a validated action, a purify-or-destroy choice, AI fallback; no copyrighted music), public on YouTube
+  - _Requirements: 23.3_
+- [ ] 10.7 Devpost write-up (Costume Contest; Kiro specs, steering and hooks) and access codes in the private form; submit by Dec 3 if possible
+  - _Requirements: 23.1, 23.4, 23.5_
+- [ ] 10.8 Keep the hosted build online through judging; check spend daily
+  - _Requirements: 23.2_
+
+- [ ] 11. Assets track (parallel, Nov 8-27)
+- [ ] 11.1 Author approves `docs/asset-manifest.md`, `docs/asset-conventions.md` and the `@gltf-transform/cli` dev dependency
+  - _Requirements: 19.5_
+- [ ] 11.2 `tools/gen-voice.mjs` (reads script line tables and `.env`; writes to `assets/raw/vo/`; copies approved takes to `public/assets/audio/vo/`)
+  - _Requirements: 18.1, 22.2_
+- [ ] 11.3 `tools/gen-image.mjs`
+  - _Requirements: 19.5_
+- [ ] 11.4 `tools/optimize-glb.mjs`
+  - _Requirements: 19.5_
+- [ ] 11.5 `tools/check-assets.mjs`
+  - _Requirements: 19.2, 19.5_
+- [ ] 11.6 P0 assets for the slice (manifest priority P0), act 1 VO
+  - _Requirements: 19, 18.1_
+- [ ] 11.7 P1 assets and acts 2-3 VO
+  - _Requirements: 19, 18.1_
+- [ ] 11.8 P2 assets; asset freeze Nov 27
+  - _Requirements: 19_
+- [ ] 11.9 Keep `CREDITS.md` current for every asset added
+  - _Requirements: 19.6_
+
+- [ ] 12. Writing track (parallel)
+- [ ] 12.1 Author approves `docs/beat-sheet.md`, `docs/level-manifest.md`, `docs/puzzles.md`, `docs/combat-tuning.md` (before task 2.4)
+  - _Requirements: 1, 6, 7_
+- [ ] 12.2 Author approves `docs/angel-persona.md` and `docs/side-quests.md` (before task 7.4)
+  - _Requirements: 10, 11, 13_
+- [ ] 12.3 Author approves `docs/script/act1.md` -> generate act 1 VO (by Nov 15)
+  - _Requirements: 18.1_
+- [ ] 12.4 Author approves `docs/script/act2-3.md` -> generate acts 2-3 VO (by Nov 22)
+  - _Requirements: 18.1_
+- [ ] 12.5 Add about 20 repeatable Classic Angel lines for beats 6-12 (2 per band) and voice them
+  - _Requirements: 10.2_
+- [ ] 12.6 Journal page art and text (5 pages)
+  - _Requirements: 7.1_
+
+## Cut list (in order, if a milestone slips by more than 2 days)
+1. Live Angel TTS (7.20).
+2. The skippable street fox (5.6).
+3. The Watcher's shadow decoys (part of 5.8).
+4. The interior cat encounter (5.9); the talking board stays.
+5. Side quests beyond one template (7.16).
+6. `stir_object` and `summon_minor_cursed` actions (part of 7.10).
+7. Custom props replaced by CC0 props with credits.
+8. Extra Classic padding lines (12.5).
+Protected: beats 1-5 polish, the final ritual, both endings, Classic/AI fallback, the README and the fresh-clone test.
+
+## Definition of done (release)
+- Classic and AI modes both reach both endings; all correctness properties P1-P16 pass.
+- No secrets in the repo, history, saves or logs.
+- The hosted build is gated, capped and online through judging.
+- A fresh clone runs by following only the README.

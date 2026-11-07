@@ -1,175 +1,287 @@
 # PRD: The Last House on Maple Street
 
-Kiroween 2026 hackathon entry. Submission deadline: **2026-12-04**. Feature-complete target: **2026-11-30**.
+Version 2 (2026-11-06). Kiroween 2026, category **Costume Contest**.
+Feature complete **2026-11-30**. Submission deadline **2026-12-04, 2:00 PM PT**.
+Detail lives in `docs/`; this document is the product source of truth. Numbered requirements are in `requirements.md`.
 
-## 1. Product Summary
+## 1. Summary
 
-A first-person 3D psychological horror game for desktop browsers, 10-15 minutes long. The player is Elena, searching for her missing son Felix on Halloween night. A locket-bound being called the Angel guides her. The game ships in two modes that share one world, one story and one save format:
+A first-person 3D psychological horror game for desktop browsers. Elena Hart searches Maple Street for her missing son Felix on Halloween night. Her grandmother's Whispering Locket wakes the Angel, an ancient being that comments on, and in AI-Enhanced Mode influences, her journey. She learns she and Felix are the two Living Keys to a seal her grandmother made beneath the Last House.
 
-- **Classic Story Mode**: fully authored, deterministic, no LLM, no API key, no network AI. Must feel complete.
-- **AI-Enhanced Mode**: adds live Angel conversation, memory, personality drift, validated world actions, up to two optional side quests, and rare bounded glitches. The core story stays authored.
+- First playthrough ~25-30 min (target ~28.5). Experienced player ~18-22 min.
+- The first ~12.5 min (beats 1-5) are what judges are most likely to see. They get priority polish.
+- Two modes share one world, one story, one set of progression flags and one save format:
+  - **Classic Story Mode**: fully authored, deterministic, no LLM, no network AI.
+  - **AI-Enhanced Mode**: adds free-text Angel conversation, memory, validated world actions, up to two optional side quests and rare glitches.
 
-## 2. Goals and Non-Goals
+## 2. Goals and non-goals
 
 ### Goals
 
-- A complete, polished, atmospheric small-scale game with a real story, exploration, combat, puzzles, six horror sequences and exactly two endings.
-- A safe, engine-validated LLM integration that meaningfully changes the experience without ever breaking it.
-- A hosted private demo for judges using the author's LLM key, with cost controls.
+- A complete, polished, atmospheric game with story, exploration, puzzles, combat, six authored horror sequences and exactly two endings.
+- A safe LLM integration that changes the experience without ever breaking it.
+- A hosted demo for judges, unlocked by a private access code, with bounded cost.
+- A repository any person or coding agent can clone and run from the README alone.
 
-### Non-Goals
+### Non-goals (before the hackathon)
 
-- Crafting, complex inventory, minimap, jump, crouch, stamina meter.
-- Vector DBs or external memory services.
-- Navmesh or elaborate enemy AI.
-- Public user registration, cloud saves (design must allow them later).
-- Large open world. One compact, coherent neighbourhood.
-- Boss fight (final act is an anchor-restoration challenge).
+- Google OAuth, public registration, daily free credits, cloud saves, Supabase, account sync.
+- Chapter select, judge start, alternative start points, shortcuts.
+- BYOK or custom endpoints on the hosted build.
+- Crafting, inventory screen, minimap, jump, crouch, stamina.
+- Navmesh or elaborate enemy AI. Vector DBs or external memory services.
+- A health-bar boss at the finale. (Two mini-bosses are in scope.)
+- A large open world.
 
-## 3. Story (Canonical, Immutable Facts)
+## 3. Canon
 
-- **Elena**: protagonist, mother. Has inherited magic that awakens during play. Her magic comes from her bloodline, **not** from the Angel.
-- **Felix**: age 8. First Living Key. His magic damaged the seal. Body trapped in the Last House; his spirit appears 3 times: beneath a streetlight, through a mirror, near the final seal.
-- **Gartner**: Felix's friend. Deceived by the evil into bringing Felix to the house. **Innocent. Never knowingly collaborates. This must never change**, including in any LLM output.
-- **Grandmother**: a witch who sealed an ancient evil beneath the Last House. The seal is bound to her bloodline and needs two bloodline members to fully open.
-- **The Evil**: faceless black smoke. Cannot escape without both Living Keys. Manipulated events to bring Elena to the house. Separate from the Angel.
-- **The Angel**: lives in the Whispering Locket (grandmother's object). Theatrical, curious, sometimes manipulative. Not the main villain. Does not know the full mystery at the start. Personality shifts with Elena's morality.
+See `.kiro/steering/canon.md`. It is locked. Key points: Gartner is innocent; Felix is the first Living Key and Elena the second; Elena's magic is from her bloodline; the Angel and the smoke are separate; exactly two endings.
 
-## 4. Gameplay Requirements
+## 4. Critical path
 
-### 4.1 Controls
+Timings are design targets. Progress always comes from interactions and objectives, never from a clock. Full triggers, flags and policies: `docs/beat-sheet.md`. Map: `docs/level-manifest.md`.
 
-| Input     | Action                                                 |
-| --------- | ------------------------------------------------------ |
-| WASD      | Move                                                   |
-| Mouse     | Look (pointer lock)                                    |
-| Shift     | Sprint (no stamina)                                    |
-| E         | Interact                                               |
-| T         | Open/close locket (pauses game, releases pointer lock) |
-| LMB       | Cast selected spell                                    |
-| 1 / 2 / 3 | Select Arcane Bolt / Purify / Ward                     |
-| Esc       | Pause                                                  |
+| #   | Beat                                | Target  | Presentation                                                               | Unlocks                         |
+| --- | ----------------------------------- | ------- | -------------------------------------------------------------------------- | ------------------------------- |
+| 1   | Elena's Home                        | 2.5 min | Interactive opening, environmental storytelling, Angel introduction        | Maple Street                    |
+| 2   | Seq 1 The Empty Street              | 1.5     | Fully interactive horror, no cutscene                                      | Intersection                    |
+| 3   | Seq 2 Felix Beneath the Streetlight | 1.5     | 15-25 s in-engine cinematic                                                | Neighbour's garden; Arcane Bolt |
+| -   | Street encounter                    | ~1      | Ordinary, skippable                                                        | -                               |
+| 4   | Seq 3 The Cursed Neighbour          | 4       | Interactive transformation and mini-boss                                   | Gartner's hideout; Ward, Purify |
+| 5   | Seq 4 Gartner's Confession          | 2       | Interactive dialogue, cinematic framing                                    | House 66                        |
+| 6   | House 66: The Watcher               | 3       | Fetch puzzle and mini-boss                                                 | Back lane                       |
+| 7   | Last House approach                 | 1.5     | Ordinary encounter (mandatory) and number lock                             | Outbuilding                     |
+| 8   | Seq 5 Felix in the Mirror           | 2       | 20-30 s cinematic, then mirror-runes puzzle                                | Last House front door           |
+| 9   | Interior                            | 2       | Ordinary encounter (mandatory) and talking-board puzzle                    | Ritual chamber                  |
+| 10  | Seq 6 The Two Living Keys           | 1.5     | 30-45 s cinematic                                                          | Three anchor rooms              |
+| 11  | Final ritual                        | 4       | Interactive climax; Felix's third appearance (15-20 s) at the first anchor | Final choice                    |
+| 12  | Choice and ending                   | 2       | Choice, then a ~20-30 s ending cinematic and credits                       | -                               |
 
-### 4.2 HUD
+**Total ~28.5 min.**
 
-Health, magic, current objective, selected spell. Nothing else. No morality number ever shown.
+### Quests
 
-### 4.3 Magic
+- **The Search**: beats 1-3.
+- **The Truth**: beats 4-8 (neighbour, Gartner, House 66, approach, mirror).
+- **The Last House**: beats 9-12.
 
-- **Arcane Bolt**: ranged damage to cursed enemies.
-- **Purify**: saves a weakened cursed living being.
-- **Ward**: temporary shield.
-- Magic resource regenerates slowly; Angel (AI mode) may restore a small amount.
-- Spells unlock gradually as Elena's magic awakens (authored).
+### Story beats that must land
 
-### 4.4 Enemies
+- Beat 1: Felix is gone; Elena hears his voice outside; she finds the locket in a locked drawer near the front door; the Angel wakes.
+- Beat 3: Felix's spirit points to the neighbour's garden, then vanishes. Elena's magic wakes (Arcane Bolt).
+- Beat 4: Both purify and destroy release Gartner's walkie-talkie, which reveals where he is hiding.
+- Beat 5: Gartner was tricked. He is innocent and guilty-feeling. He says the only way to the Last House is the back lane behind House 66.
+- Beat 6: The Watcher of House 66 knows Felix's name, teleports short distances and casts shadow decoys. Both outcomes drop the fence key to the lane gate.
+- Beat 7: The lane loops back past Elena's own garden to the rear of the Last House.
+- Beat 8: Felix appears in the mirror and warns of the broken seal and the family's link to the house.
+- Beat 10: Elena learns Felix is the first Living Key, she is the second, his body is trapped, and her grandmother made the seal.
+- Beat 11: Restoring the first anchor brings Felix's third appearance: he encourages her and reveals the anchors are weakening the evil's hold on him.
+- Beat 12: Final choice. **The Bloodline Keeper** or **The Broken Seal** (see canon).
 
-State machine: idle/patrol, chase, attack, stunned, purified, destroyed. Weakened enemies stay stunned long enough for a deliberate Purify vs. destroy choice. Steering by direct line plus simple obstacle avoidance; no navmesh.
+### Endings
 
-### 4.5 Morality
+- Decided only by the final choice at the central seal. Morality, AI behaviour, combat and side quests cannot remove the good ending.
+- The choice has two options and a confirm step, with no timer.
+- The ending is final: the save is marked finished, Continue is hidden and only New Game remains.
 
-Hidden integer in [-100, +100]. Purify raises it, destruction lowers it, other authored choices adjust it. It influences Angel dialogue (prewritten in Classic, prompt context in AI), and the locket's visual appearance (glow colour, ornament, particles). Never displayed numerically. The morality value never influences the ending.
+## 5. Gameplay
 
-### 4.6 Quests
+### 5.1 Controls
 
-Main (authored, always completable without AI):
+| Input     | Action                                                            |
+| --------- | ----------------------------------------------------------------- |
+| WASD      | Move                                                              |
+| Mouse     | Look (pointer lock)                                               |
+| Shift     | Sprint (no stamina)                                               |
+| E         | Interact (hold E to skip a cinematic)                             |
+| T         | Open or close the locket (after the locket is found)              |
+| LMB       | Cast selected spell; hold to charge Arcane Bolt or channel Purify |
+| 1 / 2 / 3 | Arcane Bolt / Purify / Ward                                       |
+| Esc       | Pause, or close an overlay                                        |
 
-1. **The Search**: find Felix on Maple Street.
-2. **The Truth**: history of the witch, the seal, Gartner, the Living Keys.
-3. **The Last House**: enter the house, face the final ritual.
+### 5.2 HUD
 
-Optional (AI mode only): max 2 per playthrough, 1 active at a time, from predefined templates bound to existing locations and objects. AI cannot invent locations or alter the main story.
+Health, magic, current objective, selected spell. A carried-items row (max 4 icons) appears only while Elena carries a key item. No numbers for morality, ever.
 
-### 4.7 Horror Sequences (all authored, in both modes)
+### 5.3 Presentation
 
-1. The Empty Street: flickering lights, silence, footsteps.
-2. Felix Beneath the Streetlight (Felix appearance 1).
-3. The Cursed Neighbour: introduces combat and the moral choice.
-4. Gartner's Confession: reveals he was deceived.
-5. The Mirror Warning (Felix appearance 2): warns of the trap.
-6. The Two Living Keys: why the evil needs both.
+- First-person hands are visible and animate spell casts.
+- Elena is fully voiced. All spoken lines have subtitles, always on.
+- In-engine real-time cinematics only (no pre-rendered video). Total forced loss of control <= 3 min, tracked by a test. Cinematics can be skipped by holding E; skipping still sets every flag.
+- Photosensitivity warning at first launch; a "reduce flashing" setting.
 
-Felix appearance 3 happens near the final seal. Reusable atmosphere effects: whispers, moving shadows, doors, footsteps, flicker, smoke disturbances. Classic mode: optional events fire from fixed authored triggers. AI mode: additional bounded variations that never disrupt the main narrative.
+### 5.4 Spells
 
-### 4.8 Finale
+- **Arcane Bolt**: ranged damage. Unlocks when Felix vanishes (end of Seq 2). Holding LMB charges a finishing bolt.
+- **Ward**: temporary shield. Unlocks at the cursed neighbour's first telegraphed attack. The neighbour cannot deal a killing blow before the Ward prompt.
+- **Purify**: channelled beam that saves a stunned purifiable being. Unlocks when the neighbour is stunned.
+- Numbers: `docs/combat-tuning.md`.
 
-Inside the Last House. Elena restores **three seal anchors** using existing spell and interaction mechanics while avoiding smoke attacks. Then a clear final decision:
+### 5.5 Encounters
 
-- **Good: The Bloodline Keeper**: restores seal, frees Felix, evil contained, both leave, Elena inherits guardianship.
-- **Bad: The Broken Seal**: breaks seal, Felix freed, evil escapes and spreads.
+| #   | Where               | Type                        | Required  |
+| --- | ------------------- | --------------------------- | --------- |
+| 1   | Maple Street        | Ordinary: cursed fox        | Skippable |
+| 2   | Neighbour's garden  | Mini-boss: Mr Briggs        | Yes       |
+| 3   | House 66            | Mini-boss: The Watcher      | Yes       |
+| 4   | Last House approach | Ordinary: two cursed hounds | Yes       |
+| 5   | Last House interior | Ordinary: cursed cat        | Yes       |
+| 6   | Ritual chamber      | Final ritual vs. the smoke  | Yes       |
 
-Exactly two endings. The ending is decided **only** by the final player choice. The good ending is always achievable.
+- Ordinary encounters ~60 s of active combat; mini-bosses ~3 min. Not a shooter.
+- Ordinary enemies are cursed animals and can be purified. Smoke wraiths can only be destroyed.
+- **Persistent stun**: every purifiable enemy enters a stun with no timer at ~30% HP. A stunned enemy is harmless. Its HP cannot drop below the stun threshold, so tapping Arcane Bolt cannot kill it by accident.
+- **Choice**: Purify saves it (morality up). A held Arcane Bolt charge destroys it (morality down). Entering stun guarantees enough magic for either.
+- If Purify is not yet unlocked (street fox), a stunned enemy can be left stunned and purified later.
+- No mandatory encounter can softlock. Death respawns at the last checkpoint with full health; no lives.
 
-## 5. The Angel (AI Feature) Requirements
+### 5.6 Morality
 
-### 5.1 Interaction
+- Hidden integer, clamped to -100..+100, starting at 0.
+- Steps: mini-boss +/-30, animal +/-10, one Gartner dialogue choice +/-5. Skipping the street fox changes nothing. Angel-summoned enemies (AI mode) change nothing.
+- Bands: dark <= -25, neutral, kind >= +25.
+- Affects Angel tone and the locket's look only. Never the ending, never progression.
 
-- Press T, type freely. No Help/Quest/Action buttons. Free-text only.
-- Gameplay is paused while the locket is open.
+### 5.7 Puzzles
 
-### 5.2 Memory
+Detail: `docs/puzzles.md`. Every puzzle is solvable in Classic Mode, has authored escalating hints, and cannot softlock.
 
-Structured game state + compact running summary of key events + recent conversation window. No vector DB.
+1. **Locket drawer** (home): Felix's drawing shows where the drawer key is hidden.
+2. **Fuse** (fetch and place between houses): take a fuse from Mr Briggs' garage (No. 31) to House 66's fuse box. The porch lights come on and the Watcher appears.
+3. **Number lock** (approach): the outbuilding padlock. The code is a date in Rosalind's journal.
+4. **Mirror runes** (outbuilding): runes visible only in the mirror. Purify each.
+5. **Talking board** (interior): a hangman-style word puzzle. Wrong letters trigger scares, never damage.
+6. **Three anchors** (ritual): one per spell (Bolt breaks a smoke shell, Ward protects a channel, Purify cleanses).
 
-### 5.3 World Actions
+### 5.8 Lore
 
-LLM may **propose** structured actions only. The engine validates and executes. Initial action set:
+Five pages of Rosalind's journal along the route, plus what the Angel and Gartner say. Pages are optional; puzzle hints cover any clue they carry.
 
-- `flicker_lights(targetId)`
-- `unlock_door(targetId)` (only doors flagged `angelUnlockable`)
-- `reveal_clue(targetId)` (only existing, unrevealed clues)
-- `restore_magic(amount)` (small, cooldown-limited)
-- `stir_object(targetId)` / `summon_minor_cursed(spawnId)` (cap, location-restricted, never during scripted sequences)
+### 5.9 Map
 
-Validation requires: target exists, capability declared, player in the right zone/range, cooldown/budget ok, not inside a scripted sequence, no story-progress break.
+One compact neighbourhood laid out as a loop. The route goes round Maple Street, then the back lane returns past Elena's own garden to the rear of the Last House, which is visible from the very first scene.
 
-**Hard prohibitions**: the Angel can never force an ending, delete or consume a critical item, bypass the seal puzzle, skip required quests, block the good ending, change canonical story facts, or run arbitrary code.
+## 6. The Angel
 
-### 5.4 Glitches (AI mode only)
+### 6.1 Classic Mode
 
-Rare, bounded, **engine-triggered** (not LLM-random) events: e.g. benevolent Angel makes a malicious suggestion, or dark Angel helps. Rate-limited, never touch critical progress, never force a bad ending.
+The locket speaks authored lines chosen by beat, zone and morality band. Pressing T opens the locket and the Angel speaks. There is no text input in Classic.
 
-### 5.5 Degradation
+### 6.2 AI-Enhanced Mode
 
-If credits run out, the API fails, or the key is invalid, switch to Classic behaviour mid-game with no restart and no progress loss. If access returns, the Angel is re-primed from structured state and continues naturally.
+- Pressing T opens the locket with a free-text box. Game time pauses and pointer lock is released.
+- No Help/Quest/Action buttons.
+- Memory: structured game snapshot, a compact summary and the last few turns. No vector DB.
+- Knowledge schedule: the Angel only knows what Elena could know at the current beat.
+- Personality follows the morality band. The locket's glow and ornament change with it.
 
-## 6. Saves
+### 6.3 World actions (AI mode only)
 
-Browser storage, versioned schema with migrations. Saves checkpoint, quest state, morality, inventory, enemy states, completed horror events, world changes and Angel memory. **Never save API keys.** Storage behind an interface so cloud save can be added later.
+The LLM proposes structured actions; the engine validates and executes them. Allowed types: `flicker_lights`, `unlock_door`, `reveal_clue`, `restore_magic`, `stir_object`, `summon_minor_cursed`.
 
-## 7. API Access and Hosting
+- A proposal must name an existing entity that declares the matching capability, be near the player, respect cooldowns and budgets, and fall outside any sequence that blocks actions.
+- Critical-path entities reject every action except `flicker_lights`.
+- Effects apply after the locket closes and are re-validated first.
+- The Angel can never set a flag, change a quest, force an ending, consume a key item, touch an anchor or the final choice, or change morality directly.
 
-- **Local/GitHub build**: user supplies provider and key via a local Node server; key in server memory only, never logged, never committed, never in saves.
-- **Hosted judge build**: private login (credentials given via Devpost), server uses the author's key, with rate limits, per-session and global budgets, and automatic Classic fallback on exhaustion.
-- Providers: OpenAI or Gemini, configurable. ElevenLabs voice is optional and behind a feature flag.
+### 6.4 Side quests (AI mode only)
 
-## 8. Visual and Audio Direction
+At most two per run, one active at a time, from four predefined templates bound to existing places (`docs/side-quests.md`). They never gate the critical path and close quietly when Elena enters the Last House.
 
-Stylized realistic Halloween: fog, moonlight, strong shadows, practical flickering lights, cinematic grading. Greybox the full route first, then replace with Blender assets (Last House, gravestones, street props, fences, trees, magical objects). Audio: ambient beds, positional footsteps and whispers, spell SFX, music stingers. Quality over size.
+### 6.5 Glitches (AI mode only)
 
-## 9. Success Criteria
+Rare, engine-triggered, at most 3 per run. A kind Angel may briefly say something malicious; a dark Angel may briefly help. They use the same validator and never touch progress.
 
-- Classic mode playable start to finish with no network, reaching either ending, in 10-15 min.
-- AI mode completes the same story with live Angel conversation and at least three distinct validated world actions demonstrated.
-- Prompt injection or hostile input cannot trigger a prohibited action (tested).
-- Mid-session AI loss/recovery works without losing progress.
-- Stable 60 fps target on a mid-range desktop; acceptable at 30 fps on integrated GPU with a low-quality preset.
-- Hosted demo is accessible to judges, protected, and cost-capped.
+### 6.6 Fallback
+
+If access is invalid, the session expires, quota or the spend ceiling is reached, or the provider fails, the game falls back to Classic behaviour mid-game with no restart and no progress loss. The fallback is shown diegetically (the locket dims). When access returns, the Angel is re-primed from the current state.
+
+### 6.7 Voice
+
+- Authored lines are pre-generated with ElevenLabs and committed as audio files.
+- Live Angel voice in AI mode is optional, off by default, and capped per access code.
+
+## 7. Saves
+
+- Browser localStorage only. Versioned schema with migrations.
+- One autosave slot, written at checkpoints. Main menu offers Continue (if a save exists and is not finished) and New Game.
+- Corrupt or incompatible saves show a message and offer New Game; never a crash.
+- A "Reset progress" option in Settings clears the save.
+- Saves never contain keys, codes, cookies or provider settings.
+
+## 8. AI access and hosting
+
+### 8.1 Hosted build (Vercel)
+
+- Static client plus Vercel Functions.
+- Classic Mode needs no login and starts immediately.
+- AI-Enhanced Mode asks for an access code supplied to judges in the private Devpost form. The server checks it and issues a short-lived (2 h) AI session in a signed HttpOnly cookie.
+- The provider key stays server-side. One fixed provider endpoint is configured by environment variables. No client-supplied URLs or keys are accepted.
+- Server-side quotas per code and per session, rate limits, concurrency limits, and a global spend ceiling. All are stored in Upstash Redis, so they survive restarts, refreshes and cleared cookies.
+- Stays online until judging ends.
+
+### 8.2 Local build (BYOK)
+
+- Players can pick a protocol (OpenAI-compatible or Anthropic-compatible), base URL, model and key, either in the game UI or in a local `.env`.
+- UI-entered keys stay in local server memory only. They are never written to localStorage, saves, logs or git.
+- A mock provider allows AI mode to be tested with no key.
+- The author will test with DeepSeek, MiniMax and Grok.
+
+## 9. Agent-friendly README and local development
+
+- `README.md` must serve humans and any coding agent with terminal and file access. It must not depend on Kiro.
+- Goal: a user can say "Read the README.md, inspect the project, install the required dependencies, configure the local environment, and run The Last House on Maple Street locally", and the agent succeeds.
+- Required sections:
+  - overview
+  - prerequisites
+  - quick start (exact commands, ports, how to stop, how to verify)
+  - environment configuration
+  - a section titled `For AI Coding Agents`
+  - local AI configuration
+  - project structure
+  - testing and troubleshooting (with reset progress and a smoke-test checklist)
+- One command, `npm run dev`, starts the client (5173) and the local API (3000).
+- The README must stay in sync with the real scripts, ports and env vars. It must never document a command that does not exist.
+- Acceptance:
+  - A fresh clone runs by following only the README.
+  - An agent can start Classic Mode with no AI key.
+  - AI mode works locally once valid credentials are supplied.
+  - A fresh-clone test is run before release.
+
+## 10. Visual and audio direction
+
+- Stylized realistic Halloween: fog, moonlight, strong shadows, practical flickering lights, cinematic grading.
+- Greybox the whole route first, then replace it with assets bound by entity ID.
+- Assets are made inside this repository. Other agents build them from `docs/asset-manifest.md`.
+- Final exports are committed under `apps/client/public/assets/`. Raw generator output in `assets/raw/` is git-ignored.
+- Audio: ambient beds, positional footsteps and whispers, spell SFX, stingers, music and full voice.
+
+## 11. Success criteria
+
+- Classic Mode completes start to finish to either ending with no network AI, in ~25-30 min.
+- AI mode completes the same story, with live Angel chat and at least three distinct validated world actions shown.
+- Hostile input cannot trigger a prohibited action (tested).
+- AI loss and recovery mid-game keep all progress.
+- 60 fps target on a mid-range desktop GPU; 30 fps on integrated graphics at the low preset.
+- The hosted demo is gated by access codes, cost-capped and stays up through judging.
+- A fresh clone runs by following only the README.
 - Feature complete by 2026-11-30.
 
-## 10. Risks
+## 12. Risks
 
-| Risk                          | Mitigation                                                           |
-| ----------------------------- | -------------------------------------------------------------------- |
-| Asset scope creep             | Greybox-first, asset freeze date, free packs for filler              |
-| LLM cost/abuse on hosted demo | Auth, rate limits, budget cap, fallback                              |
-| LLM breaks story              | Proposal-only actions, validator, canon-locked prompt, output schema |
-| Performance with fog/shadows  | Quality presets, baked/limited lights, instancing                    |
-| Time                          | Vertical slice first, cut list in TASKS.md                           |
+| Risk                                                | Mitigation                                                            |
+| --------------------------------------------------- | --------------------------------------------------------------------- |
+| Scope (28 min, 6 encounters, 6 puzzles, full voice) | Vertical slice by Nov 13; ordered cut list in `tasks.md`              |
+| LLM cost or abuse                                   | Access codes, persisted quotas, spend ceiling, provider dashboard cap |
+| LLM breaks story                                    | Proposal-only actions, validator, knowledge schedule, canon filter    |
+| Providers differ in structured output               | Tool call -> JSON mode -> plain JSON with zod and one repair retry    |
+| Performance with fog and shadows                    | Quality presets, light budget, instancing, lazy interior              |
+| README drift                                        | README sync rule; checks at each milestone; fresh-clone test          |
+| Assets missing from the repo                        | Final exports committed; placeholder fallback for any missing asset   |
 
-## 11. Open Decisions
+## 13. Open items
 
-- Team size and weekly hours (affects Blender scope). Assumed: solo.
-- Asset sourcing. Assumed: free/CC0 packs plus a few custom Blender hero pieces.
-- Hosting platform and LLM provider default. Assumed: Node on Render/Fly/Railway; provider selectable, OpenAI default.
-- Judge auth model. Assumed: small hand-made list of credentials, each with its own usage cap.
+- Creative drafts awaiting author approval: beat sheet, level manifest, puzzles, combat tuning, Angel persona, side quests, script, asset manifest.
+- Provider and model for the hosted build (one of the author's test providers), and its prices for the spend ceiling.
+- The ElevenLabs plan terms for a public, open-source project.
+- The image generation tool and its output license.

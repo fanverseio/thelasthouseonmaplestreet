@@ -1,51 +1,92 @@
 # Input and UX State Spec
 
-## Game phases
-`boot -> menu -> playing <-> paused | locket | cutscene -> ending -> menu`
-Simulation runs only in `playing` (and a limited tick during `cutscene` for scripted motion). Rendering always runs.
+## 1. Game phases
 
-## Pointer lock
-- Request pointer lock only from a user gesture (click on "Play"/"Resume"/canvas).
-- Esc: browsers exit pointer lock themselves and do not give the page a reliable keydown. Treat `pointerlockchange` (unlocked while `playing`) as "pause".
-- After an unlock, browsers may refuse a new lock request for ~1 second. Show a "Click to resume" overlay and retry on click; never loop-retry.
-- On `pointerlockerror`, show the overlay; do not crash.
-- Window blur or tab hidden -> pause.
+`boot -> warning -> menu -> playing <-> paused | locket | overlay | sequence -> ending -> credits -> menu`
 
-## Locket (T)
-- T opens the locket only in `playing`. Not available in `cutscene`, `paused`, or during scripted sequence steps flagged `locketBlocked`.
-- While open: phase = `locket`, exit pointer lock, focus the text input.
-- Typing "t" must not close the locket. Close with Esc, a close affordance, or T when the input is empty and not focused. Key handling is phase-aware: in `locket` only Esc and Enter are intercepted.
-- Closing returns to `playing` and requires a click to relock (show the overlay).
-- All game timers (stun timers, cooldowns, sequences, Angel cooldowns) pause in `locket`.
-- Input limits: 300 characters, Enter to send, one request in flight, "thinking" indicator (animated locket glow plus ellipsis).
-- If the reply takes more than 8 s, give a stock in-character line and treat as `timeout`.
+- `overlay` covers puzzle overlays (number lock, talking board), the journal reader and the final choice.
+- The simulation runs only in `playing`, and in `sequence` for scripted motion. Rendering always runs.
 
-## Input handling
-- One input module reads DOM events into an `InputState` (held keys, mouse delta, pressed-this-frame flags). Systems read only `InputState`.
-- Mouse sensitivity setting; optional invert Y. Clamp pitch to ±85°.
-- Movement is framerate-independent. Sprint is a speed multiplier (no stamina).
-- Keys are bound by `event.code` (KeyW etc.) so non-QWERTY layouts work.
+## 2. Pointer lock
 
-## Menus
-- Main menu: Continue (if a save exists), New Game (choose mode), Settings, Credits.
-- Mode choice at New Game: Classic or AI-Enhanced. AI-Enhanced shows connection state (hosted: logged in; local: key entry).
-- Pause: Resume, Settings, Save and Quit to menu.
-- Changing mode mid-game is not offered from the menu; fallback to Classic is automatic and diegetic.
+- Request pointer lock only from a user gesture (Play, Resume, a click on the canvas).
+- Esc: the browser exits pointer lock and gives the page no reliable keydown. Treat `pointerlockchange` (unlocked while `playing`) as Pause.
+- After an unlock, browsers may refuse a new lock for about 1 s. Show a "Click to resume" overlay; retry only on click.
+- `pointerlockerror` shows the overlay; never crash.
+- Window blur or a hidden tab pauses the game.
+- Locket, overlays and menus release pointer lock. Closing them shows "Click to resume".
 
-## Audio autoplay
-Create the AudioContext only after the first click on the menu. Preload the menu-adjacent audio after that.
+## 3. The locket (T)
 
-## Accessibility and safety
-- Photosensitivity warning on first launch. Setting "Reduce flashing" caps flicker rate (<3 flashes per second) and softens the contrast of flicker/strobe effects. Default on after the warning's confirm.
-- Subtitles for Angel, Felix and Gartner lines always on. Whisper SFX that carry meaning must also appear as text.
-- Settings: master/music/sfx/voice volume, mouse sensitivity, field of view (70-100), graphics preset, reduce flashing, head bob on/off.
-- Colour is never the only carrier of information (e.g. the spell HUD shows names and icons).
-- Interaction prompt shows the key ("E") and the action.
+- T does nothing until `angel_awake`.
+- T opens the locket only in `playing`, and only when the current policy allows it (`beat-sheet.md`).
+- While open: phase `locket`, sim time paused, pointer lock released.
+- **Classic Mode**: no text input. The Angel speaks one authored line for the current context (beat, zone, morality band, pending hint). Pressing T or E again plays the next line, if any. Esc or T closes it.
+- **AI-Enhanced Mode**: a text box is focused. Max 300 characters. Enter sends. One request in flight. A "thinking" state (the locket glows and pulses). Over 8 s gives a stock in-character line, and the request is treated as a timeout.
+- Typing never triggers game keys. While the input is focused, only Esc and Enter are intercepted. T closes the locket only when the input is empty.
+- Angel effects proposed during the conversation apply after the locket closes, after re-validation.
+- AI status is shown diegetically: a steady glow when ready, a dim flicker when degraded, cold and dark when unavailable.
+- Hosted, after `access_invalid` or `session_expired`: the next locket open shows the Classic line plus a small "Re-enter access code" field. Dismissing it keeps Classic behaviour.
 
-## Loading and errors
-- Loading screen with progress for the zone/interior GLBs. WebGL unsupported -> clear message with a supported browser list.
-- Corrupt or too-new save -> message with the option to start a new game; never crash.
-- Network failure in AI mode is silent in gameplay (diegetic locket flicker plus a stock line).
+## 4. Puzzle overlays and the final choice
 
-## Performance toggles
-`low | medium | high` presets: render scale, shadow map size, post-processing, light count, particles. Auto-suggest `low` if the first 5 seconds average <40 fps.
+- Number lock: mouse wheel or W/S changes a dial, A/D moves between dials, E tries the code, Esc closes.
+- Talking board: click a letter or use the arrow keys plus E; Esc closes.
+- Journal pages: a full-screen page with a voiced reading (Rosalind) and subtitles; E or Esc closes.
+- Final choice: two large options, then a confirm. Esc backs out of the confirm, never out of the game.
+- Overlays keep their state when closed and reopened.
+
+## 5. HUD
+
+- Bottom left: health and magic bars (no numbers).
+- Bottom centre: the selected spell, with icon and name (colour is never the only cue).
+- Top left: the current objective (one line).
+- Bottom right: carried key items, max 4 icons, shown only while carrying something.
+- Centre: the interaction prompt ("E Open drawer").
+- First-person hands always visible in `playing`; they animate per spell (bolt flick, purify open palms, ward raised forearm) and glow per morality band.
+
+## 6. Input handling
+
+- One input module turns DOM events into an `InputState` (held keys, mouse delta, pressed-this-frame). Systems read only `InputState`.
+- Keys bound by `event.code`, so non-QWERTY layouts work.
+- LMB tap vs hold: a press over 200 ms counts as a hold for the charged Arcane Bolt and for Purify channels.
+- Mouse sensitivity setting; invert Y option. Pitch clamped to +/-85 degrees.
+- Movement is framerate-independent. Sprint is a speed multiplier.
+- Cinematic skip: hold E for 1 s; a ring fills around the prompt.
+
+## 7. Menus
+
+- **Main menu**: Continue (only if a save exists and is not finished), New Game, Settings, Credits.
+- **New Game**: choose Classic Story Mode or AI-Enhanced Mode. If a save exists, confirm overwriting it.
+  - AI-Enhanced, hosted: an access code field. On success the session starts; on failure "The locket stays cold" and the option to play Classic.
+  - AI-Enhanced, local: shows the provider configured in `.env`, or a form for protocol, base URL, model and key (sent to the local server, held in memory only).
+- **Pause**: Resume, Settings, Quit to menu (progress is saved at the last checkpoint).
+- Mode switching mid-game is not offered from menus. Fallback to Classic is automatic. If AI comes back, the game returns to AI mode when the player had chosen it.
+- **After the ending**: credits, then the main menu with New Game only.
+
+## 8. Settings (stored separately from saves)
+
+Master, music, SFX, voice volumes; mouse sensitivity; invert Y; field of view (70-100, default 80); graphics preset (low, medium, high); reduce flashing; head bob on/off; subtitle size (normal, large). **Reset progress** (confirm) clears the save.
+
+## 9. Audio autoplay
+
+Create the AudioContext only after the first click (the warning screen's Continue). Preload menu audio after that.
+
+## 10. Accessibility and safety
+
+- Photosensitivity warning on first launch, with "reduce flashing" on by default after the warning is confirmed. With it on, flicker effects stay under 3 flashes per second and the contrast is softened.
+- Subtitles always on. Whispers that carry meaning also appear as text.
+- Colour is never the only carrier of information.
+- No gore. Content note on the warning screen: horror themes, a missing child, supernatural violence.
+
+## 11. Loading and errors
+
+- Loading screen with progress for the exterior scene and the Last House interior. The interior preloads during beat 7.
+- WebGL unsupported: a clear message listing supported browsers (desktop Chrome, Edge, Firefox).
+- A corrupt or too-new save: a message with the option to start a New Game; never crash.
+- A missing asset falls back to a greybox shape, never a crash.
+- Network failure in AI mode is silent in play (the locket dims, plus one stock line).
+
+## 12. Performance presets
+
+`low | medium | high`: render scale, shadow map size, post-processing, light count, particles. If the first 5 s average under 40 fps, suggest `low` once.

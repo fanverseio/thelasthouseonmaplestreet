@@ -1,42 +1,46 @@
 # Submission Checklist (Kiroween 2026)
 
-Deadline: **Friday Dec 4, 2026, 2:00 PM Pacific**. Re-read the Official Rules on the Devpost page before submitting; this list is a summary.
+Deadline: **Friday 2026-12-04, 2:00 PM Pacific**. Aim to submit on 2026-12-03. Re-read the Official Rules on the Devpost page before submitting; this list is a summary, and the rules page could not be fetched automatically when this was written.
 
-## Eligibility
-- [ ] Project started on or after Oct 30, 2026 (this repo's first commit is after that date).
-- [ ] Category chosen: Costume Contest (haunting, polished UI) or Frankenstein (stitched technologies). Pick one and note it in the write-up.
-- [ ] Bonus prizes selected, if any, with their individual requirements met.
+## Eligibility and category
+- [ ] Project started on or after 2026-10-30 (first commit is after that date).
+- [ ] Category: **Costume Contest** (a haunting, polished interface; the locket and the atmosphere are the showcase).
+- [ ] Any bonus prizes selected, with their own requirements met.
 
-## Repository (public GitHub, not GitLab/Bitbucket)
-- [ ] All source, assets and instructions needed to run it.
-- [ ] Open source license file detected by GitHub and visible in the About section (LICENSE exists; confirm type).
-- [ ] `.kiro/` committed at the root with specs, steering and hooks. NOT in `.gitignore`.
-- [ ] README: setup, run, modes, controls, how to supply an API key locally, no-secrets note.
-- [ ] `CREDITS.md` for third-party assets and fonts.
-- [ ] No secrets in the repo or history (run a secret scan; rotate if anything leaked).
-- [ ] Repo size sane (large files via LFS or excluded).
+## Repository (public GitHub)
+- [ ] All source, final assets and instructions needed to run the game are committed (`apps/client/public/assets/` included; `assets/raw/` ignored).
+- [ ] MIT `LICENSE` detected by GitHub and visible in the About section.
+- [ ] `.kiro/` committed at the root with specs, steering and hooks; not in `.gitignore`.
+- [ ] README complete and in sync with the real scripts, ports and env vars (`npm run check` passes).
+- [ ] **Fresh-clone test passed** (`tasks.md` 10.4): a coding agent set up and ran the game from the README alone.
+- [ ] `CREDITS.md` lists every third-party or generated asset and font.
+- [ ] No secrets in the repo or its history (full-history scan run; keys rotated if anything leaked).
+- [ ] Repository size reasonable.
 
 ## Working app
-- [ ] Public URL to the hosted build.
-- [ ] Judge credentials and instructions entered in the Devpost form (judges only).
-- [ ] Tested from a clean browser/network; Classic works without login.
+- [ ] Public Vercel URL; Classic Mode works with no login.
+- [ ] Access codes (plain text) and instructions entered only in the private Devpost form: "Choose AI-Enhanced Mode, enter one of these codes."
+- [ ] Hosted checklist in `hosting-ops.md` section 8 completed, tested from a clean browser on another network.
+- [ ] Spend ceiling and provider dashboard cap set; the deployment stays online until the end of judging.
 
 ## Demo video
 - [ ] Under 3 minutes, public on YouTube.
-- [ ] Shows the project working on the device it was built for.
-- [ ] No third-party trademarks or copyrighted music.
-- [ ] Shows: Classic highlights, the Angel conversation, a validated world action, a purify-or-destroy choice, both endings briefly, AI fallback.
+- [ ] Shows the game running in a desktop browser.
+- [ ] Shows: the opening and the locket, a horror sequence, a purify-or-destroy choice, an AI conversation with a validated world action, the AI fallback, and **both endings** (briefly).
+- [ ] No third-party trademarks, copyrighted music or unlicensed material.
 
 ## Write-up
-- [ ] Features and functionality.
-- [ ] How Kiro was used: specs (requirements/design/tasks and docs), steering files, hooks, MCP if used. Give concrete examples, and show the spec-to-code workflow.
-- [ ] Mention AI safety design: LLM proposes, engine validates.
+- [ ] Features and the two modes.
+- [ ] How Kiro was used, with concrete examples: steering files, the Kiro-native spec (requirements, design, tasks), the docs it references, the hooks (canon consistency, TypeScript check), the refinement workflow, and the spec-to-task workflow.
+- [ ] The AI safety design: the LLM proposes, the engine validates.
+- [ ] The agent-friendly README.
 
-## Kiro usage evidence (build this up during development, not at the end)
-- [ ] Steering files in `.kiro/steering/` actually used (product, tech, structure, canon).
-- [ ] At least one useful hook (e.g. run tests on save, secret scan on commit, content validation on content change).
-- [ ] Specs driving real tasks, with checked-off history.
+## Kiro usage evidence (collect during development)
+- [ ] Steering files used throughout.
+- [ ] Tasks checked off in `tasks.md` over time.
+- [ ] Screenshots of hooks firing and of the task runner.
 
-## Final day
-- [ ] Submit at least a few hours early; drafts can be saved on Devpost.
-- [ ] Free Kiro credits request deadline: Dec 1, 12:00 PM PT, if needed.
+## Final days
+- [ ] Free Kiro credits requested before 2026-12-01 12:00 PM PT, if needed.
+- [ ] Devpost draft saved early and updated.
+- [ ] Submitted before the deadline; confirmation received.

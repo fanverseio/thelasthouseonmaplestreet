@@ -1,13 +1,17 @@
-# Secrets and local config (never commit)
+# ---------------------------------------------------------------
+# Secrets and local config. Never commit.
+# ---------------------------------------------------------------
 .env
 .env.*
 !.env.example
+.vercel/
 
-# Generated assets (voice and graphics are produced locally with the asset tooling)
-assets/generated/
-assets/voice/
-apps/client/public/audio/voice/
-apps/client/public/generated/
+# ---------------------------------------------------------------
+# Raw generator output (ElevenLabs takes, image-gen drafts, Blender
+# working exports). Final, optimised exports are committed under
+# apps/client/public/assets/ so a fresh clone runs.
+# ---------------------------------------------------------------
+assets/raw/
 
 # Dependencies and build output
 node_modules/
@@ -16,8 +20,10 @@ build/
 coverage/
 .vite/
 *.tsbuildinfo
+playwright-report/
+test-results/
 
-# Server runtime data (usage ledger, sessions)
+# Local runtime data
 data/
 *.sqlite
 *.sqlite-journal

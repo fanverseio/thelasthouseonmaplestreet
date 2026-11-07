@@ -16,10 +16,11 @@ Read, in this order, whichever exist (skip silently only if absent, and list abs
 
 1. `.kiro/specs/the-last-house/PRD.md`
 2. `.kiro/specs/the-last-house/ARCHITECTURE.md`
-3. `.kiro/specs/the-last-house/TASKS.md`
-4. Every file in `.kiro/steering/` other than this one
-5. The feature's own spec folder under `.kiro/specs/` (`requirements.md`, `design.md`, `tasks.md`)
-6. Existing source, shared interfaces, tests, `package.json` scripts, test config
+3. `.kiro/specs/the-last-house/requirements.md`, `design.md` and `tasks.md` (Kiro-native spec; `tasks.md` replaced the old `TASKS.md`)
+4. The relevant files in `.kiro/specs/the-last-house/docs/` (beat sheet, level manifest, contracts, tuning, puzzles, cinematic controller, Angel docs)
+5. Every file in `.kiro/steering/` other than this one
+6. The feature's own spec folder under `.kiro/specs/` if it is a separate spec
+7. Existing source, shared interfaces, tests, `package.json` scripts, test config
 
 The approved PRD, architecture, steering rules and locked technical decisions are authoritative. Never change them. Never add gameplay features.
 
@@ -37,7 +38,7 @@ Write **only** to:
 
 Rules:
 
-- Never overwrite or edit the source spec files (`PRD.md`, `ARCHITECTURE.md`, `TASKS.md`, `requirements.md`, `design.md`, `tasks.md`). Windows paths are case-insensitive, so `tasks.md` and `TASKS.md` are the same file. Proposed files always use the `.proposed.md` suffix.
+- Never overwrite or edit the source spec files (`PRD.md`, `ARCHITECTURE.md`, `requirements.md`, `design.md`, `tasks.md`, or anything in `docs/`). There is no `TASKS.md` any more; on Windows it would collide with `tasks.md`. Proposed files always use the `.proposed.md` suffix.
 - The user promotes proposals manually by merging them into the real spec files. Never do this yourself unless explicitly asked.
 - Do not edit any other feature's spec, and do not touch anything outside the `refinement/` folder.
 - If a refinement folder for the feature already exists, read it and update it in place. Do not create duplicates.
