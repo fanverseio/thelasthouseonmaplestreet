@@ -53,7 +53,7 @@ export interface VisibleEntity {
 export interface RuntimeState {
   simTime: number;
   firedTriggers: string[];
-  scheduled: { at: number; line: string }[];
+  scheduled: { at: number; line?: string; tut?: { textId: string; seconds: number } }[];
   hints: Record<string, HintState>;
   played: PlayedLines;
   subtitle: (SpokenLine & { until: number }) | null;
@@ -70,6 +70,14 @@ export interface WorldRuntimeOptions {
   content?: Partial<RuntimeContent>;
   /** Called for every spoken line (the voice layer hooks in here). */
   onLine?: (line: SpokenLine) => void;
+  /** Called for every sequence effect (audio cues, fx) the runtime itself does not render. */
+  onEffect?: (effect: SequenceEffect) => void;
+  /** An `encounter` action fired. Returns a failure reason, or null on success (game/encounter-runtime.ts). */
+  onEncounter?: (op: 'interact', id: string) => string | null;
+  /** Called at the end of every tick (the encounter runtime advances here). */
+  onTick?: (dt: number, pose: PlayerPose) => void;
+  /** True while a hostile enemy is active: the locket's `combat_blocked` policy then applies. */
+  inCombat?: () => boolean;
 }
 
 export interface WorldRuntime {
@@ -78,6 +86,8 @@ export interface WorldRuntime {
   nearest(pose: PlayerPose): Hit | null;
   /** The sequence runner asked for / ended a clip: view reports clip state here. */
   signal(signal: SequenceSignal): void;
+  /** Speak a dialogue line now, or after sim seconds from now. */
+  say(lineId: string, after?: number): void;
   /** Present entities for the greybox view. */
   visibleEntities(): VisibleEntity[];
   /** T: allowed now (phase check is the caller's). */
@@ -91,6 +101,12 @@ export interface WorldRuntime {
   /** Active sequence video clip (placeholder overlay), or null. */
   readonly video: { clipId: string; fallbackSeconds: number } | null;
   readonly highlights: readonly EntityId[];
+  /** Current HUD tutorial prompt id (movement, bolt), or null. */
+  readonly tutorial: string | null;
+  /** Last sequence light effect per light (view animates flicker from at + seconds, sim time). */
+  readonly lights: Readonly<Record<string, LightFx>>;
+  /** Entities a sequence has spawned and not despawned (e.g. the window shadow). */
+  readonly present: ReadonlySet<EntityId>;
   readonly sequences: SequenceRunner;
   readonly simTime: number;
   /** Every line spoken so far, in order (capped); handy for tests and the journal later. */
@@ -100,6 +116,12 @@ export interface WorldRuntime {
   subscribe(listener: () => void): () => void;
   getState(): RuntimeState;
   restore(state: RuntimeState): void;
+}
+
+export interface LightFx {
+  effect: 'flicker' | 'on' | 'off' | 'burst' | 'color';
+  at: number;
+  seconds: number;
 }
 
 const MAX_SPOKEN = 200;
@@ -129,7 +151,10 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
 
   let simTime = 0;
   let fired = new Set<string>();
-  let scheduled: { at: number; line: string }[] = [];
+  let scheduled: RuntimeState['scheduled'] = [];
+  let tutorial: { textId: string; until: number } | null = null;
+  let lights: Record<string, LightFx> = {};
+  const present = new Set<EntityId>();
   let hintStates: Record<string, HintState> = Object.fromEntries(hints.map((h) => [h.id, initialHintState()]));
   let played: PlayedLines = emptyPlayed();
   let subtitle: (SpokenLine & { until: number }) | null = null;
@@ -169,8 +194,21 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
 
   const runner = createSequenceRunner({
     store,
+    onUnlockSpell: (spell) => {
+      store.setState((s) =>
+        s.player.spellsUnlocked.includes(spell) ? s : { player: { ...s.player, spellsUnlocked: [...s.player.spellsUnlocked, spell] } },
+      );
+    },
     onEffect: (e: SequenceEffect) => {
-      if (e.k === 'line') say(e.lineId);
+      options.onEffect?.(e);
+      if (e.k === 'light') {
+        lights = { ...lights, [e.target]: { effect: e.effect, at: simTime, seconds: e.seconds ?? 2 } };
+        changed();
+      } else if (e.k === 'spawn' || e.k === 'despawn') {
+        if (e.k === 'spawn') present.add(e.target);
+        else present.delete(e.target);
+        changed();
+      } else if (e.k === 'line') say(e.lineId);
       else if (e.k === 'video') {
         video = { clipId: e.clipId, fallbackSeconds: e.fallbackSeconds };
         changed();
@@ -180,6 +218,11 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
       }
     },
   });
+
+  function showTutorial(textId: string, seconds: number): void {
+    tutorial = { textId, until: simTime + seconds };
+    changed();
+  }
 
   /** Runs actions in order; stops at the first failure and returns its reason. */
   function run(actions: readonly Action[]): string | null {
@@ -206,6 +249,10 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
           if (a.after && a.after > 0) scheduled.push({ at: simTime + a.after, line: a.line });
           else say(a.line);
           break;
+        case 'tutorial':
+          if (a.after && a.after > 0) scheduled.push({ at: simTime + a.after, tut: { textId: a.textId, seconds: a.seconds } });
+          else showTutorial(a.textId, a.seconds);
+          break;
         case 'startSequence': {
           const def = content.sequences.find((s) => s.id === a.sequence);
           if (!def) return `unknown_sequence: ${a.sequence}`;
@@ -216,12 +263,19 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
         case 'checkpoint':
           store.getState().writeCheckpointForEvent(a.event);
           break;
+        case 'encounter': {
+          const failure = options.onEncounter?.(a.op, a.id) ?? (options.onEncounter ? null : 'no_encounter_runtime');
+          if (failure) return failure;
+          break;
+        }
       }
     }
     return null;
   }
 
-  const defOf = (id: EntityId): InteractionDef | undefined => defs.find((d) => d.id === id);
+  /** Several defs may share an entity when their show conditions differ; the one shown wins. */
+  const defOf = (id: EntityId): InteractionDef | undefined =>
+    defs.find((d) => d.id === id && holds(d.show)) ?? defs.find((d) => d.id === id);
 
   function interactables(): Interactable[] {
     const out: Interactable[] = [];
@@ -229,6 +283,7 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
       const p = content.placements[d.id];
       if (!p || !holds(d.show)) continue;
       const locked = !holds(d.requires);
+      if (out.some((o) => o.id === d.id)) continue;
       out.push({ id: d.id, x: p.x, z: p.z, prompt: locked ? (d.lockedPrompt ?? d.prompt) : d.prompt, enabled: true });
     }
     return out;
@@ -263,7 +318,10 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
     if (scheduled.length > 0) {
       const due = scheduled.filter((s) => s.at <= simTime);
       scheduled = scheduled.filter((s) => s.at > simTime);
-      for (const s of due) say(s.line);
+      for (const s of due) {
+        if (s.line) say(s.line);
+        if (s.tut) showTutorial(s.tut.textId, s.tut.seconds);
+      }
     }
     runner.tick(dt);
     // Trigger volumes fire once
@@ -275,7 +333,19 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
       run(t.actions);
       runner.signal({ trigger: t.id });
     }
+    // Flag rules: run once when the flag first appears (any writer).
+    for (const rule of content.interactions.onFlag ?? []) {
+      const key = `flag:${rule.flag}`;
+      if (fired.has(key) || !progress().flags.includes(rule.flag)) continue;
+      fired.add(key);
+      run(rule.actions);
+    }
     advanceHints(dt);
+    options.onTick?.(dt, pose);
+    if (tutorial && simTime >= tutorial.until) {
+      tutorial = null;
+      changed();
+    }
     if (subtitle && simTime >= subtitle.until) {
       subtitle = null;
       changed();
@@ -327,6 +397,10 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
   return {
     tick,
     interact,
+    say(lineId, after) {
+      if (after && after > 0) scheduled.push({ at: simTime + after, line: lineId });
+      else say(lineId);
+    },
     nearest,
     signal: (s) => runner.signal(s),
     visibleEntities() {
@@ -339,7 +413,7 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
         return [{ id: id as EntityId, x: p.x, z: p.z, r: p.r, interactive: live.has(id as EntityId), highlighted: hl.has(id as EntityId) }];
       });
     },
-    canOpenLocket: () => canOpenLocket(progress().flags, runner.policy.locket, false),
+    canOpenLocket: () => canOpenLocket(progress().flags, runner.policy.locket, options.inCombat?.() ?? false),
     locketLine,
     get locketPolicy() {
       return runner.policy.locket;
@@ -355,6 +429,15 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
     },
     get highlights() {
       return highlights();
+    },
+    get tutorial() {
+      return tutorial?.textId ?? null;
+    },
+    get lights() {
+      return lights;
+    },
+    get present() {
+      return present;
     },
     sequences: runner,
     get simTime() {

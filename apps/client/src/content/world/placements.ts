@@ -23,6 +23,27 @@ export const PLACEMENTS: Readonly<Record<EntityId, Placement>> = {
   'clue.home.journal_1': { x: -17.8, z: 37, r: 0.2 },
   'door.home.front': { x: -19.5, z: 34.8, r: 0.5 },
   'light.home.felix_window': { x: -26, z: 40.5, r: 0.3 },
+  // Beats 2-3: Maple Street south arc, then the intersection (east of the veil at x 36)
+  'trg.street.seq1': { x: -9, z: 30, r: 8 },
+  'trg.street.seq1_end': { x: 31.5, z: 30, r: 6 },
+  'light.street.01': { x: -4, z: 27, r: 0.3 },
+  'light.street.02': { x: 6, z: 27, r: 0.3 },
+  'light.street.03': { x: 16, z: 27, r: 0.3 },
+  'light.street.04': { x: 24, z: 27, r: 0.3 },
+  'light.street.05': { x: 30, z: 27, r: 0.3 },
+  'light.street.06': { x: 46, z: 27, r: 0.3 },
+  'prop.street.window_14': { x: 5, z: 35.8, r: 0.3 },
+  'trg.street.streetlight': { x: 57, z: 29.5, r: 3.5 },
+  'light.street.intersection': { x: 58, z: 27, r: 0.3 },
+  'clue.street.candy_bag': { x: 62, z: 32, r: 0.3 },
+  'trg.street.fox': { x: 42, z: 28, r: 4 },
+  // Beat 4: No. 31, Mr Briggs' garden (house x 62-70, z -5..9; garage x 62-70, z 12..20)
+  'trg.garden.enter': { x: 58, z: 20, r: 2.5 },
+  'enemy.garden.briggs': { x: 57, z: 6, r: 0.5 },
+  'clue.garden.walkie': { x: 55.5, z: 4.5, r: 0.3 },
+  'door.garden.garage': { x: 60.9, z: 14, r: 0.5 },
+  'pickup.garden.fuse': { x: 60.9, z: 17, r: 0.2 },
+  'light.garden.porch': { x: 60.9, z: 2, r: 0.3 },
 };
 
 export function placementOf(id: EntityId): Placement | undefined {

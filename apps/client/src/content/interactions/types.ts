@@ -21,8 +21,12 @@ export type Action =
   /** Subtitle (and voice) for a dialogue line, optionally `after` this many sim seconds. */
   | { do: 'say'; line: VoiceLineId; after?: number }
   | { do: 'startSequence'; sequence: SequenceId }
+  /** HUD tutorial prompt (text in beat2.ts TUTORIAL_TEXT) for seconds sim seconds, optionally after a delay. */
+  | { do: 'tutorial'; textId: string; seconds: number; after?: number }
   /** Writes the checkpoint tied to a named event, e.g. `enter:trg.garden.enter`. */
-  | { do: 'checkpoint'; event: string };
+  | { do: 'checkpoint'; event: string }
+  /** Hands the press to the encounter runtime (game/encounter-runtime.ts): engage or weaken. */
+  | { do: 'encounter'; op: 'interact'; id: string };
 
 export interface InteractionDef {
   id: EntityId;
@@ -64,9 +68,16 @@ export interface HintDef {
   steps: readonly HintStep[];
 }
 
+/** Runs actions once, the first time the flag is seen set (any source). */
+export interface FlagRule {
+  flag: ProgressFlag;
+  actions: readonly Action[];
+}
+
 /** Everything the world runtime needs for one or more beats. Concatenate the arrays of each beat. */
 export interface InteractionContent {
   interactions: readonly InteractionDef[];
   triggers: readonly TriggerDef[];
   hints: readonly HintDef[];
+  onFlag?: readonly FlagRule[];
 }

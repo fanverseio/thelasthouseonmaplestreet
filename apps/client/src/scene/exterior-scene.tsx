@@ -1,5 +1,11 @@
-import type { ProgressFlag } from '@tlh/shared';
-import { BOXES, homeDoorOpen, MAP_HALF_X, MAP_HALF_Z, VEILS, veilIsOpen } from '../content/world/exterior-layout.ts';
+import { useFrame } from '@react-three/fiber';
+import { useRef, useState, useSyncExternalStore } from 'react';
+import type { MeshStandardMaterial, Mesh, PointLight } from 'three';
+import type { EntityId, ProgressFlag } from '@tlh/shared';
+import { veilOpacity } from '../game/gates.ts';
+import type { WorldRuntime } from '../game/world-runtime.ts';
+import { PLACEMENTS } from '../content/world/placements.ts';
+import { BOXES, homeDoorOpen, MAP_HALF_X, MAP_HALF_Z, VEILS, veilIsOpen, type Veil } from '../content/world/exterior-layout.ts';
 import { HOME_BOUNDS, HOME_FRONT_DOOR, HOME_WALL_HEIGHT, HOME_WALLS, type WallRect } from '../content/world/home-layout.ts';
 
 function WallBox({ r, color }: { r: WallRect; color: string }) {
@@ -15,10 +21,90 @@ function WallBox({ r, color }: { r: WallRect; color: string }) {
 
 /** Greybox exterior: debug-coloured boxes, smoke veils, ground, streetlights. View only. */
 const STREETLIGHTS: readonly [number, number][] = [
-  [-35, 28], [-5, 28], [20, 28], [48, 28], [60, 5], [60, -18], [48, -28], [10, -28], [-35, -28], [-56, -10], [-56, 15],
+  [-35, 28], [60, 5], [60, -18], [48, -28], [10, -28], [-35, -28], [-56, -10], [-56, 15],
 ];
 
-export function ExteriorScene({ flags }: { flags: readonly ProgressFlag[] }) {
+const SEQUENCE_LIGHTS = [
+  ...['01', '02', '03', '04', '05', '06'].map((n) => `light.street.${n}`),
+  'light.street.intersection',
+] as EntityId[];
+const WINDOW = 'prop.street.window_14' as EntityId;
+const LIGHT_BASE = 6;
+
+/** Greybox street light whose glow follows the sequence's light effects (flicker, on, off, burst). */
+function SeqLight({ id, runtime }: { id: EntityId; runtime?: WorldRuntime }) {
+  const p = PLACEMENTS[id];
+  const light = useRef<PointLight>(null);
+  const bulb = useRef<Mesh>(null);
+  useFrame(() => {
+    const fx = runtime?.lights[id];
+    const t = runtime?.simTime ?? 0;
+    let k = 1;
+    if (fx?.effect === 'off' || fx?.effect === 'burst') k = 0;
+    else if (fx?.effect === 'flicker' && t - fx.at < fx.seconds) k = Math.abs(Math.sin(t * 37) * Math.sin(t * 11)) > 0.35 ? 1 : 0.05;
+    if (light.current) light.current.intensity = LIGHT_BASE * k;
+    const mat = bulb.current?.material as MeshStandardMaterial | undefined;
+    if (mat) mat.emissiveIntensity = 2 * k;
+  });
+  if (!p) return null;
+  return (
+    <group position={[p.x, 0, p.z]}>
+      <mesh position={[0, 2, 0]}>
+        <cylinderGeometry args={[0.08, 0.08, 4]} />
+        <meshStandardMaterial color="#222" />
+      </mesh>
+      <mesh ref={bulb} position={[0, 4.1, 0]}>
+        <sphereGeometry args={[0.2]} />
+        <meshStandardMaterial color="#ffb35c" emissive="#ffb35c" emissiveIntensity={2} />
+      </mesh>
+      <pointLight ref={light} position={[0, 4, 0]} intensity={LIGHT_BASE} distance={14} color="#ffb35c" />
+    </group>
+  );
+}
+
+/** Upstairs window of the Parkers' house: a shadow crosses it while the sequence has it spawned. */
+function WindowShadow({ runtime }: { runtime?: WorldRuntime }) {
+  useSyncExternalStore(runtime?.subscribe ?? (() => () => {}), () => runtime?.version ?? 0);
+  const p = PLACEMENTS[WINDOW];
+  if (!p) return null;
+  return (
+    <group position={[p.x, 4, p.z - 0.85]} rotation={[0, Math.PI, 0]}>
+      <mesh>
+        <planeGeometry args={[1.2, 1.6]} />
+        <meshStandardMaterial color="#ffcf8a" emissive="#ffcf8a" emissiveIntensity={0.6} />
+      </mesh>
+      {runtime?.present.has(WINDOW) && (
+        <mesh position={[0, -0.1, 0.01]}>
+          <planeGeometry args={[0.45, 1.3]} />
+          <meshBasicMaterial color="#000000" />
+        </mesh>
+      )}
+    </group>
+  );
+}
+
+/** A smoke veil. When its flag opens it fades out (game/gates.ts veilOpacity), then goes. */
+function VeilWall({ v, open }: { v: Veil; open: boolean }) {
+  const openedAt = useRef<number | null>(null);
+  const mat = useRef<MeshStandardMaterial>(null);
+  const [gone, setGone] = useState(open); // already open when the scene mounts: no fade
+  useFrame(({ clock }) => {
+    if (!open || gone) return;
+    openedAt.current ??= clock.elapsedTime;
+    const o = veilOpacity(clock.elapsedTime - openedAt.current);
+    if (mat.current) mat.current.opacity = o;
+    if (o <= 0) setGone(true);
+  });
+  if (gone) return null;
+  return (
+    <mesh position={[v.x, 2.5, v.z]}>
+      <boxGeometry args={[v.w, 5, v.d]} />
+      <meshStandardMaterial ref={mat} color={v.opensOn === null ? '#3a3a42' : '#000000'} transparent opacity={v.opensOn === null ? 0.6 : 0.92} />
+    </mesh>
+  );
+}
+
+export function ExteriorScene({ flags, runtime }: { flags: readonly ProgressFlag[]; runtime?: WorldRuntime }) {
   return (
     <>
       <color attach="background" args={['#07080c']} />
@@ -61,16 +147,14 @@ export function ExteriorScene({ flags }: { flags: readonly ProgressFlag[] }) {
       {!homeDoorOpen(flags) && <WallBox r={HOME_FRONT_DOOR} color="#4a3526" />}
       <pointLight position={[-20, 2.8, 38]} intensity={4} distance={14} color="#ffcf8a" />
 
-      {VEILS.filter((v) => !veilIsOpen(v, flags)).map((v) => (
-        <mesh key={v.gate} position={[v.x, 2.5, v.z]}>
-          <boxGeometry args={[v.w, 5, v.d]} />
-          <meshStandardMaterial
-            color={v.opensOn === null ? '#3a3a42' : '#000000'}
-            transparent
-            opacity={v.opensOn === null ? 0.6 : 0.92}
-          />
-        </mesh>
+      {VEILS.map((v) => (
+        <VeilWall key={v.gate} v={v} open={veilIsOpen(v, flags)} />
       ))}
+
+      {SEQUENCE_LIGHTS.map((id) => (
+        <SeqLight key={id} id={id} runtime={runtime} />
+      ))}
+      <WindowShadow runtime={runtime} />
 
       {STREETLIGHTS.map(([x, z]) => (
         <group key={`${x},${z}`} position={[x, 0, z]}>

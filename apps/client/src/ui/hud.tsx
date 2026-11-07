@@ -28,7 +28,7 @@ function Bar({ label, value, kind }: { label: string; value: number; kind: 'heal
 }
 
 /** HUD: health, magic, spell, objective, carried items, interaction prompt. Shows no hidden values. */
-export function Hud({ prompt }: { prompt?: string | null }) {
+export function Hud({ prompt, tutorial }: { prompt?: string | null; tutorial?: string | null }) {
   const hp = useGame((s) => s.player.hp);
   const magic = useGame((s) => s.player.magic);
   const selected = useGame((s) => s.player.selectedSpell);
@@ -40,6 +40,7 @@ export function Hud({ prompt }: { prompt?: string | null }) {
     <div className="hud" aria-live="polite">
       <div className="hud-objective">{objectiveFor(flags)}</div>
       {prompt ? <div className="hud-prompt">{prompt}</div> : null}
+      {tutorial ? <div className="hud-tutorial">{tutorial}</div> : null}
       <div className="hud-bottom-left">
         <Bar label="Health" value={hp} kind="health" />
         <Bar label="Magic" value={magic} kind="magic" />
