@@ -1,6 +1,6 @@
 # The Last House on Maple Street
 
-> **Project status: foundations (as of 2026-11-07).** The monorepo, dev runner, local API (`/api/health`, `/api/config/status`), shared schemas, tests and repo checks work. **The game itself is not playable yet:** `npm run dev` opens a developer boot-check page. Features marked **Planned, not yet available** do not exist yet. Coding agents: read [For AI Coding Agents](#for-ai-coding-agents) before running anything.
+> **Project status: foundations (as of 2026-11-07).** The monorepo, dev runner, local API (`/api/health`, `/api/config/status`), shared schemas, tests and repo checks work. **The game is an early greybox:** `npm run dev` opens the photosensitivity warning and main menu; New Game > Classic lets you walk a grey-box Maple Street (no story, enemies or Angel yet). Features marked **Planned, not yet available** do not exist yet. Coding agents: read [For AI Coding Agents](#for-ai-coding-agents) before running anything.
 
 A first-person 3D psychological horror game for desktop browsers, built for the **Kiroween 2026** hackathon (category: Costume Contest).
 
@@ -65,9 +65,9 @@ npm run dev
 - Open **http://localhost:5173** in a desktop browser.
 - **Verify it is running**:
   - The terminal shows `[client] ... Local: http://localhost:5173/` and `[api] Listening on http://127.0.0.1:3000`.
-  - `http://localhost:5173` shows the boot-check page with **API: ok**, the AI provider status, WebGL 2 status and a small foggy test scene.
+  - `http://localhost:5173` shows the content warning. Continue opens the main menu. `http://localhost:5173/?bootcheck` shows the developer check page with **API: ok**, the AI provider status, WebGL 2 status and a small foggy test scene.
   - `http://127.0.0.1:3000/api/health` returns `{"ok":true,"version":"0.1.0","mode":"local",...}`.
-  - _Planned, not yet available:_ the photosensitivity warning and the main menu replace the boot-check page in task 2.9.
+  - New Game > Classic Story Mode loads the grey-box street; click the screen to capture the mouse (WASD, Shift, mouse look, Esc to pause).
 - **Stop**: press `Ctrl+C` in the terminal running `npm run dev`. Both services stop. If one service crashes, the runner stops the other.
 - **No `.env` is needed.** Without one, the game runs with default ports and Classic Mode only.
 
@@ -115,7 +115,7 @@ Follow these steps in order:
 6. **Credentials**: Classic Mode needs none; start it without asking. For AI mode, ask the user for their provider protocol, base URL, model and API key. Never invent credentials, and never use keys found elsewhere on the machine. `LLM_PROTOCOL=mock` lets you test AI mode with no key.
 7. **Run** `npm run dev`. It is long-running: start it as a background process if your environment supports that, or ask the user to run it in their own terminal.
 8. **Diagnose ordinary setup errors** (port in use, missing dependency, wrong Node version, proxy errors) using [Troubleshooting](#troubleshooting). Do not change the approved architecture, gameplay, specs or steering to make setup pass.
-9. **Verify**: `http://127.0.0.1:3000/api/health` returns `ok: true`, and `http://localhost:5173` shows the boot-check page with **API: ok**. Optionally run `npm run typecheck`, `npm run lint`, `npm test` and `npm run check`; all should pass.
+9. **Verify**: `http://127.0.0.1:3000/api/health` returns `ok: true`, and `http://localhost:5173/?bootcheck` shows the check page with **API: ok**. Optionally run `npm run typecheck`, `npm run lint`, `npm test` and `npm run check`; all should pass.
 10. **Report** to the user: the local game URL, which services are running and on which ports, whether AI mode is configured, and anything still missing.
 11. **Never** deploy, publish, commit or push as part of setup.
 
@@ -161,14 +161,14 @@ Base URLs must use `https://`, or `http://localhost` / `http://127.0.0.1` for a 
 
 ```
 apps/client/                Game client (Vite + React + R3F)
-  src/ui/                   Boot check now; HUD, menus, locket later
+  src/ui/                   Screens, HUD and boot check; locket later
   src/scene/                3D view components (test scene now)
   src/store/                Zustand stores (game state, settings)
   src/services/             API client
-  src/game/                 Headless game systems (no React/Three imports)  [planned]
-  src/content/              Authored data: world, flags, beats, dialogue    [planned]
+  src/game/                 Headless game systems (no React/Three imports)          
+  src/content/              Authored data: world, flags, beats, dialogue            
   public/assets/            Final game assets (committed)                   [planned]
-  e2e/                      Playwright browser tests                        [planned]
+  e2e/                      Playwright browser tests                                
 apps/server/src/            Local API server and shared request handlers
   handlers/                 health, config/status (access, chat, tts later)
   local.ts                  Local server entry point (port 3000)
@@ -184,7 +184,7 @@ assets/src/  assets/raw/    Blender sources; raw generator output (ignored)
 .kiro/memory/               Development memory (decisions, gotchas, handoffs)
 ```
 
-Unit tests live next to the code they test (`*.test.ts`, `*.test.mjs`). Playwright tests will live in `apps/client/e2e/`.
+Unit tests live next to the code they test (`*.test.ts`, `*.test.mjs`). Playwright tests live in `apps/client/e2e/`.
 
 ## Testing and troubleshooting
 
@@ -198,7 +198,7 @@ These match `package.json` exactly (`npm run check` fails if they drift).
 | `npm run build`     | Production build of the client into `apps/client/dist`                                  |
 | `npm run preview`   | Serve the production client build locally (static files only, no API)                   |
 | `npm test`          | Unit tests for shared, server, client stores and scripts (`vitest --run`)               |
-| `npm run test:e2e`  | Playwright browser tests (none yet, so it passes; no browsers needed until then)        |
+| `npm run test:e2e`  | Playwright browser smoke test (starts the client itself; run `npx playwright install chromium` once first)        |
 | `npm run typecheck` | TypeScript checks for the root configs and every workspace                              |
 | `npm run lint`      | ESLint for the whole repository                                                         |
 | `npm run check`     | Secret scan of tracked and staged files, plus the README/`.env.example` sync check      |
@@ -232,7 +232,7 @@ Works now:
 
 - [ ] `npm run dev` starts both services with no errors.
 - [ ] `/api/health` returns `ok: true`, directly on port 3000 and through the client at `http://localhost:5173/api/health`.
-- [ ] The boot-check page shows **API: ok** and **WebGL 2: available**, and the foggy test scene renders.
+- [ ] `/?bootcheck` shows **API: ok** and **WebGL 2: available**, and the foggy test scene renders.
 - [ ] `npm run typecheck`, `npm run lint`, `npm test` and `npm run check` all pass.
 
 Planned, not yet available:

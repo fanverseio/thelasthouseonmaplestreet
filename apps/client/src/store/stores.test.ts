@@ -60,3 +60,15 @@ describe('settings store', () => {
     expect(store.getState().fieldOfView).toBe(FOV_MIN);
   });
 });
+
+describe('settings updates', () => {
+  it('clamps volume, sensitivity and field of view', () => {
+    const store = createSettingsStore();
+    store.getState().updateSettings({ volume: { master: 5 }, mouseSensitivity: 99, fieldOfView: 10 });
+    const s = store.getState();
+    expect(s.volume.master).toBe(1);
+    expect(s.volume.music).toBe(defaultSettings().volume.music);
+    expect(s.mouseSensitivity).toBe(3);
+    expect(s.fieldOfView).toBe(FOV_MIN);
+  });
+});

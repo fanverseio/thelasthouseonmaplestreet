@@ -131,3 +131,15 @@ body,
 .hud-spell { position: absolute; bottom: 1.25rem; left: 50%; transform: translateX(-50%); }
 .hud-carried { position: absolute; right: 1.25rem; bottom: 1.25rem; display: flex; gap: 0.5rem; list-style: none; margin: 0; padding: 0; font-size: 1.5rem; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+.screen { display: grid; gap: 0.9rem; max-width: 36rem; margin: 0 auto; padding: 4rem 1.5rem; align-content: start; min-height: 100%; }
+.screen h1 { margin: 0 0 0.5rem; font-weight: normal; letter-spacing: 0.04em; }
+.screen p { margin: 0; line-height: 1.5; }
+.screen .note { color: var(--muted); font-size: 0.9rem; margin-top: -0.5rem; }
+.screen button, .resume-overlay button { padding: 0.7rem 1rem; background: transparent; color: var(--fg); border: 1px solid var(--accent); font: inherit; cursor: pointer; }
+.screen button:hover, .resume-overlay button:hover { background: rgba(201, 162, 74, 0.15); }
+.screen button:disabled { opacity: 0.45; cursor: not-allowed; }
+.screen button.secondary { border-color: var(--muted); }
+.menu-list { display: grid; gap: 0.7rem; }
+.row { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+.resume-overlay .screen { background: rgba(7, 8, 12, 0.95); overflow: auto; max-height: 100%; }

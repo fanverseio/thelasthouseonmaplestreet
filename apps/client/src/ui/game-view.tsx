@@ -1,5 +1,5 @@
 import { Canvas } from '@react-three/fiber';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { InputController } from '../game/input.ts';
 import { Hands } from '../scene/hands.tsx';
 import { ExteriorScene } from '../scene/exterior-scene.tsx';
@@ -7,6 +7,7 @@ import { PlayerRig } from '../scene/player-rig.tsx';
 import { bindInput } from '../services/input-bindings.ts';
 import { gameStore, useGame } from '../store/index.ts';
 import { Hud } from './hud.tsx';
+import { SettingsScreen } from './screens.tsx';
 
 /**
  * The playable view: canvas, input wiring and the "Click to resume" overlay.
@@ -17,11 +18,11 @@ export function GameView() {
   const input = useMemo(() => new InputController(), []);
   const phase = useGame((s) => s.game.phase);
   const flags = useGame((s) => s.progress.flags);
+  const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
     const el = container.current;
     if (!el) return;
-    gameStore.getState().setPhase('paused');
     return bindInput({
       element: el,
       input,
@@ -42,10 +43,23 @@ export function GameView() {
         <Hands />
       </Canvas>
       {phase === 'playing' && <Hud />}
-      {phase !== 'playing' && (
+      {phase !== 'playing' && !showSettings && (
         <div className="resume-overlay" role="dialog" aria-label="Paused">
           <p>Click to resume</p>
           <small>WASD move · Shift sprint · mouse look · Esc pause</small>
+          <div className="menu-list">
+            <button type="button" onClick={(e) => { e.stopPropagation(); setShowSettings(true); }}>
+              Settings
+            </button>
+            <button type="button" onClick={(e) => { e.stopPropagation(); gameStore.getState().setPhase('menu'); }}>
+              Quit to menu
+            </button>
+          </div>
+        </div>
+      )}
+      {showSettings && (
+        <div className="resume-overlay" onClick={(e) => e.stopPropagation()}>
+          <SettingsScreen onBack={() => setShowSettings(false)} />
         </div>
       )}
     </div>

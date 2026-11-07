@@ -39,6 +39,8 @@ export function defaultSettings(): SettingsData {
 
 export interface SettingsState extends SettingsData {
   setFieldOfView: (fov: number) => void;
+  /** Patch simple settings (sensitivity, toggles, preset). Volumes are clamped to 0..1. */
+  updateSettings: (patch: Partial<Omit<SettingsData, 'volume'>> & { volume?: Partial<SettingsData['volume']> }) => void;
   resetSettings: () => void;
 }
 
@@ -46,6 +48,17 @@ export function createSettingsStore() {
   return createStore<SettingsState>()((set) => ({
     ...defaultSettings(),
     setFieldOfView: (fov) => set({ fieldOfView: Math.min(FOV_MAX, Math.max(FOV_MIN, Math.round(fov))) }),
+    updateSettings: (patch) =>
+      set((s) => {
+        const volume = { ...s.volume };
+        for (const [k, v] of Object.entries(patch.volume ?? {})) {
+          volume[k as keyof typeof volume] = Math.min(1, Math.max(0, v));
+        }
+        const next = { ...patch, volume };
+        if (patch.mouseSensitivity !== undefined) next.mouseSensitivity = Math.min(3, Math.max(0.2, patch.mouseSensitivity));
+        if (patch.fieldOfView !== undefined) next.fieldOfView = Math.min(FOV_MAX, Math.max(FOV_MIN, Math.round(patch.fieldOfView)));
+        return next;
+      }),
     resetSettings: () => set(defaultSettings()),
   }));
 }
