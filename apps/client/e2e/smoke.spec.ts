@@ -24,3 +24,16 @@ test('warning -> menu -> new Classic game shows the game view paused', async ({ 
   await expect(page.getByTestId('main-menu')).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+test('the Last House scene loads lazily in dev via ?scene=last_house', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.goto('/?scene=last_house');
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await page.getByRole('button', { name: 'New Game' }).click();
+  await page.getByRole('button', { name: 'Classic Story Mode' }).click();
+  await expect(page.getByTestId('game-view')).toBeVisible();
+  await expect(page.getByRole('status')).toHaveCount(0);
+  await expect(page.locator('canvas')).toBeVisible();
+  expect(errors).toEqual([]);
+});

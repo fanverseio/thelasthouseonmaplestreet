@@ -43,36 +43,36 @@ Each milestone includes a README sync check (task 9.7 rules).
   - _Requirements: 21.1, 21.8, 21.10_
 
 - [ ] 2. Greybox critical path (Nov 8-11)
-- [ ] 2.1 Input module and pointer lock state machine
+- [ ] 2.1 Input module and pointer lock state machine (logic and tests done; manual Chrome/Edge/Firefox check pending)
   - `InputState`, key binding by `event.code`, LMB tap vs hold (200 ms), pause on lock loss, blur and hidden tab, "Click to resume" overlay, no retry loop.
   - Verify: unit tests for the state machine; manual check in Chrome, Edge, Firefox.
   - _Requirements: 4.1, 4.2, 4.3, 4.4_
-- [ ] 2.2 Fixed-step loop and player controller
+- [x] 2.2 Fixed-step loop and player controller
   - 60 Hz accumulator in `useFrame`; walk 4 m/s, sprint 7 m/s; pitch clamp; FOV setting.
   - Verify: headless unit tests for movement at varying frame rates give the same positions.
   - _Requirements: 4.1_
-- [ ] 2.3 Collision (static AABB and cylinder, wall sliding)
+- [x] 2.3 Collision (static AABB and cylinder, wall sliding)
   - Verify: unit tests for corners, slides and no tunnelling at sprint speed.
   - _Requirements: 4.1_
-- [ ] 2.4 World registry and entity content
+- [x] 2.4 World registry and entity content
   - `content/world/*.ts` for every entity in `docs/level-manifest.md`; startup validation of ID pattern, kind, capabilities, critical, owner.
   - Verify: content test fails on a bad ID, an unknown capability or `angelUnlock` on a critical entity.
   - _Requirements: 1.4, 12.3, 12.4, 19.2_
-- [ ] 2.5 Interaction, pickups, sockets and carried items
+- [x] 2.5 Interaction, pickups, sockets and carried items
   - Nearest interactable within 2.5 m, prompt text, E; carried items max 4; items consumed only by their sockets.
   - Verify: unit tests; HUD shows icons only while carrying.
   - _Requirements: 4.5, 7.3, 7.5_
-- [ ] 2.6 Greybox exterior scene
+- [ ] 2.6 Greybox exterior scene (built and collision-tested; author walk-through and screenshot review pending)
   - The loop map from `docs/level-manifest.md` section 1 with debug colours, colliders, fog, moonlight and streetlights; the Last House silhouette visible from the start.
   - Verify: walk the whole loop in about 90 s; no gaps in colliders; screenshot for review.
   - _Requirements: 1.1, 19.1, 19.2_
-- [ ] 2.7 Greybox Last House scene, lazy loading and loading screen
+- [x] 2.7 Greybox Last House scene, lazy loading and loading screen
   - Verify: the interior loads on entering; preload starts in the lane; the loading screen shows progress.
   - _Requirements: 19.1_
-- [ ] 2.8 HUD skeleton and placeholder first-person hands
+- [x] 2.8 HUD skeleton and placeholder first-person hands
   - Verify: health, magic, objective, spell icon and name; no morality number anywhere (grep test on UI strings).
   - _Requirements: 4.5, 4.6, 4.7_
-- [ ] 2.9 Phases and menus skeleton
+- [x] 2.9 Phases and menus skeleton
   - boot, warning (photosensitivity and content), menu (Continue, New Game with mode choice, Settings, Credits), pause; AudioContext created after the first click.
   - Verify: Playwright smoke reaches the menu and starts a Classic game.
   - _Requirements: 4.2, 18.3, 20.1_

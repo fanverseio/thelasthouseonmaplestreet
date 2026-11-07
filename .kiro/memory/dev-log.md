@@ -34,3 +34,7 @@ Q: build the 3D views (2.6-2.9) without per-step browser checks? A (author): bui
 Open: no `gh` CLI, so the author opens the PR for `feat/phase1-foundations` on GitHub (CI task 1.7 waits for it). Default node is v18; use Node 24 from Program Files in shells.
 Open: gate-to-beat flag cross-check (level manifest section 5 check 2) waits for machine-readable beat data.
 Work state: 2.1-2.5 logic committed (bca796d). Next 2.6 greybox exterior, 2.7 Last House scene, 2.8 HUD/hands, 2.9 phases/menus.
+
+## 2026-11-07 | milestone | Section 2 greybox built (2.2-2.5, 2.7-2.9 done; 2.1 and 2.6 await manual review)
+Added exterior and interior layouts (data + reachability tests), player rig, HUD, hands, warning/menu/pause screens, lazy Last House scene (separate chunk, preload in the west lane), Playwright smoke (2 tests; needed 
+px playwright install chromium). 187 unit tests. Dev shortcut: /?scene=last_house (dev builds only). /?bootcheck keeps the developer page. Next: section 3 (progression, gates, sequences, vertical slice).

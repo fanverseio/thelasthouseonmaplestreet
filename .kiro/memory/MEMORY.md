@@ -4,7 +4,7 @@ Short, durable notes that a future session needs and cannot easily re-derive. Ke
 
 ## Status
 - 2026-11-07: Phase 1 foundations committed (e6cb6e1) and pushed to `feat/phase1-foundations`; no PR yet. tasks.md 1.7 (CI) stays open until a PR runs green. `npm run dev` shows a boot-check page only.
-- 2026-11-07: Draft docs APPROVED. Tasks 2.1-2.3 logic done (input, collision, player; bdb57b4). 2.4 world registry with a subagent. Next: 2.5, then views 2.6-2.9. No PR yet (no `gh`; author opens it on GitHub).
+- 2026-11-07: Draft docs approved. tasks.md section 2 built (2.1 and 2.6 await the author's manual browser check). Next: section 3 (progression, gates, sequences). No PR yet (no `gh`; author opens it on GitHub). Unit 187 tests + 2 Playwright smoke tests pass.
 ## Decisions that are easy to forget
 - Everyone starts at Elena's home. No chapter select, judge start or shortcuts (author decision).
 - Good ending = Elena takes over the seal's duty from Felix and leaves with him. Bad ending = seal broken, evil escapes. Ending depends only on the final choice.

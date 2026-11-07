@@ -10,6 +10,7 @@ import {
   type Mode,
   type ProgressFlag,
   type PuzzleId,
+  type SceneId,
   type SpellId,
 } from '@tlh/shared';
 import { createStore } from 'zustand/vanilla';
@@ -40,6 +41,8 @@ export interface GameSlice {
   activeMode: Mode;
   aiStatus: AiStatus;
   checkpointId: CheckpointId;
+  /** Which 3D scene is loaded. Derived from the checkpoint on load, so it is not saved. */
+  scene: SceneId;
 }
 
 export interface PlayerSlice {
@@ -89,6 +92,7 @@ export interface GameData {
 
 export interface GameActions {
   setPhase: (phase: GamePhase) => void;
+  setScene: (scene: SceneId) => void;
   /** Reset everything for a new playthrough in the chosen mode. */
   startNewGame: (mode: Mode) => void;
 }
@@ -103,6 +107,7 @@ export function initialGameData(mode: Mode = 'classic'): GameData {
       activeMode: mode,
       aiStatus: 'unavailable',
       checkpointId: 'cp_home_start',
+      scene: 'exterior',
     },
     player: {
       hp: 100,
@@ -137,6 +142,7 @@ export function createGameStore() {
   return createStore<GameState>()((set) => ({
     ...initialGameData(),
     setPhase: (phase) => set((state) => ({ game: { ...state.game, phase } })),
+    setScene: (scene) => set((state) => ({ game: { ...state.game, scene } })),
     startNewGame: (mode) => set(() => ({ ...initialGameData(mode), game: { ...initialGameData(mode).game, phase: 'playing' } })),
   }));
 }
