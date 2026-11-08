@@ -86,7 +86,7 @@ export function PlayerRig({ input, runtime, onOpenLocket, skipHold }: { input: I
     cam.position.set(b.x, EYE_HEIGHT, b.z);
     cam.rotation.set(b.pitch, b.yaw, 0, 'YXZ');
     const p = gameStore.getState().player;
-    if (p.pos[0] !== b.x || p.pos[2] !== b.z) {
+    if (p.pos[0] !== b.x || p.pos[2] !== b.z || p.yaw !== b.yaw) {
       gameStore.setState({ player: { ...p, pos: [b.x, 0, b.z], yaw: b.yaw } });
     }
   });

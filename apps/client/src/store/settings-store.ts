@@ -26,6 +26,8 @@ export interface SettingsData {
   headBob: boolean;
   interactGlow: InteractGlow;
   testBrightness: TestBrightness;
+  /** Testing aid: show x, z and facing on screen. */
+  showPosition: boolean;
   subtitleSize: 'normal' | 'large';
   warningAcknowledged: boolean;
 }
@@ -45,6 +47,7 @@ export function defaultSettings(): SettingsData {
     headBob: true,
     interactGlow: 'bright',
     testBrightness: 'bright',
+    showPosition: true,
     subtitleSize: 'normal',
     warningAcknowledged: false,
   };

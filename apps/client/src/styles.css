@@ -159,3 +159,6 @@ body,
 .hud-actions kbd { display: inline-block; min-width: 1.5rem; text-align: center; padding: 0 0.3rem; border: 1px solid var(--muted); font-family: inherit; }
 .hud-actions li.selected kbd { border-color: var(--accent); color: var(--accent); }
 .hud-actions small { display: block; margin-top: 0.5rem; color: var(--muted); }
+
+.position-readout { position: absolute; top: 1rem; right: 1.25rem; padding: 0.3rem 0.6rem; background: rgba(7, 8, 12, 0.7); border: 1px solid var(--muted); font-family: Consolas, 'Courier New', monospace; font-size: 0.85rem; pointer-events: none; text-align: right; }
+.position-readout small { display: block; color: var(--muted); font-size: 0.7rem; }

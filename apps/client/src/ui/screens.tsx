@@ -147,6 +147,10 @@ export function SettingsScreen({ onBack }: { onBack: () => void }) {
         Head bob
       </label>
       <label className="row">
+        <input type="checkbox" checked={s.showPosition} onChange={(e) => update({ showPosition: e.target.checked })} />
+        Show position (testing)
+      </label>
+      <label className="row">
         Scene brightness
         <select value={s.testBrightness} onChange={(e) => update({ testBrightness: e.target.value as typeof s.testBrightness })}>
           <option value="bright">Bright (testing)</option>

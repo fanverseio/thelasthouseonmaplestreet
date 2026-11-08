@@ -21,6 +21,7 @@ import { DialogueChoicePanel } from './dialogue-choice.tsx';
 import { EndingChoicePanel } from './ending-choice.tsx';
 import { EncounterPanel } from './encounter-stub.tsx';
 import { Hud } from './hud.tsx';
+import { PositionReadout } from './position-readout.tsx';
 import { Locket } from './locket.tsx';
 import { PuzzleOverlay } from './puzzle-overlay.tsx';
 import { HoldBar, SmokeStrike } from './ritual-hud.tsx';
@@ -136,6 +137,7 @@ export function GameView() {
       </Canvas>
       {phase === 'playing' && <Hud actions={runtime.actions} tutorial={runtime.tutorial ? (TUTORIAL_TEXT[runtime.tutorial] ?? null) : null} />}
       {phase === 'playing' && <div className="crosshair" aria-hidden="true" />}
+      {phase === 'playing' && <PositionReadout />}
       {phase === 'playing' && <Subtitles line={runtime.subtitle} />}
       {phase === 'playing' && <EncounterPanel encounters={encounters} />}
       {phase === 'playing' && <DialogueChoicePanel choices={choices} />}
