@@ -22,6 +22,8 @@ coverage/
 *.tsbuildinfo
 playwright-report/
 test-results/
+# Manual playtest screenshots (large PNGs, kept local)
+/test/
 
 # Local runtime data
 data/
