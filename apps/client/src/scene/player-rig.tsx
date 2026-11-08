@@ -5,7 +5,7 @@ import { exteriorColliders, HOME_SPAWN } from '../content/world/exterior-layout.
 import { getCheckpoint } from '../game/checkpoints.ts';
 import { INTERIOR_SPAWN, interiorColliders } from '../content/world/interior-layout.ts';
 import { SPELL_FOR_KEY, type InputController } from '../game/input.ts';
-import { createPlayerBody, EYE_HEIGHT, FixedStepper, MOUSE_SENSITIVITY, stepPlayer } from '../game/player.ts';
+import { createPlayerBody, EYE_HEIGHT, faceFront, FixedStepper, MOUSE_SENSITIVITY, stepPlayer } from '../game/player.ts';
 import type { SkipHold } from '../game/skip-hold.ts';
 import type { WorldRuntime } from '../game/world-runtime.ts';
 import { preloadLastHouse } from '../services/scene-loader.ts';
@@ -58,6 +58,7 @@ export function PlayerRig({ input, runtime, onOpenLocket, skipHold }: { input: I
       const sensitivity = MOUSE_SENSITIVITY * settings.mouseSensitivity * (settings.invertY ? -1 : 1);
       // E and T are one-frame edges: handle them once per frame, before the fixed steps.
       const pose = () => ({ x: body.current.x, z: body.current.z, yaw: body.current.yaw });
+      if (input.state.faceFrontPressed) faceFront(body.current);
       if (input.state.cyclePressed) runtime.cycleAction();
       if (input.state.spellPressed) gameStore.getState().selectSpell(SPELL_FOR_KEY[input.state.spellPressed]);
       runtime.setHeld(input.state.interactDown); // hold-E interactions (the ritual anchors) read this
@@ -86,8 +87,8 @@ export function PlayerRig({ input, runtime, onOpenLocket, skipHold }: { input: I
     cam.position.set(b.x, EYE_HEIGHT, b.z);
     cam.rotation.set(b.pitch, b.yaw, 0, 'YXZ');
     const p = gameStore.getState().player;
-    if (p.pos[0] !== b.x || p.pos[2] !== b.z || p.yaw !== b.yaw) {
-      gameStore.setState({ player: { ...p, pos: [b.x, 0, b.z], yaw: b.yaw } });
+    if (p.pos[0] !== b.x || p.pos[2] !== b.z || p.yaw !== b.yaw || p.pitch !== b.pitch) {
+      gameStore.setState({ player: { ...p, pos: [b.x, 0, b.z], yaw: b.yaw, pitch: b.pitch } });
     }
   });
 

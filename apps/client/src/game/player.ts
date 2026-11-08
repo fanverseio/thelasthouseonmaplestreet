@@ -55,6 +55,13 @@ export function stepPlayer(body: PlayerBody, input: InputState, dt: number, opts
   }
 }
 
+/** R key: look level and face the nearest of the 8 compass directions. Mutates `body`. */
+export function faceFront(body: PlayerBody): void {
+  const step = Math.PI / 4;
+  body.yaw = Math.round(body.yaw / step) * step;
+  body.pitch = 0;
+}
+
 /**
  * Fixed-step accumulator. Feed real frame time; `onStep` runs 0..n times at exactly SIM_DT.
  * Returns the interpolation alpha (0..1) for rendering.

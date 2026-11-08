@@ -54,6 +54,8 @@ export interface PlayerSlice {
   spellsUnlocked: SpellId[];
   pos: [number, number, number];
   yaw: number;
+  /** Look up (+) or down (-), radians. For the test readout only; not saved. */
+  pitch: number;
   /** Counts deaths. The view compares it to snap the body to the checkpoint spawn. Not saved. */
   respawns: number;
 }
@@ -128,6 +130,7 @@ export function initialGameData(mode: Mode = 'classic'): GameData {
       spellsUnlocked: [],
       pos: [0, 0, 0],
       yaw: 0,
+      pitch: 0,
       respawns: 0,
     },
     progress: { flags: [], morality: { value: 0, history: [] }, carried: [], puzzles: {} },

@@ -20,6 +20,7 @@ export function bindInput(opts: InputBindingsOptions): () => void {
   const feed = (event: PointerLockEvent) => {
     const step = stepPointerLock(lock, event);
     lock = step.state;
+    if (event === 'lock_acquired') input.ignoreNextMove(); // the first move after re-locking can be a huge jump
     if (step.requestLock) void element.requestPointerLock?.();
     if (event !== 'user_click') onLockChange(step.state, step.pause);
     if (step.pause) input.releaseAll();

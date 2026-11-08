@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { aabb } from './collision.ts';
 import { createInputState } from './input.ts';
-import { createPlayerBody, FixedStepper, PITCH_LIMIT, SIM_DT, stepPlayer } from './player.ts';
+import { createPlayerBody, faceFront, FixedStepper, PITCH_LIMIT, SIM_DT, stepPlayer } from './player.ts';
 
 function run(frameRate: number, seconds: number, forward = 1, sprint = false) {
   const body = createPlayerBody();
@@ -77,5 +77,22 @@ describe('FixedStepper', () => {
     n = 0;
     s.advance(SIM_DT * 3, () => n++);
     expect(n).toBe(3);
+  });
+});
+
+describe('faceFront', () => {
+  it('levels the view and snaps to the nearest of 8 directions', () => {
+    const body = createPlayerBody(3, 4, 0.3); // a bit left of north
+    body.pitch = 0.9;
+    faceFront(body);
+    expect(body.pitch).toBe(0);
+    expect(body.yaw).toBeCloseTo(0, 9);
+    body.yaw = Math.PI / 4 + 0.3; // nearer NW than W
+    faceFront(body);
+    expect(body.yaw).toBeCloseTo(Math.PI / 4, 9);
+    body.yaw = -2.9; // near south, the other way round
+    faceFront(body);
+    expect(body.yaw).toBeCloseTo(-Math.PI, 9);
+    expect([body.x, body.z]).toEqual([3, 4]); // position never changes
   });
 });

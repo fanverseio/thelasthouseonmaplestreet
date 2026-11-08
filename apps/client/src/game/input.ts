@@ -4,6 +4,8 @@
  */
 
 export const TAP_MAX_MS = 200;
+/** A single mouse move larger than this (px) is a browser glitch (fast flick, lock regained) and is ignored. */
+export const MAX_MOUSE_JUMP = 300;
 
 export const KEY_BINDINGS = {
   forward: 'KeyW',
@@ -14,6 +16,7 @@ export const KEY_BINDINGS = {
   sprintAlt: 'ShiftRight',
   interact: 'KeyE',
   cycleAction: 'KeyQ',
+  faceFront: 'KeyR',
   locket: 'KeyT',
   spell1: 'Digit1',
   spell2: 'Digit2',
@@ -35,6 +38,8 @@ export interface InputState {
   interactPressed: boolean;
   /** Q: switch the selected action in the side panel. */
   cyclePressed: boolean;
+  /** R: level the view and face the nearest compass direction. */
+  faceFrontPressed: boolean;
   locketPressed: boolean;
   pausePressed: boolean;
   spellPressed: 1 | 2 | 3 | null;
@@ -57,6 +62,7 @@ export function createInputState(): InputState {
     lmbHeldMs: 0,
     interactPressed: false,
     cyclePressed: false,
+    faceFrontPressed: false,
     locketPressed: false,
     pausePressed: false,
     spellPressed: null,
@@ -70,6 +76,7 @@ export function createInputState(): InputState {
 export class InputController {
   readonly state: InputState = createInputState();
   private readonly down = new Set<string>();
+  private skipNextMove = false;
 
   keyDown(code: string, repeat = false): void {
     if (repeat || this.down.has(code)) return;
@@ -81,6 +88,9 @@ export class InputController {
         break;
       case KEY_BINDINGS.cycleAction:
         s.cyclePressed = true;
+        break;
+      case KEY_BINDINGS.faceFront:
+        s.faceFrontPressed = true;
         break;
       case KEY_BINDINGS.locket:
         s.locketPressed = true;
@@ -107,6 +117,12 @@ export class InputController {
   }
 
   mouseMove(dx: number, dy: number): void {
+    // The first move after the lock comes back, and any huge single jump, are browser glitches.
+    if (this.skipNextMove) {
+      this.skipNextMove = false;
+      return;
+    }
+    if (Math.abs(dx) > MAX_MOUSE_JUMP || Math.abs(dy) > MAX_MOUSE_JUMP) return;
     this.state.lookDX += dx;
     this.state.lookDY += dy;
   }
@@ -140,11 +156,17 @@ export class InputController {
     s.lookDY = 0;
     s.interactPressed = false;
     s.cyclePressed = false;
+    s.faceFrontPressed = false;
     s.locketPressed = false;
     s.pausePressed = false;
     s.spellPressed = null;
     s.lmbTap = false;
     s.lmbReleased = false;
+  }
+
+  /** Ignore the next mouse move (call when pointer lock is regained). */
+  ignoreNextMove(): void {
+    this.skipNextMove = true;
   }
 
   /** Drop everything held (focus loss, pause). */

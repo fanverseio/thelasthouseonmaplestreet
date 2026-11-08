@@ -85,3 +85,31 @@ describe('stepPointerLock', () => {
     expect(stepPointerLock('lost', 'window_blur').pause).toBe(true);
   });
 });
+
+describe('mouse jump filter and face front key', () => {
+  it('ignores a single huge mouse jump but keeps normal fast moves', () => {
+    const i = new InputController();
+    i.mouseMove(250, -120);
+    i.mouseMove(900, 0); // glitch
+    i.mouseMove(0, -2000); // glitch
+    expect(i.state.lookDX).toBe(250);
+    expect(i.state.lookDY).toBe(-120);
+  });
+
+  it('drops the first move after the pointer lock comes back', () => {
+    const i = new InputController();
+    i.ignoreNextMove();
+    i.mouseMove(40, 40);
+    i.mouseMove(5, 3);
+    expect(i.state.lookDX).toBe(5);
+    expect(i.state.lookDY).toBe(3);
+  });
+
+  it('R is a one-frame edge', () => {
+    const i = new InputController();
+    i.keyDown('KeyR');
+    expect(i.state.faceFrontPressed).toBe(true);
+    i.endFrame();
+    expect(i.state.faceFrontPressed).toBe(false);
+  });
+});
