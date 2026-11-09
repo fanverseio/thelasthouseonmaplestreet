@@ -19,7 +19,8 @@ const amb = (id, prompt) => ({ id, prompt: `${prompt} Seamless loop, steady, no 
 const STEP_NOTE = 'One single footstep of an adult in soft shoes, close microphone, dry, no music, no voice';
 
 const FOOTSTEP_SURFACES = {
-  wood: 'on old wooden floorboards, a faint creak',
+  // Author: Elena wears trainers, so wood steps are soft rubber soles, never a hard heel click.
+  wood: 'wearing soft rubber-soled sneakers on old wooden floorboards, a gentle muffled pad with only a very faint creak, no heel click, quiet',
   tile: 'on hard ceramic kitchen tile, a small click and echo',
   pavement: 'on a concrete sidewalk at night',
   grass: 'on damp grass, soft and muffled',
