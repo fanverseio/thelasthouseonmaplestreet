@@ -110,3 +110,6 @@ Elena = Lauren (American), Angel = designed 'TLH Angel', Felix = Don Kim, Gartne
 
 ## 2026-11-09 | milestone | American text + full voice-over (a4f652f..b0dc2db)
 176 lines voiced with eleven_v3, mp3_44100_64, 7.75 MB in apps/client/public/assets/audio/vo. Tool: node tools/gen-voice.mjs all [--only, --force, --dry-run]. Missing from ALL_LINES (no audio yet): vo_felix_b8_*, vo_felix_b11_*, vo_*_end_*, vo_rosalind_j2. Author decision: no music yet; next is SFX + ambience loops.
+
+## 2026-11-09 | milestone | SFX + ambience generated and wired (5c0301f..531c84a)
+81 cues (73 sfx, 8 x 30 s ambience) via tools/gen-sound.mjs + tools/sound-cues.mjs; real audio buses (master, sfx, ambience, voice; music reserved at 0), ambience crossfades by zone and ducks under voice, file cues with synth fallback. 14 missing voice lines added (vo_rosalind_j2 + 13 clip lines flagged clip:true). Gotcha: ElevenLabs sound generation costs ~10 credits/s, not 40. Audio total 12.9 MB. 957 tests. Credits left ~53,600. Next: author listen-check (playtest 14-15), then art.
