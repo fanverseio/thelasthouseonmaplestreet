@@ -35,6 +35,7 @@ import { canContinue, saveNow } from './save.ts';
 import type { SequenceDef, SequenceStep } from './sequences.ts';
 import {
   buildStateFromFlags,
+  createAnchorDriver,
   createHeadlessGame,
   disableNetwork,
   type HeadlessGame,
@@ -427,14 +428,11 @@ function buildSteps(plan: Plan): Step[] {
       flags: [`anchor_${plan.anchors[0]}`, 'felix3_done', `anchor_${plan.anchors[1]}`, `anchor_${plan.anchors[2]}`, 'anchors_all'],
       clips: ['cin_felix_anchor'],
       run(g) {
-        const hold = { north: 3, east: 6, west: 4 } as const;
+        // The real anchor mechanics (task 5.10): shell + Arcane Bolt + E, E + Ward, Purify channel.
+        const driver = createAnchorDriver(g);
         for (const [i, dir] of plan.anchors.entries()) {
-          g.goTo(`anchor.ritual.${dir}`);
-          expect(g.press()).toMatchObject({ status: 'holding', id: `anchor.ritual.${dir}` });
-          g.world.setHeld(true);
-          g.tick(hold[dir] - 0.5);
-          expect(g.flags()).not.toContain(`anchor_${dir}`); // not before the full hold
-          g.tick(0.9);
+          expect(g.flags()).not.toContain(`anchor_${dir}`);
+          driver.restore(dir);
           g.world.setHeld(false);
           expect(g.flags()).toContain(`anchor_${dir}`);
           if (i === 0) playClip(g, plan, 'cin_felix_anchor');

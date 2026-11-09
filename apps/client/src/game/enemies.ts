@@ -877,6 +877,14 @@ export class EnemySystem {
     return { dealt, blocked: false };
   }
 
+  /**
+   * Hurt Elena from outside the enemy FSM (the final ritual's smoke rings, pools and strikes, task 5.10): through
+   * the Ward and the invulnerability window like any enemy attack. `blocked`: the Ward absorbed it.
+   */
+  damagePlayer(amount: number, sourceId: string): { dealt: number; blocked: boolean } {
+    return this.hitPlayer(amount, sourceId);
+  }
+
   /* ---- death ---- */
 
   /**

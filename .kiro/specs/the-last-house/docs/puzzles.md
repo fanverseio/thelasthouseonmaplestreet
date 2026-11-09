@@ -57,7 +57,7 @@ Hint sources: Classic = the Angel's authored hint lines (locket glows when a hin
 Any order. Each uses one spell. Restoring an anchor saves immediately. Magic regenerates fast in the ritual (`combat-tuning.md`), so magic can never block an anchor.
 | Anchor | Spell | Mechanic | Fail state |
 |---|---|---|---|
-| `anchor.ritual.north` | Arcane Bolt | A smoke shell (100 HP, 5 bolts) covers the anchor. Break it, then hold E for 2 s to restore. | The shell regrows after 20 s if not restored. |
+| `anchor.ritual.north` | Arcane Bolt | A smoke shell (100 HP, 5 bolts) covers the anchor. Break it, then hold E for 3 s to restore. | The shell regrows after 20 s if not restored. |
 | `anchor.ritual.east` | Ward | Hold E for 6 s to channel. The smoke strikes every 1.5 s. A strike without Ward pauses the channel and deals 10 damage. Progress is kept. | None; progress is never lost. |
 | `anchor.ritual.west` | Purify | Channel Purify on the anchor for 4 s. Two smoke wraiths harass; damage interrupts the channel but keeps progress. | None. |
 - **Hints**: entering an anchor room shows a rune icon of the needed spell on the anchor. After 45 s without progress, the Angel names the spell.

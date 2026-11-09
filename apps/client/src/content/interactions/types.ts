@@ -50,7 +50,9 @@ export type Action =
    */
   | { do: 'enterScene'; scene: 'exterior' | 'last_house'; event?: string }
   /** Hands the press to the finale runtime (game/ending.ts): open the final choice overlay (Beat 12). */
-  | { do: 'finale'; op: 'choice' };
+  | { do: 'finale'; op: 'choice' }
+  /** Hands the press to the ritual director (game/ritual.ts): start (or hint) the task of one anchor (task 5.10). */
+  | { do: 'anchor'; dir: 'north' | 'east' | 'west' };
 
 export interface InteractionDef {
   id: EntityId;

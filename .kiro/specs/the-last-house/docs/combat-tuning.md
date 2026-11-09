@@ -49,7 +49,7 @@ Animals: leash radius 20 m from their spawn; aggro radius 12 m. They lose intere
 ## 5. Mini-boss behaviour
 ### Mr Briggs
 - Phase 1 (100-60%): circles, swipes, releases a smoke puff that obscures vision for 2 s.
-- Scripted first attack: a 1.5 s telegraph; the Ward prompt appears at its start; the hit is capped so Elena keeps at least 30 HP.
+- Scripted first attack: a 2.5 s telegraph (author decision Q31); the Ward prompt appears at its start and magic is topped up to the Ward cost so Ward is always affordable; the hit is capped so Elena keeps at least 30 HP.
 - Phase 2 (60-30%): adds a ground slam with a visible ring.
 - Stun at 30%.
 - Target duration about 3 min including the choice.
@@ -65,6 +65,10 @@ Animals: leash radius 20 m from their spawn; aggro radius 12 m. They lose intere
 - No HP and no health bar.
 - Attacks: ground rings (1.2 s telegraph, 15 damage, radius 2.5 m); hazard pools (5 damage/s, drift slowly); wraiths (2 alive at a time, respawn after 8 s).
 - Pressure by anchors restored: 0 -> 1 wraith and rings every 4 s; 1 -> 2 wraiths, every 3.5 s; 2 -> 2 wraiths, every 3 s plus pools; 3 -> all attacks stop.
+- Implemented in `game/ritual.ts` (`RITUAL_TUNING`, task 5.10). The smoke is a director, not an FSM enemy. A ring is centred on Elena when it is spawned and lands 1.2 s later, so she can walk out of it. All its damage goes through `SpellSystem.absorbDamage` (a Ward blocks it). It pauses during cinematic clips and starts over after a death (3 s grace); restored anchors persist.
+- Values not in the doc (invented, tune in playtest): pool radius 1.6 m, tick 3.5 damage every 0.7 s (= 5/s), drift 0.5 m/s towards Elena, life 14 s, a new pool every 6 s, at most 2; pools spawn 4-8 m from Elena inside the chamber; wraith corpse stays 2 s; the "landed" cue 0.6 s.
+- Anchor tasks (docs/puzzles.md P6): north = break the smoke shell (100 HP, Arcane Bolt) then hold E 3 s; the shell regrows 20 s after it broke if the anchor is not restored (the hold progress is lost then). East = hold E 6 s; the smoke strikes every 1.5 s (0.5 s warning), 10 damage; the Ward blocks it; a strike that gets through pauses the channel 0.8 s; progress is never lost. West = channel Purify on the anchor 4 s; damage that gets through interrupts the channel, progress kept; at least 2 wraiths while Elena is at the west anchor. Ordinary rings are suspended while the east channel runs (its strikes replace them).
+- Magic never blocks an anchor: when a task starts, and every step while Elena is within 8 m of an unrestored anchor, magic is raised to that anchor's floor (north 40 = five tap bolts, east 25 = Ward, west 30 = Purify's cost).
 
 ## 6. Morality
 | Event | Delta |

@@ -40,6 +40,13 @@ export interface FighterHost {
   pos: { x: number; z: number };
 }
 
+/** Anything the fighter can aim at: an Enemy, or a plain point (an anchor, a smoke shell). */
+export interface AimPoint {
+  x: number;
+  z: number;
+  position: { y: number };
+}
+
 /** A story encounter id, or the id of any other live enemy (the dev practice hound). */
 export type FightEnemy = StubEncounterId | (string & {});
 
@@ -61,7 +68,7 @@ export function createFighter(host: FighterHost, options: { keepAlive?: boolean 
   };
 
   /** One fixed step of the world, the enemies and the spells, aimed at `at`. */
-  const step = (at?: Enemy) => {
+  const step = (at?: AimPoint) => {
     if (keepAlive) {
       store.setState((s) => ({ player: { ...s.player, hp: s.player.hp > 0 ? 100 : s.player.hp, magic: 100 } }));
     }
@@ -74,11 +81,11 @@ export function createFighter(host: FighterHost, options: { keepAlive?: boolean 
       const flat = Math.hypot(dx, dz) || 1e-6;
       aim = { ...aim, yaw: Math.atan2(-dx, -dz), pitch: Math.atan2(at.position.y - 1.65, flat) };
     }
-    spells.step(SIM_DT, input, aim, { hostileActive: enemies.hostileActive(), ritualActive: false });
+    spells.step(SIM_DT, input, aim, { hostileActive: enemies.hostileActive(), ritualActive: flags().includes('ritual_active') && !flags().includes('anchors_all') });
     input.lmbTap = false;
     input.lmbReleased = false;
   };
-  const run = (seconds: number, at?: Enemy) => {
+  const run = (seconds: number, at?: AimPoint) => {
     for (let i = 0; i < Math.round(seconds / SIM_DT); i++) step(at);
   };
   const select = (spell: 'arcane_bolt' | 'purify' | 'ward') => {
@@ -93,6 +100,7 @@ export function createFighter(host: FighterHost, options: { keepAlive?: boolean 
     input,
     step,
     run,
+    select,
     enemy: enemyOf,
     /** Tap LMB with Arcane Bolt (20 damage), then wait out its cooldown. */
     tap(id: FightEnemy) {
@@ -166,7 +174,8 @@ export type Fighter = ReturnType<typeof createFighter>;
  * A small headless rig for the fight tests: a dev start, the real world / encounter / enemy / spell systems, a
  * teleporting Elena and a fighter. `keepAlive` is OFF by default here: the fight tests care about damage.
  */
-export function createFightRig(start: DevStart, options: { keepAlive?: boolean; bindings?: readonly EncounterBinding[] } = {}) {
+export function createFightRig(start: DevStart, options: { keepAlive?: boolean; bindings?: readonly EncounterBinding[]; storage?: MemorySaveStorage } = {}) {
+  const storage = options.storage ?? new MemorySaveStorage();
   const store = createGameStore();
   store.getState().startNewGame('classic');
   const failed = applyDevStart(store, start);
@@ -174,7 +183,7 @@ export function createFightRig(start: DevStart, options: { keepAlive?: boolean; 
   store.getState().setPhase('playing');
   store.setState((s) => ({ player: { ...s.player, respawns: 0 } })); // the dev start itself respawns once
   const combat = createCombat(store);
-  const { world, encounters } = createEncounterWorld({ store, enemies: combat.enemies, ...(options.bindings && { bindings: options.bindings }) });
+  const { world, encounters, ritual, ending } = createEncounterWorld({ store, enemies: combat.enemies, spells: combat.spells, storage, ...(options.bindings && { bindings: options.bindings }) });
   const p = store.getState().player.pos;
   const pos = { x: p[0], z: p[2] };
   const flags = () => store.getState().progress.flags;
@@ -191,7 +200,7 @@ export function createFightRig(start: DevStart, options: { keepAlive?: boolean; 
   };
   const press = () => world.interact({ x: pos.x, z: pos.z });
   const morality = () => store.getState().progress.morality.value;
-  return { store, world, encounters, spells: combat.spells, enemies: combat.enemies, fight, pos, events, flags, hp, tick, goTo, press, morality };
+  return { store, storage, world, encounters, ritual, ending, spells: combat.spells, enemies: combat.enemies, fight, pos, events, flags, hp, tick, goTo, press, morality };
 }
 
 export type FightRig = ReturnType<typeof createFightRig>;
@@ -242,6 +251,7 @@ export function createHeadlessGame(options: { store?: GameStore; storage?: Memor
     store,
     storage,
     enemies: combat.enemies,
+    spells: combat.spells,
     onEffect: (e) => {
       if (e.k === 'video') clips.push(e.clipId);
     },
@@ -297,6 +307,107 @@ export function createHeadlessGame(options: { store?: GameStore; storage?: Memor
 }
 
 export type HeadlessGame = ReturnType<typeof createHeadlessGame>;
+
+/** What the anchor driver needs from a headless game or a fight rig. */
+export interface AnchorHost {
+  store: GameStore;
+  world: { tick(dt: number, pose: PlayerPose): void; setHeld(down: boolean): void; interact(pose: PlayerPose): unknown };
+  spells: SpellSystem;
+  ritual: { view(): { shell: { broken: boolean } | null } };
+  fight: Fighter;
+  pos: { x: number; z: number };
+}
+
+/**
+ * Restores the three ritual anchors the way a player does (task 5.10): north = Arcane Bolts at the smoke shell, then
+ * hold E; east = hold E while raising the Ward whenever it is ready; west = Purify channelled on the anchor, started
+ * again after every interruption. Elena is teleported next to the anchor (movement is covered elsewhere).
+ */
+export function createAnchorDriver(host: AnchorHost) {
+  const { store, world, spells, fight, pos } = host;
+  const flags = () => store.getState().progress.flags;
+  const anchor = (dir: 'north' | 'east' | 'west'): AimPoint => {
+    const p = PLACEMENTS[`anchor.ritual.${dir}` as EntityId]!;
+    return { x: p.x, z: p.z, position: { y: 1.2 } };
+  };
+  const stand = (dir: 'north' | 'east' | 'west', dz = 2.2) => {
+    const a = anchor(dir);
+    pos.x = a.x;
+    pos.z = a.z + dz;
+    fight.run(SIM_DT * 2);
+  };
+  const press = () => world.interact({ x: pos.x, z: pos.z, yaw: 0 });
+  /** Break the shell with tap bolts. Returns the number of bolts it took. */
+  const breakShell = (): number => {
+      stand('north');
+      const p = anchor('north');
+      let n = 0;
+      while (!host.ritual.view().shell?.broken && n < 30) {
+        fight.select('arcane_bolt');
+        fight.input.lmbTap = true;
+        fight.step(p);
+        fight.run(0.5, p);
+        n++;
+      }
+      return n;
+  };
+  const api = {
+    stand,
+    press,
+    breakShell,
+    north() {
+      if (flags().includes('anchor_north')) return;
+      breakShell();
+      press();
+      world.setHeld(true);
+      for (let t = 0; t < 6 && !flags().includes('anchor_north'); t += 0.1) fight.run(0.1);
+      world.setHeld(false);
+      fight.run(SIM_DT * 2); // the flag rules (Felix's clip, anchors_all) run on the next world step
+    },
+    east(maxSeconds = 90) {
+      if (flags().includes('anchor_east')) return;
+      stand('east');
+      press();
+      world.setHeld(true);
+      for (let t = 0; t < maxSeconds && !flags().includes('anchor_east'); t += 0.1) {
+        if (!spells.wardActive && spells.cooldownLeft('ward') === 0) fight.ward();
+        fight.run(0.1);
+      }
+      world.setHeld(false);
+      fight.run(SIM_DT * 2);
+    },
+    west(maxSeconds = 120) {
+      if (flags().includes('anchor_west')) return;
+      stand('west');
+      const p = anchor('west');
+      fight.select('purify');
+      for (let t = 0; t < maxSeconds && !flags().includes('anchor_west'); t += 0.1) {
+        if (!spells.channeling) {
+          // Let go for a step (a press that ended must be released before the next one counts), then press again.
+          fight.input.lmbDown = false;
+          fight.run(SIM_DT, p);
+          if (spells.cooldownLeft('purify') === 0) {
+            fight.input.lmbDown = true;
+            fight.input.lmbHeldMs = 300; // past the tap limit: a channel, not a tap
+          }
+        }
+        fight.run(0.1, p);
+      }
+      fight.input.lmbDown = false;
+      fight.input.lmbReleased = true;
+      fight.step(p);
+      fight.input.lmbHeldMs = 0;
+      fight.run(SIM_DT * 2);
+    },
+    /** Restore one anchor by name. */
+    restore(dir: 'north' | 'east' | 'west') {
+      if (dir === 'north') api.north();
+      else if (dir === 'east') api.east();
+      else api.west();
+    },
+  };
+  return api;
+}
 
 /** Make every network entry point throw, and count the calls. Restore with the returned function. */
 export function disableNetwork(): { calls: () => number; restore: () => void } {

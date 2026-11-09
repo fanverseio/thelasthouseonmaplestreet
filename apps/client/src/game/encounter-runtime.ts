@@ -19,6 +19,7 @@ import type { GameStore } from '../store/game-store.ts';
 import type { SaveStorage } from '../services/save-storage.ts';
 import { createChoiceRuntime } from './dialogue-choice.ts';
 import { STUN_MIN_MAGIC, type Enemy, type EnemyEvent, type EnemySystem } from './enemies.ts';
+import { SPELL_CONFIG, type SpellSystem } from './spells.ts';
 import { createEndingRuntime } from './ending.ts';
 import { HpRegen } from './health.ts';
 import { createRitualRuntime } from './ritual.ts';
@@ -338,6 +339,9 @@ export function createEncounterRuntime(options: EncounterRuntimeOptions): Encoun
     const t = b.telegraph;
     if (!t || telegraphs.has(b.id) || flags().includes(t.wardFlag) || !read(b.id).engaged) return;
     store.getState().setFlag(t.wardFlag);
+    // Ward must always be affordable for the scripted first attack (task 5.10 fix).
+    const wardCost = Math.max(t.magicCost, SPELL_CONFIG.ward.cost);
+    store.setState((s) => (s.player.magic >= wardCost ? s : { player: { ...s.player, magic: wardCost } }));
     if (isFsm(b)) {
       // A stunned enemy has no wind-up (the call is refused), but the Ward is taught all the same.
       enemies?.startScripted(STUB_ENCOUNTERS[b.id].enemyId, { name: 'scripted_strike', damage: t.damage, seconds: t.seconds, hpFloor: t.hpFloor });
@@ -555,8 +559,10 @@ export function createEncounterRuntime(options: EncounterRuntimeOptions): Encoun
 }
 
 /** Convenience: a world runtime and an encounter runtime wired together. */
-export function createEncounterWorld(options: WorldRuntimeOptions & { bindings?: readonly EncounterBinding[]; storage?: SaveStorage; enemies?: EnemySystem }) {
-  const { bindings, storage, enemies, ...worldOptions } = options;
+export function createEncounterWorld(
+  options: WorldRuntimeOptions & { bindings?: readonly EncounterBinding[]; storage?: SaveStorage; enemies?: EnemySystem; spells?: SpellSystem },
+) {
+  const { bindings, storage, enemies, spells, ...worldOptions } = options;
   const encounters = createEncounterRuntime({
     store: options.store,
     ...(enemies && { enemies }),
@@ -566,7 +572,7 @@ export function createEncounterWorld(options: WorldRuntimeOptions & { bindings?:
   });
   const choices = createChoiceRuntime({ store: options.store });
   // Beats 11-12: the smoke pressure of the final ritual and the final choice / ending.
-  const ritual = createRitualRuntime({ store: options.store });
+  const ritual = createRitualRuntime({ store: options.store, ...(spells && { spells }), ...(enemies && { enemies }) });
   const ending = createEndingRuntime({
     store: options.store,
     ...(storage && { storage }),
@@ -578,11 +584,12 @@ export function createEncounterWorld(options: WorldRuntimeOptions & { bindings?:
     onEncounter: hooks.onEncounter,
     onTick: (dt, pose) => {
       hooks.onTick(dt, pose);
-      ritual.tick(dt);
+      ritual.tick(dt, pose);
       ending.tick(dt);
       worldOptions.onTick?.(dt, pose);
     },
     onFinale: () => ending.open(),
+    onAnchor: (dir) => ritual.pressAnchor(dir),
     inCombat: hooks.inCombat,
     onEffect: (e) => {
       hooks.onEffect(e);

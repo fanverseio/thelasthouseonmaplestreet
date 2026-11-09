@@ -35,7 +35,44 @@ export function HoldBar({ runtime }: { runtime: WorldRuntime }) {
   );
 }
 
-/** The smoke's harmless placeholder strike during the final ritual: a text and glyph cue, never colour alone. */
+const SPELL_NAME = { arcane_bolt: 'Arcane Bolt (1)', ward: 'Ward (3)', purify: 'Purify (2)' } as const;
+
+/**
+ * The anchor tasks (task 5.10): the spell the nearest unrestored anchor needs (a text "rune icon"), the smoke shell's
+ * strength, the progress of the task, and short hints. Role `progressbar` so assistive tech reads the percentage.
+ */
+export function AnchorHud({ ritual }: { ritual: RitualRuntime }) {
+  useSyncExternalStore(ritual.subscribe, () => ritual.version);
+  const v = ritual.view();
+  if (!v.active) return null;
+  const channel = v.channel;
+  const dir = channel?.dir ?? v.near?.dir ?? null;
+  const pct = dir ? Math.round(v.progress[dir] * 100) : 0;
+  const shown = channel !== null || (v.near !== null && pct > 0);
+  return (
+    <div style={{ ...barStyle, bottom: '18%', width: '17rem' }} data-testid="anchor-hud">
+      {v.near && (
+        <div data-testid="anchor-rune">
+          ✦ {v.near.dir} anchor: {SPELL_NAME[v.near.spell]}
+        </div>
+      )}
+      {v.near?.dir === 'north' && v.shell && (
+        <small data-testid="shell-state">{v.shell.broken ? 'Smoke shell broken' : `Smoke shell ${v.shell.hp}/${v.shell.maxHp}`}</small>
+      )}
+      {shown && dir && (
+        <div role="progressbar" aria-label={`${dir} anchor`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} data-testid="anchor-bar">
+          <small>{channel?.paused ? 'The smoke strikes. Keep holding.' : v.eastWarning ? 'A strike is coming: Ward!' : dir === 'west' ? 'Purifying' : 'Keep holding E'}</small>
+          <div style={{ height: '0.5rem', background: '#333', borderRadius: '3px', marginTop: '0.25rem' }}>
+            <div style={{ height: '100%', width: `${pct}%`, background: '#9ad1ff', borderRadius: '3px' }} />
+          </div>
+        </div>
+      )}
+      {v.hint && <small data-testid="anchor-hint">{v.hint}</small>}
+    </div>
+  );
+}
+
+/** The smoke's ring telegraph during the final ritual: a text and glyph cue, never colour alone. */
 export function SmokeStrike({ ritual }: { ritual: RitualRuntime }) {
   useSyncExternalStore(ritual.subscribe, () => ritual.version);
   const { strike } = ritual.view();
@@ -46,7 +83,7 @@ export function SmokeStrike({ ritual }: { ritual: RitualRuntime }) {
       role="status"
       data-testid="smoke-strike"
     >
-      {strike === 'warning' ? '≈ The smoke gathers…' : '≈ The smoke strikes, and passes'}
+      {strike === 'warning' ? '≈ The smoke gathers…' : '≈ The smoke strikes'}
     </div>
   );
 }

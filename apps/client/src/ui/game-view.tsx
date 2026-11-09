@@ -18,6 +18,7 @@ import { FsmEnemies } from '../scene/fsm-enemies.tsx';
 import { Interactables } from '../scene/interactables.tsx';
 import { PointGlow } from '../scene/glow.tsx';
 import { Hands } from '../scene/hands.tsx';
+import { RitualFx } from '../scene/ritual-fx.tsx';
 import { SpellFx } from '../scene/spell-fx.tsx';
 import { ExteriorScene } from '../scene/exterior-scene.tsx';
 import { PlayerRig } from '../scene/player-rig.tsx';
@@ -33,7 +34,7 @@ import { Hud } from './hud.tsx';
 import { PositionReadout } from './position-readout.tsx';
 import { Locket } from './locket.tsx';
 import { PuzzleOverlay } from './puzzle-overlay.tsx';
-import { HoldBar, SmokeStrike } from './ritual-hud.tsx';
+import { AnchorHud, HoldBar, SmokeStrike } from './ritual-hud.tsx';
 import { SettingsScreen } from './screens.tsx';
 import { SkipRing } from './skip-ring.tsx';
 import { SmokePuffOverlay } from './smoke-puff.tsx';
@@ -71,7 +72,7 @@ export function GameView() {
     });
   }, [spells]);
   // One world runtime per game view: New Game mounts a fresh view, so timers and fired triggers start clean.
-  const { world: runtime, encounters, choices, ritual, ending } = useMemo(() => createEncounterWorld({ store: gameStore, storage: saveStorage, enemies, loadScene: loadSceneHook, onEffect: (e) => sfx.handleEffect(e) }), [enemies]);
+  const { world: runtime, encounters, choices, ritual, ending } = useMemo(() => createEncounterWorld({ store: gameStore, storage: saveStorage, enemies, spells, loadScene: loadSceneHook, onEffect: (e) => sfx.handleEffect(e) }), [enemies, spells]);
   useSyncExternalStore(runtime.subscribe, () => runtime.version);
   const skipHold = useMemo(() => createSkipHold(runtime.sequences, ALL_SEQUENCES), [runtime]);
   const spellContext = useCallback((): SpellContext => {
@@ -186,6 +187,7 @@ export function GameView() {
         <Interactables runtime={runtime} flags={flags} />
         <EncounterEnemies encounters={encounters} />
         <FsmEnemies enemies={enemies} />
+        <RitualFx ritual={ritual} />
         <PointGlow runtime={runtime} />
         <PlayerRig input={input} runtime={runtime} onOpenLocket={openLocket} skipHold={skipHold} spells={spells} spellContext={spellContext} />
         <SpellFx spells={spells} input={input} />
@@ -201,6 +203,7 @@ export function GameView() {
       {phase === 'playing' && <DialogueChoicePanel choices={choices} />}
       {phase === 'playing' && <HoldBar runtime={runtime} />}
       {phase === 'playing' && <SmokeStrike ritual={ritual} />}
+      {phase === 'playing' && <AnchorHud ritual={ritual} />}
       {phase === 'overlay' && <EndingChoicePanel ending={ending} />}
       {phase === 'playing' && <SkipRing skip={skipHold} />}
       {runtime.video && (

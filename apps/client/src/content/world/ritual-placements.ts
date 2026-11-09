@@ -11,4 +11,9 @@ export const RITUAL_PLACEMENTS: Readonly<Record<EntityId, Placement>> = {
   'anchor.ritual.north': { x: 0, z: -40, r: 0.6 },
   'anchor.ritual.east': { x: 20, z: -18, r: 0.6 },
   'anchor.ritual.west': { x: -20, z: -18, r: 0.6 },
+  // Smoke-wraith spawn points in the ritual chamber corners (x -12..12, z -30..-6); the director picks one (task 5.10).
+  'spawn.ritual.wraith_1': { x: -9, z: -26, r: 0.5 },
+  'spawn.ritual.wraith_2': { x: 9, z: -26, r: 0.5 },
+  'spawn.ritual.wraith_3': { x: -9, z: -9, r: 0.5 },
+  'spawn.ritual.wraith_4': { x: 9, z: -9, r: 0.5 },
 };

@@ -109,6 +109,12 @@ export interface SpellTarget {
   boltDamage?: (charged: boolean, base: number) => number;
   /** Whether Purify may start on it right now. Default `ready`. */
   purifyStatus?: () => PurifyStatus;
+  /**
+   * A longer or resumable Purify channel (the west anchor, task 5.10). `seconds` replaces the default channel
+   * time; `resume` gives the progress a new channel starts from and `onProgress` reports it every step, so a
+   * channel that is interrupted (damage, release) keeps what it had.
+   */
+  purifyChannel?: { seconds: number; resume?: () => number; onProgress?: (time: number) => void };
 }
 
 /** The stun floor rule (combat-tuning section 2): a tap bolt on a stunned enemy deals 0. */
@@ -140,7 +146,7 @@ export type SpellEvent =
   | { type: 'ward_blocked'; amount: number; sourceId: string | undefined; staggerS: number }
   | { type: 'ward_down' }
   | { type: 'purify_started'; targetId: string; cost: number }
-  | { type: 'purify_cancelled'; targetId: string; reason: 'released' | 'out_of_range' | 'invalid' | 'reset'; refunded: number };
+  | { type: 'purify_cancelled'; targetId: string; reason: 'released' | 'out_of_range' | 'invalid' | 'reset' | 'interrupted'; refunded: number };
 
 /* ---------------- Geometry ---------------- */
 
@@ -304,6 +310,18 @@ export class SpellSystem {
     return this.channelTarget !== null;
   }
 
+  /** Id of the target being purified right now, or null. */
+  get channelTargetId(): string | null {
+    return this.channelTarget;
+  }
+
+  /** Something hurt Elena mid-channel (the west anchor): end the channel; a resumable target keeps its progress. */
+  interruptChannel(): boolean {
+    if (this.channelTarget === null) return false;
+    this.endChannel('interrupted', 0);
+    return true;
+  }
+
   activeProjectiles(): number {
     let n = 0;
     for (const p of this.projectiles) if (p.active) n++;
@@ -329,7 +347,7 @@ export class SpellSystem {
       charging,
       charge: charging && input ? Math.min(1, input.lmbHeldMs / 1000 / SPELL_CONFIG.bolt.chargeS) : 0,
       channeling: this.channelTarget !== null,
-      channel: this.channelTarget !== null ? Math.min(1, this.channelTime / SPELL_CONFIG.purify.channelS) : 0,
+      channel: this.channelTarget !== null ? Math.min(1, this.channelTime / (this.targets.get(this.channelTarget)?.purifyChannel?.seconds ?? SPELL_CONFIG.purify.channelS)) : 0,
       channelTargetId: this.channelTarget,
       wardLeft: this.wardLeft,
       hint: this.hintLeft > 0 ? this.hint : null,
@@ -498,13 +516,14 @@ export class SpellSystem {
     const cost = cfg.freeKinds.includes(target.kind) ? 0 : cfg.cost;
     if (!this.pay('purify', cost)) return;
     this.channelTarget = target.id;
-    this.channelTime = 0;
+    const pc = target.purifyChannel;
+    this.channelTime = pc?.resume ? Math.min(Math.max(0, pc.resume()), pc.seconds - 1e-6) : 0;
     this.channelPaid = cost;
     this.emit({ type: 'cast', spell: 'purify', charged: false });
     this.emit({ type: 'purify_started', targetId: target.id, cost });
   }
 
-  private endChannel(reason: 'released' | 'out_of_range' | 'invalid' | 'reset', refundShare: number): void {
+  private endChannel(reason: 'released' | 'out_of_range' | 'invalid' | 'reset' | 'interrupted', refundShare: number): void {
     const id = this.channelTarget;
     if (id === null) return;
     const refunded = Math.round(this.channelPaid * refundShare * 1000) / 1000;
@@ -535,7 +554,9 @@ export class SpellSystem {
       return;
     }
     this.channelTime += dt;
-    if (this.channelTime >= SPELL_CONFIG.purify.channelS) {
+    const channelS = target.purifyChannel?.seconds ?? SPELL_CONFIG.purify.channelS;
+    target.purifyChannel?.onProgress?.(Math.min(this.channelTime, channelS));
+    if (this.channelTime >= channelS) {
       this.channelTarget = null;
       this.channelTime = 0;
       this.channelPaid = 0;

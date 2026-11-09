@@ -61,6 +61,23 @@ describe('the scripted first attack (requirements 5.2, 5.3)', () => {
     expect(r.hp()).toBe(100); // the strike has not landed yet
   });
 
+  it('tops magic up to the Ward cost when the wind-up starts, so Ward is always affordable', () => {
+    const r = createFightRig('garden');
+    engage(r);
+    const e = r.encounters.fsmEnemy('briggs')!;
+    // Elena arrives with an empty well just before the scripted attack begins.
+    for (let i = 0; i < 60 * 14 && !r.encounters.view('briggs').telegraphing; i++) {
+      r.store.setState((s) => ({ player: { ...s.player, magic: 0 } }));
+      r.tick(SIM_DT);
+    }
+    expect(e.scripted).not.toBeNull();
+    expect(r.store.getState().player.magic).toBeGreaterThanOrEqual(SPELL_CONFIG.ward.cost);
+    r.fight.ward();
+    expect(r.spells.wardActive).toBe(true);
+    untilStrike(r);
+    expect(r.events.find((ev) => ev.type === 'attack' && ev.ability === 'scripted_strike')).toMatchObject({ blocked: true });
+  });
+
   it('LMB Ward (spell 3 selected) during the wind-up blocks the strike entirely', () => {
     const r = createFightRig('garden');
     engage(r);

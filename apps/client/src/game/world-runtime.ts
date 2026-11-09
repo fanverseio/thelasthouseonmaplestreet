@@ -89,6 +89,8 @@ export interface WorldRuntimeOptions {
   inCombat?: () => boolean;
   /** A `finale` action fired (game/ending.ts). Returns a failure reason, or null on success. */
   onFinale?: (op: 'choice') => string | null;
+  /** An `anchor` action fired (game/ritual.ts, task 5.10). Returns a failure reason, or null on success. */
+  onAnchor?: (dir: 'north' | 'east' | 'west') => string | null;
 }
 
 export interface WorldRuntime {
@@ -96,6 +98,8 @@ export interface WorldRuntime {
   interact(pose: PlayerPose): InteractResult;
   /** Tell the runtime whether E is down right now (the view calls this before `interact` and every step). */
   setHeld(down: boolean): void;
+  /** E is down right now (as the view last reported it). The ritual anchors' channels read this. */
+  readonly held: boolean;
   /** The running hold interaction (progress 0..1, sim time), or null. */
   readonly hold: { id: EntityId; progress: number; seconds: number } | null;
   nearest(pose: PlayerPose): Hit | null;
@@ -423,6 +427,11 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
           if (failure) return failure;
           break;
         }
+        case 'anchor': {
+          const failure = options.onAnchor?.(a.dir) ?? (options.onAnchor ? null : 'no_ritual_runtime');
+          if (failure) return failure;
+          break;
+        }
         case 'encounter': {
           const failure = options.onEncounter?.(a.op, a.id) ?? (options.onEncounter ? null : 'no_encounter_runtime');
           if (failure) return failure;
@@ -693,6 +702,9 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
     interact,
     setHeld(down) {
       held = down;
+    },
+    get held() {
+      return held;
     },
     get hold() {
       return holdState ? { id: holdState.id, progress: Math.min(1, holdState.elapsed / holdState.seconds), seconds: holdState.seconds } : null;

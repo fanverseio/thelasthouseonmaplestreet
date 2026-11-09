@@ -4,7 +4,6 @@ import { ALL_INTERACTIONS } from '../content/interactions/index.ts';
 import type { Cond } from '../content/interactions/types.ts';
 import { getLine } from '../content/dialogue/index.ts';
 import { ALL_SEQUENCES } from '../content/sequences/index.ts';
-import { INTERIOR_SPAWN } from '../content/world/interior-layout.ts';
 import { PLACEMENTS } from '../content/world/placements.ts';
 import { MemorySaveStorage } from '../services/save-storage.ts';
 import { createGameStore, type GameStore } from '../store/game-store.ts';
@@ -15,133 +14,71 @@ import { InputController } from './input.ts';
 import { canContinue } from './save.ts';
 import { sealState, type SealState } from './progression.ts';
 import { SIM_DT } from './player.ts';
-import { STRIKE_INTERVALS } from './ritual.ts';
 import { validateSequenceDef } from './sequences.ts';
+import { createAnchorDriver, createFightRig } from './test-helpers.ts';
 
 type Dir = 'north' | 'east' | 'west';
-const ANCHORS: Record<Dir, string> = { north: 'anchor.ritual.north', east: 'anchor.ritual.east', west: 'anchor.ritual.west' };
-const HOLD: Record<Dir, number> = { north: 3, east: 6, west: 4 };
 
-/** A headless Elena in the ritual chamber, started the way `?start=ritual` does. */
+/**
+ * A headless Elena in the ritual chamber, started the way `?start=ritual` does, with the REAL spell, enemy and ritual
+ * systems (task 5.10). `restore(dir)` plays the anchor's mechanic like a player: Bolts and E (north), E and Ward (east),
+ * Purify (west). Elena is topped up each step so the smoke cannot kill her (the unit tests of the director cover damage).
+ */
 function setup(start: 'ritual' | 'ritual-choice' = 'ritual') {
-  const store: GameStore = createGameStore();
-  store.getState().startNewGame('classic');
-  expect(applyDevStart(store, start)).toEqual([]);
-  store.getState().setPhase('playing');
-  const storage = new MemorySaveStorage();
-  const { world, encounters, ritual, ending } = createEncounterWorld({ store, storage });
-  const pos: { x: number; z: number } = { x: INTERIOR_SPAWN.x, z: -12 }; // INTERIOR_SPAWN.x is a literal type
-  const flags = () => store.getState().progress.flags;
-  const tick = (seconds: number) => {
-    for (let i = 0; i < Math.round(seconds / SIM_DT); i++) world.tick(SIM_DT, { x: pos.x, z: pos.z });
-  };
+  const rig = createFightRig(start, { keepAlive: true });
+  const driver = createAnchorDriver(rig);
+  const { store, storage, world, ritual, ending, pos, flags, tick, press } = rig;
   const goTo = (id: string) => {
     const p = PLACEMENTS[id as keyof typeof PLACEMENTS]!;
     pos.x = p.x;
     pos.z = p.z + 1; // one metre in front of it
   };
-  const press = () => world.interact({ x: pos.x, z: pos.z });
-  /** Press E on an anchor and keep holding it for `seconds`. */
-  const hold = (dir: Dir, seconds = HOLD[dir] + 0.2) => {
-    goTo(ANCHORS[dir]);
-    const r = press();
-    world.setHeld(true);
-    tick(seconds);
-    return r;
-  };
   const activate = () => {
     goTo('seal.ritual.central');
     expect(press()).toMatchObject({ status: 'done', id: 'seal.ritual.central' });
+  };
+  const restore = (dir: Dir) => {
+    driver.restore(dir);
+    world.setHeld(false);
   };
   /** Wait out the first-anchor cinematic placeholder (15 s fallback). */
   const finishCinematic = () => {
     tick(16);
   };
-  return { store, storage, world, encounters, ritual, ending, pos, flags, tick, goTo, press, hold, activate, finishCinematic };
+  return { store, storage, world, encounters: rig.encounters, ritual, ending, pos, flags, tick, goTo, press, restore, activate, finishCinematic, driver, rig };
 }
 
-describe('hold interactions', () => {
-  it('complete only after the full hold, and show progress meanwhile', () => {
+describe('the anchors are real tasks, not hold-E stubs', () => {
+  it('holding E on east or west alone never restores them', () => {
     const t = setup();
     t.activate();
-    t.goTo(ANCHORS.east);
-    expect(t.press()).toMatchObject({ status: 'holding', id: 'anchor.ritual.east' });
+    t.driver.stand('east');
+    t.press();
     t.world.setHeld(true);
-    t.tick(3);
-    expect(t.world.hold?.progress).toBeCloseTo(0.5, 1);
+    t.tick(1.4); // before the first strike: no pause, plain progress
     expect(t.flags()).not.toContain('anchor_east');
-    t.tick(2.8);
-    expect(t.flags()).not.toContain('anchor_east');
-    t.tick(0.4);
-    expect(t.flags()).toContain('anchor_east');
-    expect(t.world.hold).toBeNull();
-  });
-
-  it('cancel when E is released, and start over from zero', () => {
-    const t = setup();
-    t.activate();
-    t.goTo(ANCHORS.west);
-    t.press();
+    t.driver.stand('west');
+    expect(t.press()).toMatchObject({ status: 'refused', reason: 'use_purify' });
     t.world.setHeld(true);
-    t.tick(3);
-    t.world.setHeld(false);
-    t.tick(0.1);
-    expect(t.world.hold).toBeNull();
-    t.world.setHeld(true);
-    t.tick(5);
-    expect(t.flags()).not.toContain('anchor_west'); // nothing was banked
-    t.press();
-    t.world.setHeld(true);
-    t.tick(3.9);
-    expect(t.flags()).not.toContain('anchor_west');
-    t.tick(0.3);
-    expect(t.flags()).toContain('anchor_west');
-  });
-
-  it('cancel when Elena leaves range', () => {
-    const t = setup();
-    t.activate();
-    t.goTo(ANCHORS.west);
-    t.press();
-    t.world.setHeld(true);
-    t.tick(2);
-    t.pos.x += 8;
-    t.tick(0.1);
-    expect(t.world.hold).toBeNull();
-    t.pos.x -= 8;
-    t.tick(6);
+    t.tick(10);
     expect(t.flags()).not.toContain('anchor_west');
   });
 
-  it('uses sim time only: nothing advances without ticks', () => {
-    const t = setup();
-    t.activate();
-    t.goTo(ANCHORS.east);
-    t.press();
-    t.world.setHeld(true);
-    expect(t.world.hold?.progress).toBe(0);
-    expect(t.flags()).not.toContain('anchor_east');
-  });
-
-  it('the north anchor selects Arcane Bolt by itself when it is unlocked (Q14)', () => {
+  it('the north anchor refuses while the smoke shell stands, selects Arcane Bolt, and the Angel hints', () => {
     const t = setup();
     t.activate();
     t.store.setState((s) => ({ player: { ...s.player, selectedSpell: 'purify' } }));
-    t.goTo(ANCHORS.north);
-    expect(t.press()).toMatchObject({ status: 'holding' });
+    t.driver.stand('north');
+    expect(t.press()).toMatchObject({ status: 'refused', id: 'anchor.ritual.north', reason: 'shell_intact' });
     expect(t.store.getState().player.selectedSpell).toBe('arcane_bolt');
+    expect(t.world.spoken).toContain('vo_angel_p6_h_north');
+    expect(t.ritual.view().channel).toBeNull();
   });
 
-  it('the north anchor still refuses and the Angel hints when Arcane Bolt is not unlocked', () => {
+  it('pressing E before the seal is woken does nothing', () => {
     const t = setup();
-    t.activate();
-    t.store.setState((s) => ({ player: { ...s.player, selectedSpell: 'ward', spellsUnlocked: ['ward', 'purify'] } }));
-    t.goTo(ANCHORS.north);
-    expect(t.press()).toMatchObject({ status: 'refused', id: 'anchor.ritual.north' });
-    expect(t.world.hold).toBeNull();
-    expect(t.world.spoken).toContain('vo_angel_p6_h_north');
-    t.tick(0.1);
-    expect(t.world.prompt).toContain('Arcane Bolt');
+    t.driver.stand('east');
+    expect(t.press()).toMatchObject({ status: 'none' });
   });
 
   it('the Angel hints the first unrestored anchor after 45 s without progress, one at a time (Q15)', () => {
@@ -157,8 +94,7 @@ describe('hold interactions', () => {
     t.tick(120); // said once per stall, not nagging
     expect(t.world.spoken.filter((l) => l === 'vo_angel_p6_h_north')).toHaveLength(1);
     expect(t.world.spoken).not.toContain('vo_angel_p6_h_east');
-    t.hold('north');
-    t.world.setHeld(false);
+    t.restore('north');
     t.finishCinematic();
     expect(t.flags()).toContain('anchor_north');
     t.tick(40);
@@ -166,18 +102,6 @@ describe('hold interactions', () => {
     t.tick(10);
     expect(t.world.spoken).toContain('vo_angel_p6_h_east');
     expect(t.world.spoken).not.toContain('vo_angel_p6_h_west');
-  });
-
-  it('switching spell mid-hold cancels the north anchor', () => {
-    const t = setup();
-    t.activate();
-    t.goTo(ANCHORS.north);
-    t.press();
-    t.world.setHeld(true);
-    t.tick(1);
-    t.store.setState((s) => ({ player: { ...s.player, selectedSpell: 'purify' } }));
-    t.tick(0.1);
-    expect(t.world.hold).toBeNull();
   });
 });
 
@@ -204,8 +128,7 @@ describe('Beat 11: the ritual, headless', () => {
       const t = setup();
       t.activate();
       for (const [i, dir] of order.entries()) {
-        t.hold(dir);
-        t.world.setHeld(false);
+        t.restore(dir);
         expect(t.flags(), order.join()).toContain(`anchor_${dir}`);
         if (i === 0) {
           // The first anchor brings Felix's clip; control is locked until it ends.
@@ -225,11 +148,9 @@ describe('Beat 11: the ritual, headless', () => {
   it('the Felix clip plays once, for the first anchor only', () => {
     const t = setup();
     t.activate();
-    t.hold('east');
-    t.world.setHeld(false);
+    t.restore('east');
     t.finishCinematic();
-    t.hold('west');
-    t.world.setHeld(false);
+    t.restore('west');
     expect(t.world.video).toBeNull();
     expect(t.world.sequences.results.filter((r) => r.id === 'cin_felix_anchor')).toHaveLength(1);
   });
@@ -237,28 +158,24 @@ describe('Beat 11: the ritual, headless', () => {
   it('skipping the Felix clip still sets felix3_done', () => {
     const t = setup();
     t.activate();
-    t.hold('west');
-    t.world.setHeld(false);
+    t.restore('west');
     expect(t.world.sequences.active).toBe('cin_felix_anchor');
     expect(t.world.sequences.skip().skipped).toBe(true);
     expect(t.flags()).toContain('felix3_done');
     expect(t.world.video).toBeNull();
   });
 
-  it('smoke strikes are a harmless timed cue that speeds up with each anchor and stops at anchors_all', () => {
+  it('the smoke strikes (rings) speed up with each anchor and stop at anchors_all', () => {
     const t = setup();
     t.activate();
-    const hp = t.store.getState().player.hp;
-    t.tick(STRIKE_INTERVALS[0] + 0.1);
+    t.tick(4.1);
     expect(t.ritual.view().strike).toBe('warning');
     t.tick(1.3);
     expect(t.ritual.view().strike).toBe('landed');
-    expect(t.ritual.strikesLanded).toBe(1);
+    expect(t.ritual.strikesLanded).toBeGreaterThanOrEqual(1);
     expect(t.world.spoken).toContain('vo_smoke_b11_01');
-    expect(t.store.getState().player.hp).toBe(hp);
     for (const dir of ['north', 'east', 'west'] as const) {
-      t.hold(dir);
-      t.world.setHeld(false);
+      t.restore(dir);
       t.finishCinematic();
     }
     t.tick(1);
@@ -267,16 +184,15 @@ describe('Beat 11: the ritual, headless', () => {
     t.tick(30);
     expect(t.ritual.strikesLanded).toBe(landed);
     expect(t.ritual.view()).toMatchObject({ active: false, strike: 'idle' });
+    expect(t.ritual.wraithCount()).toBe(0);
   });
 
   it('death keeps the anchors and ritual_active, and respawns at cp_ritual', () => {
     const t = setup();
     t.activate();
-    t.hold('east');
-    t.world.setHeld(false);
+    t.restore('east');
     t.finishCinematic();
-    t.hold('west');
-    t.world.setHeld(false);
+    t.restore('west');
     expect(t.flags()).toEqual(expect.arrayContaining(['anchor_east', 'anchor_west', 'ritual_active', 'felix3_done']));
     t.store.setState((s) => ({ player: { ...s.player, hp: 0 } }));
     t.tick(0.1);
@@ -286,24 +202,24 @@ describe('Beat 11: the ritual, headless', () => {
     expect(s.player.pos[2]).toBe(-12);
     expect(s.progress.flags).toEqual(expect.arrayContaining(['anchor_east', 'anchor_west', 'ritual_active', 'felix3_done']));
     // The last anchor still finishes the ritual after the respawn.
-    t.hold('north');
-    t.world.setHeld(false);
+    t.restore('north');
     expect(t.flags()).toContain('anchors_all');
   });
 
-  it('a hold in progress is dropped by death and does not bank time', () => {
+  it('a task in progress is dropped by death, but its progress is banked', () => {
     const t = setup();
     t.activate();
-    t.goTo(ANCHORS.east);
+    t.driver.stand('east');
     t.press();
     t.world.setHeld(true);
-    t.tick(4);
+    t.tick(3);
     t.store.setState((s) => ({ player: { ...s.player, hp: 0 } }));
     t.pos.x = 0;
     t.pos.z = -12; // respawn point, far from the east anchor
     t.tick(0.1);
-    expect(t.world.hold).toBeNull();
+    expect(t.ritual.view().channel).toBeNull();
     expect(t.flags()).not.toContain('anchor_east');
+    expect(t.ritual.anchorProgress('east')).toBeGreaterThan(1);
   });
 });
 
