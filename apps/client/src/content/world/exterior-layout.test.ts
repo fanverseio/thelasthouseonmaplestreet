@@ -45,7 +45,7 @@ describe('exterior layout', () => {
     expect(isFree(HOME_SPAWN.x, HOME_SPAWN.z, exteriorColliders([]))).toBe(true);
   });
 
-  it('keeps Elena inside her house until locket_taken, then lets her reach the street', () => {
+  it('keeps Elena inside her house until home_done, then lets her reach the street', () => {
     const before = reach([]);
     // bedroom, hall and kitchen are connected
     expect(before(-25, 39)).toBe(true);
@@ -54,7 +54,7 @@ describe('exterior layout', () => {
     // the street is not
     expect(before(-20, 31)).toBe(false);
     expect(before(-30, 31)).toBe(false);
-    const after = reach(['locket_taken']);
+    const after = reach(['home_done']);
     expect(after(-20, 31)).toBe(true);
     expect(after(-30, 31)).toBe(true);
     expect(after(...INTERSECTION)).toBe(false);
@@ -62,9 +62,9 @@ describe('exterior layout', () => {
 
   it('closes the front doorway with a collider only while the door is shut', () => {
     expect(isFree(-19.5, 34.2, exteriorColliders([]))).toBe(false);
-    expect(isFree(-19.5, 34.2, exteriorColliders(['locket_taken']))).toBe(true);
+    expect(isFree(-19.5, 34.2, exteriorColliders(['home_done']))).toBe(true);
     expect(homeDoorOpen([])).toBe(false);
-    expect(homeDoorOpen(['locket_taken'])).toBe(true);
+    expect(homeDoorOpen(['home_done'])).toBe(true);
   });
 
   it('every veil gate matches a gate in the manifest with the same flag', () => {
@@ -76,14 +76,14 @@ describe('exterior layout', () => {
   });
 
   it('keeps Elena in the home stretch until the first veil opens', () => {
-    const r = reach(['locket_taken']);
+    const r = reach(['home_done']);
     expect(r(...([-30, 31] as const))).toBe(true);
     expect(r(...INTERSECTION)).toBe(false);
     expect(r(...LAST_HOUSE_GROUNDS)).toBe(false);
   });
 
   it('opens the route one veil at a time', () => {
-    const stage = (flags: ProgressFlag[]) => reach(['locket_taken', ...flags]);
+    const stage = (flags: ProgressFlag[]) => reach(['home_done', ...flags]);
     let r = stage(['seq1_done']);
     expect(r(...INTERSECTION)).toBe(true);
     expect(r(...NO31)).toBe(false);
@@ -104,13 +104,13 @@ describe('exterior layout', () => {
 
   it('never opens the front road to the Last House', () => {
     const all = VEILS.flatMap((v) => (v.opensOn ? [v.opensOn] : []));
-    const colliders = exteriorColliders([...all, 'locket_taken']);
+    const colliders = exteriorColliders([...all, 'home_done']);
     const iron = VEILS.find((v) => v.opensOn === null)!;
     expect(isFree(iron.x, iron.z, colliders)).toBe(false);
   });
 
   it('has no gap in the outer boundary', () => {
-    const everything: ProgressFlag[] = ['locket_taken', ...VEILS.flatMap((v) => (v.opensOn ? [v.opensOn] : []))];
+    const everything: ProgressFlag[] = ['home_done', ...VEILS.flatMap((v) => (v.opensOn ? [v.opensOn] : []))];
     const colliders = exteriorColliders(everything);
     const r = reach(everything);
     expect(r(-69, 0)).toBe(false);

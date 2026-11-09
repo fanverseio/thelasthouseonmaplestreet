@@ -44,6 +44,7 @@ export const BEAT7: InteractionContent = {
       id: 'trg.grounds.enter',
       requires: { flags: ['lane_open'], notFlags: ['enc_approach_resolved'] },
       actions: [
+        { do: 'checkpoint', event: 'enter:trg.grounds.enter' },
         { do: 'encounter', op: 'interact', id: 'hound_1' },
         { do: 'encounter', op: 'interact', id: 'hound_2' },
       ],

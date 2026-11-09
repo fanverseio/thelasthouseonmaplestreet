@@ -1,8 +1,8 @@
-﻿import type { GateDef } from '../../game/world-registry.ts';
+import type { GateDef } from '../../game/world-registry.ts';
 
 /** level-manifest.md section 3. opensOn: null means the gate never opens. */
 export const GATES: readonly GateDef[] = [
-  { id: 'door.home.front', opensOn: 'locket_taken' },
+  { id: 'door.home.front', opensOn: 'home_done' },
   { id: 'gate.street.veil_east', opensOn: 'seq1_done' },
   { id: 'gate.street.veil_garden', opensOn: 'seq2_done' },
   { id: 'gate.street.veil_north', opensOn: 'seq3_done' },

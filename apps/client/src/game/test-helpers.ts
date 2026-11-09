@@ -13,9 +13,13 @@ import { createEncounterWorld } from './encounter-runtime.ts';
 import { gateChanges } from './gates.ts';
 import { SIM_DT } from './player.ts';
 
-export type StartEvent = 'garden' | 'interior';
+export type StartEvent = 'garden' | 'grounds' | 'interior';
 
-const EVENT_NAME: Record<StartEvent, string> = { garden: 'enter:trg.garden.enter', interior: 'enter:last_house' };
+const EVENT_NAME: Record<StartEvent, string> = {
+  garden: 'enter:trg.garden.enter',
+  grounds: 'enter:trg.grounds.enter',
+  interior: 'enter:last_house',
+};
 
 /**
  * A fresh Classic game rebuilt from flags (what a dev start does): flags are set one by one through the real

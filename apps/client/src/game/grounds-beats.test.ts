@@ -293,19 +293,20 @@ describe('Beat 7 rules', () => {
     expect(g.press()).toMatchObject({ status: 'done', id: 'puzzle.grounds.padlock' });
   });
 
-  it('death during the hounds respawns at the lane gate; resolved hounds stay resolved and the rest wake again', () => {
+  it('death during the hounds respawns at the grounds entrance (cp_grounds, Q8); resolved hounds stay resolved and the rest wake again', () => {
     const g = setup();
     enterGrounds(g);
     fightHound(g, 1, 'purify');
     g.store.setState((s) => ({ player: { ...s.player, hp: 0 } }));
     g.world.tick(SIM_DT, { x: g.pos.x, z: g.pos.z });
     expect(g.store.getState().player.hp).toBe(100);
-    expect(g.store.getState().player.pos).toEqual([-58, 0, -20]);
+    expect(g.store.getState().game.checkpointId).toBe('cp_grounds');
+    expect(g.store.getState().player.pos).toEqual([-57, 0, 20]);
     expect(g.encounters.view('hound_1').state).toBe('resolved');
     expect(g.encounters.view('hound_2')).toMatchObject({ state: 'idle', engaged: false });
-    g.pos.x = -58;
-    g.pos.z = -20;
-    g.route([-58, 14], GROUNDS_GATE, [-54, 22.1]); // the trigger already fired; approach range wakes it
+    g.pos.x = -57;
+    g.pos.z = 20;
+    g.route([-54, 22.1]); // the trigger already fired; approach range wakes it
     expect(g.encounters.view('hound_2').engaged).toBe(true);
     fightHound(g, 2, 'destroy');
     expect(g.flags()).toContain('enc_approach_resolved');

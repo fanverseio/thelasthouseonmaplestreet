@@ -105,7 +105,8 @@ export function staticColliders(): Collider[] {
   return walls;
 }
 
-/** The front door of No. 12 follows its gate in the manifest (locket_taken). */
+/** The front door of No. 12 follows its gate in the manifest (home_done, Q26: the doorway stays blocked until E is pressed on the door).
+ * The door interaction itself still needs locket_taken. */
 export function homeDoorOpen(flags: readonly ProgressFlag[]): boolean {
   const gate = GATES.find((g) => g.id === 'door.home.front');
   return gate !== undefined && isGateOpen(gate, flags);

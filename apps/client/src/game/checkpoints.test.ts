@@ -20,6 +20,7 @@ const FLAGS_AT: Record<string, ProgressFlag[]> = {
   cp_house66: ['locket_taken', 'angel_awake', 'home_done', 'seq1_done', 'seq2_done', 'seq3_started', 'briggs_purified', 'walkie_found', 'seq3_done', 'seq4_done'],
   cp_watcher: ['locket_taken', 'angel_awake', 'home_done', 'seq1_done', 'seq2_done', 'seq3_started', 'briggs_purified', 'walkie_found', 'seq3_done', 'seq4_done', 'fuse_taken', 'fuse_placed'],
   cp_lane: ['locket_taken', 'angel_awake', 'home_done', 'seq1_done', 'seq2_done', 'seq3_started', 'briggs_purified', 'walkie_found', 'seq3_done', 'seq4_done', 'fuse_taken', 'fuse_placed', 'watcher_started', 'watcher_destroyed', 'fence_key_taken', 'lane_open'],
+  cp_grounds: ['locket_taken', 'angel_awake', 'home_done', 'seq1_done', 'seq2_done', 'seq3_started', 'briggs_purified', 'walkie_found', 'seq3_done', 'seq4_done', 'fuse_taken', 'fuse_placed', 'watcher_started', 'watcher_destroyed', 'fence_key_taken', 'lane_open'],
   cp_outbuilding: ['locket_taken', 'angel_awake', 'home_done', 'seq1_done', 'seq2_done', 'seq3_started', 'briggs_purified', 'walkie_found', 'seq3_done', 'seq4_done', 'fuse_taken', 'fuse_placed', 'watcher_started', 'watcher_destroyed', 'fence_key_taken', 'lane_open', 'enc_approach_resolved', 'padlock_open'],
   cp_interior: ['padlock_open', 'seq5_done', 'runes_done'],
   cp_ritual: ['enc_interior_resolved', 'board_solved'],
@@ -47,6 +48,7 @@ describe('checkpoints', () => {
     expect(checkpointForFlag('padlock_open')?.id).toBe('cp_outbuilding');
     expect(checkpointForFlag('board_solved')?.id).toBe('cp_ritual');
     expect(checkpointForEvent('enter:trg.garden.enter')?.id).toBe('cp_garden');
+    expect(checkpointForEvent('enter:trg.grounds.enter')?.id).toBe('cp_grounds');
     expect(checkpointForEvent('enter:last_house')?.id).toBe('cp_interior');
     expect(checkpointForEvent('new_game')?.id).toBe('cp_home_start');
     expect(checkpointForFlag('anchors_all')).toBeNull();
@@ -77,7 +79,11 @@ describe('checkpoints', () => {
     const closed = exteriorColliders([]);
     const step = moveAndSlide({ x: porch.x, z: HOME_BOUNDS.minZ + 1 }, { x: 0, z: -3 }, PLAYER_RADIUS, closed);
     expect(step.z).toBeGreaterThan(HOME_BOUNDS.minZ);
-    const open = exteriorColliders(['locket_taken']);
+    // Q26: the locket alone (drawer opened, key taken) does not open the doorway; only home_done does.
+    const lockedYet = exteriorColliders(['locket_taken', 'angel_awake']);
+    const stillBlocked = moveAndSlide({ x: porch.x, z: HOME_BOUNDS.minZ + 1 }, { x: 0, z: -3 }, PLAYER_RADIUS, lockedYet);
+    expect(stillBlocked.z).toBeGreaterThan(HOME_BOUNDS.minZ);
+    const open = exteriorColliders(['locket_taken', 'angel_awake', 'home_done']);
     const through = moveAndSlide({ x: porch.x, z: HOME_BOUNDS.minZ + 1 }, { x: 0, z: -3 }, PLAYER_RADIUS, open);
     expect(through.z).toBeLessThan(HOME_BOUNDS.minZ);
   });

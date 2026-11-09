@@ -28,6 +28,7 @@ export const CHECKPOINTS: readonly CheckpointDef[] = [
   { id: 'cp_house66', onFlag: 'seq4_done', onEvent: null, scene: 'exterior', spawn: { x: 50, z: -35, yaw: 0 }, note: 'Outside the shed' },
   { id: 'cp_watcher', onFlag: 'fuse_placed', onEvent: null, scene: 'exterior', spawn: { x: -56, z: -32, yaw: 0 }, note: 'House 66 gate (mini-boss reset)' },
   { id: 'cp_lane', onFlag: 'lane_open', onEvent: null, scene: 'exterior', spawn: { x: -58, z: -20, yaw: Math.PI }, note: 'Lane gate' },
+  { id: 'cp_grounds', onFlag: null, onEvent: 'enter:trg.grounds.enter', scene: 'exterior', spawn: { x: -57, z: 20, yaw: Math.PI }, note: 'Grounds entrance (hound fight reset)' },
   { id: 'cp_outbuilding', onFlag: 'padlock_open', onEvent: null, scene: 'exterior', spawn: { x: -52, z: 25.5, yaw: Math.PI }, note: 'Outbuilding door' },
   { id: 'cp_interior', onFlag: null, onEvent: 'enter:last_house', scene: 'last_house', spawn: { x: 0, z: 20, yaw: 0 }, note: 'Entrance hall' },
   { id: 'cp_ritual', onFlag: 'board_solved', onEvent: null, scene: 'last_house', spawn: { x: 0, z: -12, yaw: 0 }, note: 'Ritual chamber centre' },

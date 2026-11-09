@@ -39,7 +39,7 @@ export const HOME_WALLS: readonly WallRect[] = [
   w('home.wall.div2_s', -17.2, 40.5, -16.8, 42.6),
 ];
 
-/** The front door: fills the doorway while gate `door.home.front` is closed. */
+/** The front door: fills the doorway while gate `door.home.front` is closed (opens on home_done). */
 export const HOME_FRONT_DOOR: WallRect = w('home.door.front', -21, 34, -18, 34.4);
 
 export function homeColliders(doorOpen: boolean): Collider[] {

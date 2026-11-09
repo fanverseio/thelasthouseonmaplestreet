@@ -215,7 +215,7 @@ function buildSteps(plan: Plan): Step[] {
         g.tick(6.2);
         expect(g.encounters.view('briggs').telegraphing).toBe(true);
         if (plan.briggs === 'purify') expect(g.encounters.castWard()).toBe(true); // the dark run takes the hit instead
-        g.tick(1.6);
+        g.tick(2.6); // the wind-up is 2.5 s (Q31)
         expect(g.press()).toMatchObject({ status: 'done', id: 'enemy.garden.briggs' });
         expect(g.encounters.view('briggs').state).toBe('weakened');
         g.tick(1.7);
@@ -282,13 +282,29 @@ function buildSteps(plan: Plan): Step[] {
     },
     {
       id: 'lane',
-      flags: ['journal_3', 'enc_approach_resolved'],
-      morality: 10 * (DELTA[plan.hounds[0]] + DELTA[plan.hounds[1]]),
+      flags: ['journal_3'],
       run(g) {
         g.goTo('trg.lane.home_window');
         g.tick(6);
         g.goTo('clue.lane.journal_3');
         expect(g.press()).toMatchObject({ status: 'done', id: 'clue.lane.journal_3' });
+      },
+    },
+    {
+      id: 'grounds_enter',
+      flags: [],
+      event: 'grounds',
+      run(g) {
+        g.goTo('trg.grounds.enter');
+        g.tick(0.1);
+        expect(g.store.getState().game.checkpointId).toBe('cp_grounds');
+      },
+    },
+    {
+      id: 'hounds',
+      flags: ['enc_approach_resolved'],
+      morality: 10 * (DELTA[plan.hounds[0]] + DELTA[plan.hounds[1]]),
+      run(g) {
         g.goTo('trg.grounds.enter');
         fightEnemy(g, 'hound_1', 'enemy.grounds.hound_1', plan.hounds[0], 1.7);
         expect(g.flags()).not.toContain('enc_approach_resolved'); // both hounds are needed
@@ -460,6 +476,7 @@ const CHECKPOINT_AFTER: Record<CheckpointId, string | null> = {
   cp_house66: 'gartner',
   cp_watcher: 'fuse',
   cp_lane: 'watcher',
+  cp_grounds: 'grounds_enter',
   cp_outbuilding: 'padlock',
   cp_interior: 'enter_house',
   cp_ritual: 'board',

@@ -174,14 +174,17 @@ describe('Beat 1 headless playthrough: New Game to home_done', () => {
     ]);
   });
 
-  it('opens the front door gate only with locket_taken', () => {
+  it('opens the front door gate only with home_done (Q26)', () => {
     const { flags, walkTo, press, store } = setup();
     walkTo(-19.5, 36);
     expect(press().status).toBe('refused');
     expect(store.getState().setFlag('locket_taken').ok).toBe(true);
-    // the gate is open (collision) but home_done still needs angel_awake
-    expect(walkTo(-19.5, 33)).toBeLessThan(0.1);
+    // the door interaction would work, but the doorway collider stays until home_done
+    expect(walkTo(-19.5, 33)).toBeGreaterThan(0.5);
     expect(flags()).not.toContain('home_done');
+    expect(store.getState().setFlag('angel_awake').ok).toBe(true);
+    expect(store.getState().setFlag('home_done').ok).toBe(true);
+    expect(walkTo(-19.5, 33)).toBeLessThan(0.1);
   });
 
   it('refuses a full inventory without losing the jar', () => {

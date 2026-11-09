@@ -68,6 +68,7 @@ export const CHECKPOINT_IDS = [
   'cp_house66',
   'cp_watcher',
   'cp_lane',
+  'cp_grounds',
   'cp_outbuilding',
   'cp_interior',
   'cp_ritual',
