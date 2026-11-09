@@ -57,6 +57,14 @@ export const PLACEMENTS: Readonly<Record<EntityId, Placement>> = {
   // Beat 6: House 66 yard (house x -67..-53, z -44..-36; lane veil at z -22)
   'socket.house66.fusebox': { x: -52, z: -35, r: 0.5 },
   'enemy.house66.watcher': { x: -58, z: -28, r: 0.5 },
+  // The Watcher's teleport nodes (task 5.8): six spots spread over the yard (x -68..-48, z -35.5..-23.5), clear of the
+  // house wall (z -36), the fusebox, the fence key and the lane gate. He teleports to these and nowhere else.
+  'node.house66.tp_1': { x: -65.5, z: -33, r: 0.5 },
+  'node.house66.tp_2': { x: -59, z: -33.5, r: 0.5 },
+  'node.house66.tp_3': { x: -50.5, z: -31, r: 0.5 },
+  'node.house66.tp_4': { x: -65.5, z: -27, r: 0.5 },
+  'node.house66.tp_5': { x: -51, z: -26.5, r: 0.5 },
+  'node.house66.tp_6': { x: -58.5, z: -25.5, r: 0.5 },
   'pickup.house66.fence_key': { x: -56.5, z: -28, r: 0.2 },
   'gate.house66.lane': { x: -59.5, z: -23.6, r: 0.75 },
   // Beat 7: the back lane (x -60, behind the west gardens) and the Last House grounds (outbuilding box x -56..-48, z 27..33)

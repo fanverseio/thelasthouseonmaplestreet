@@ -11,6 +11,7 @@ import { PLACEMENTS } from '../content/world/placements.ts';
 import { createGameStore } from '../store/game-store.ts';
 import { moveAndSlide } from './collision.ts';
 import { createEncounterWorld } from './encounter-runtime.ts';
+import { createCombat, createFighter } from './test-helpers.ts';
 import { PLAYER_RADIUS, SIM_DT } from './player.ts';
 import { objectiveFor } from './objectives.ts';
 import { validateSequenceDef } from './sequences.ts';
@@ -25,7 +26,8 @@ function setup(extra: ProgressFlag[] = []) {
   const store = createGameStore();
   store.getState().startNewGame('classic');
   for (const f of [...POST_SEQ3, ...extra]) expect(store.getState().setFlag(f).ok, f).toBe(true);
-  const { world, encounters, choices } = createEncounterWorld({ store });
+  const combat = createCombat(store);
+  const { world, encounters, choices } = createEncounterWorld({ store, enemies: combat.enemies });
   const pos = { x: 58, z: 5 };
   const flags = () => store.getState().progress.flags;
   const carried = () => store.getState().progress.carried;
@@ -54,7 +56,9 @@ function setup(extra: ProgressFlag[] = []) {
   };
   const press = () => world.interact({ x: pos.x, z: pos.z });
   const morality = () => store.getState().progress.morality.value;
-  return { store, world, encounters, choices, pos, flags, carried, tick, walkTo, route, press, morality };
+  /** The real fight: bolts, a charged bolt and the Purify channel through the SpellSystem (test-helpers.ts). */
+  const fight = createFighter({ store, ...combat, encounters, world, pos });
+  return { store, world, encounters, choices, pos, flags, carried, tick, walkTo, route, press, morality, fight, enemies: combat.enemies };
 }
 type Game = ReturnType<typeof setup>;
 
@@ -175,17 +179,16 @@ function toStunnedWatcher(g: Game) {
   expect(g.store.getState().game.checkpointId).toBe('cp_watcher');
   g.tick(3.2);
   expect(g.world.spoken).toEqual(expect.arrayContaining(['vo_elena_b6_02', 'vo_watcher_b6_01']));
-  // He engages when Elena comes within 4 m; E weakens him, the stub stuns him a moment later.
+  // He engages when Elena comes within 4 m; the real fight (Bolt taps) takes him to the 30% stun.
   g.route([-58, -31.5]);
   expect(g.flags()).toContain('watcher_started');
   expect(g.encounters.view('watcher').hostile).toBe(true);
   g.route([-58, -30]);
   expect(g.world.prompt).toBe('E  Face the Watcher');
-  expect(g.press()).toMatchObject({ status: 'done', id: 'enemy.house66.watcher' });
-  expect(g.encounters.view('watcher').state).toBe('weakened');
-  g.tick(2.6);
+  expect(g.press()).toMatchObject({ status: 'done', id: 'enemy.house66.watcher' }); // nothing to weaken: the spells do it
+  g.fight.stun('watcher');
   expect(g.encounters.view('watcher').state).toBe('stunned');
-  expect(g.world.spoken).toContain('vo_watcher_b6_05');
+  expect(g.world.spoken).toContain('vo_watcher_b6_05'); // Felix's name at 30%
 }
 
 describe.each([
@@ -202,7 +205,7 @@ describe.each([
     });
     toStunnedWatcher(g);
     const before = g.morality();
-    expect(g.encounters.choose('watcher', choice)).toEqual({ ok: true });
+    g.fight.defeat('watcher', choice);
     expect(g.morality() - before).toBe(delta);
     expect(g.flags()).toContain(flag);
     expect(g.flags()).not.toContain('fence_key_taken'); // the key is a pickup
@@ -257,9 +260,23 @@ describe('Beat 6 rules', () => {
     expect(g.flags()).not.toContain('fuse_placed');
   });
 
-  it('death respawns at cp_watcher: the fuse stays placed and the Watcher resets', () => {
+  /** The Watcher fight begun (engaged, a few bolts in, decoys possible) but not stunned. */
+  function toEngagedWatcher(g: Game) {
+    playGartner(g, 'comfort');
+    g.route([59, -10], [59, 14], [60.9, 16.5]);
+    g.press();
+    g.route([59, 5], [59, -10], [55, -31], FUSEBOX_SPOT);
+    g.press();
+    g.route([-58, -31.5], [-58, -30]);
+    expect(g.encounters.view('watcher').engaged).toBe(true);
+    for (let i = 0; i < 5; i++) g.fight.tap('watcher');
+    expect(g.encounters.fsmEnemy('watcher')!.hp).toBeLessThan(280);
+    expect(g.encounters.fsmEnemy('watcher')!.state).not.toBe('stunned');
+  }
+
+  it('death respawns at cp_watcher: the fuse stays placed and an engaged Watcher resets to full HP', () => {
     const g = setup();
-    toStunnedWatcher(g);
+    toEngagedWatcher(g);
     g.store.setState((s) => ({ player: { ...s.player, hp: 0 } }));
     g.world.tick(SIM_DT, { x: g.pos.x, z: g.pos.z });
     const s = g.store.getState();
@@ -267,14 +284,32 @@ describe('Beat 6 rules', () => {
     expect(s.player.hp).toBe(100);
     expect(s.progress.flags).toEqual(expect.arrayContaining(['fuse_placed', 'watcher_started']));
     expect(g.encounters.view('watcher')).toMatchObject({ state: 'idle', engaged: false, hostile: false });
+    const e = g.encounters.fsmEnemy('watcher')!;
+    expect(e.hp).toBe(280);
+    expect(g.enemies.all().filter((x) => x.def.id === 'shadow_decoy')).toHaveLength(0);
     // Elena can start over from the respawn point and finish.
     g.pos.x = -56;
     g.pos.z = -32;
     g.route([-58, -31.5], [-58, -30]);
     expect(g.press()).toMatchObject({ status: 'done', id: 'enemy.house66.watcher' });
-    g.tick(2.6);
+    g.fight.stun('watcher');
     expect(g.encounters.view('watcher').state).toBe('stunned');
-    expect(g.encounters.choose('watcher', 'purify')).toEqual({ ok: true });
+    g.fight.defeat('watcher', 'purify');
+  });
+
+  it('death while the Watcher is stunned keeps him stunned: the choice is still there', () => {
+    const g = setup();
+    toStunnedWatcher(g);
+    g.store.setState((s) => ({ player: { ...s.player, hp: 0 } }));
+    g.world.tick(SIM_DT, { x: g.pos.x, z: g.pos.z });
+    expect(g.store.getState().player.pos).toEqual([-56, 0, -32]);
+    expect(g.encounters.view('watcher')).toMatchObject({ state: 'stunned', hostile: false });
+    expect(g.encounters.fsmEnemy('watcher')!.hp).toBe(84);
+    g.pos.x = -56;
+    g.pos.z = -32;
+    g.route([-58, -31.5], [-58, -30]);
+    g.fight.defeat('watcher', 'destroy');
+    expect(g.flags()).toContain('watcher_destroyed');
   });
 
   it('P2 hints: the Angel at 60 s near House 66, the garage light at 120 s, nothing far away', () => {

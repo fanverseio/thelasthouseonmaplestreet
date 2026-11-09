@@ -2,8 +2,9 @@ import type { EnemyDef } from '../../game/enemies.ts';
 
 /**
  * The Watcher of House 66 (Mr Corwin), a victim of the smoke. docs/combat-tuning.md sections 4 and 5.
- * Grab is live. Teleport, decoys and the voice lines are typed stubs until task 5.8.
- * The voice line ids are placeholders for the authored lines; grab cooldown, reach and aggro are invented.
+ * Grab, teleport (nodes tp_1..tp_6, 6-9 s, 0.8 s mark), decoys (2 at 60% and 2 at 40% HP) and the voice lines are
+ * live (task 5.8). The voice lines are the authored vo_watcher_b6_03 / 04 / 05 (Felix's name at 90 / 50 / 30%).
+ * Grab cooldown, reach and aggro are invented.
  */
 export const WATCHER: EnemyDef = {
   id: 'watcher',
@@ -26,6 +27,6 @@ export const WATCHER: EnemyDef = {
       minPlayerDistance: 2,
     },
     { kind: 'spawnDecoys', thresholds: [0.6, 0.4], count: 2, decoy: 'shadow_decoy' },
-    { kind: 'voiceAtHp', thresholds: [0.9, 0.5, 0.3], lines: ['vo_watcher_felix_90', 'vo_watcher_felix_50', 'vo_watcher_felix_30'] },
+    { kind: 'voiceAtHp', thresholds: [0.9, 0.5, 0.3], lines: ['vo_watcher_b6_03', 'vo_watcher_b6_04', 'vo_watcher_b6_05'] },
   ],
 };
