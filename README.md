@@ -176,7 +176,7 @@ apps/server/src/            Local API server and shared request handlers
 packages/shared/src/        zod schemas and types shared by client, server and saves
 scripts/                    dev.mjs (runs both services), check-secrets.mjs, check-readme-sync.mjs
 api/                        Vercel Function entry points (hosted)           [planned]
-tools/                      Asset tools: gen-voice.mjs (ElevenLabs: `all` makes every voice line) [others planned]
+tools/                      Asset tools: gen-voice.mjs (ElevenLabs: `all` makes every voice line), gen-sound.mjs (ElevenLabs: `all` makes every sound effect and ambience loop from sound-cues.mjs; `dry-run` shows the credit estimate) [others planned]
 assets/src/  assets/raw/    Blender sources; raw generator output (ignored)
 .github/workflows/ci.yml    CI: typecheck, lint, test, check, build
 .kiro/steering/             Always-on project rules (product, tech, structure, canon, story flow, memory)

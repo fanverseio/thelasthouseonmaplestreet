@@ -4,7 +4,7 @@
  */
 import { getLine } from '../content/dialogue/index.ts';
 import { settingsStore } from '../store/index.ts';
-import { ensureAudioContext } from './audio-engine.ts';
+import { audioEngine, ensureAudioContext, getBuses, VOICE_DUCK_LEVEL } from './audio-engine.ts';
 
 export const VO_BASE_PATH = '/assets/audio/vo';
 export const MIN_SUBTITLE_MS = 1800;
@@ -30,7 +30,7 @@ export interface VoicePlayback {
 export interface VoiceDeps {
   fetchFn?: typeof fetch;
   getContext?: () => AudioContext | null;
-  /** Linear gain 0..1; defaults to master x voice from settings. */
+  /** Linear gain 0..1 when there is no mixer (a custom context); the default path uses the voice bus. */
   getVolume?: () => number;
 }
 
@@ -43,6 +43,7 @@ export function playVoiceLine(id: string, text?: string, deps: VoiceDeps = {}): 
   const fetchFn = deps.fetchFn ?? (typeof fetch === 'function' ? fetch : undefined);
   const getContext = deps.getContext ?? ensureAudioContext;
   const getVolume = deps.getVolume ?? settingsVolume;
+  const custom = deps.getContext !== undefined; // a test context has no mixer: play straight to its destination
   const subtitle = text ?? getLine(id)?.text ?? '';
   const fallbackMs = fallbackDurationMs(subtitle);
 
@@ -50,8 +51,18 @@ export function playVoiceLine(id: string, text?: string, deps: VoiceDeps = {}): 
   let source: AudioBufferSourceNode | null = null;
   let timer: ReturnType<typeof setTimeout> | null = null;
   let finish: () => void = () => undefined;
+  // The ambience sits lower while a line is spoken.
+  let ducked = false;
+  const unduck = () => {
+    if (!ducked) return;
+    ducked = false;
+    audioEngine.duck('voice', null);
+  };
   const done = new Promise<void>((resolve) => {
-    finish = resolve;
+    finish = () => {
+      unduck();
+      resolve();
+    };
   });
 
   const waitFallback = () => {
@@ -78,14 +89,19 @@ export function playVoiceLine(id: string, text?: string, deps: VoiceDeps = {}): 
         finish();
         return false;
       }
+      const buses = custom ? null : getBuses(ctx);
       const gain = ctx.createGain();
-      gain.gain.value = getVolume();
-      gain.connect(ctx.destination);
+      gain.gain.value = buses ? 1 : getVolume();
+      gain.connect(buses?.voice ?? ctx.destination);
       source = ctx.createBufferSource();
       source.buffer = buffer;
       source.connect(gain);
       source.onended = () => finish();
       source.start();
+      if (buses) {
+        ducked = true;
+        audioEngine.duck('voice', VOICE_DUCK_LEVEL);
+      }
       return true;
     } catch {
       waitFallback();

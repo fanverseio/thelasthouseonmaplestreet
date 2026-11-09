@@ -14,6 +14,8 @@ import {
   type PuzzleEvent,
   type TalkingBoardState,
 } from '../game/puzzles.ts';
+import { cueForPuzzleInput, cuesForPuzzleEvent } from '../services/audio-cues.ts';
+import { sfx } from '../services/sfx.ts';
 import { gameStore, useGame } from '../store/index.ts';
 
 export interface PuzzleOverlayProps {
@@ -47,11 +49,19 @@ const shell: CSSProperties = {
 };
 const btn: CSSProperties = { padding: '0.5rem 0.9rem', background: 'transparent', color: 'inherit', border: '1px solid #c9a24a', font: 'inherit', cursor: 'pointer' };
 
+/** Send an input to the puzzle and make its small sound (dial click, planchette slide). */
+function sendInput<S extends object>(controller: PuzzleController<S>, puzzle: 'p3_padlock' | 'p5_board', input: PuzzleInput): PuzzleEvent[] {
+  const cue = cueForPuzzleInput(puzzle, input);
+  if (cue) sfx.play(cue);
+  return controller.input(input);
+}
+
 /** Full-screen overlay for the two overlay puzzles. State lives in the store, so closing never loses it. */
 export function PuzzleOverlay({ puzzle, say, onClose }: PuzzleOverlayProps) {
   const [note, setNote] = useState('');
   const onEvents = (events: PuzzleEvent[]) => {
     for (const e of events) {
+      for (const r of cuesForPuzzleEvent(puzzle, e)) sfx.play(r.cue);
       if (e.t === 'hint' && e.line) setNote(`${getLine(e.line)?.speaker ?? 'Angel'}: ${getLine(e.line)?.text ?? ''}`);
       else if (e.t === 'scare') setNote(SCARE_TEXT[e.scare] ?? 'Something stirs.');
       else if (e.t === 'rattle') setNote('The padlock rattles.');
@@ -109,7 +119,7 @@ export function NumberLock({ say, onClose, onEvents, note }: InnerProps) {
       else if (e.code === 'KeyE' || e.code === 'Enter') input = { k: 'try' };
       else if (e.code !== 'Escape') return;
       e.preventDefault();
-      if (input) onEvents(controller.input(input));
+      if (input) onEvents(sendInput(controller, 'p3_padlock', input));
       else onClose();
     };
     window.addEventListener('keydown', onKey);
@@ -127,16 +137,16 @@ export function NumberLock({ say, onClose, onEvents, note }: InnerProps) {
               key={i}
               role="group"
               aria-label={`Dial ${i + 1}`}
-              onWheel={(e) => onEvents(controller.input({ k: 'cursor', delta: i - state.cursor }).concat(controller.input({ k: 'dial', delta: e.deltaY < 0 ? 1 : -1 })))}
+              onWheel={(e) => onEvents(sendInput(controller, 'p3_padlock', { k: 'cursor', delta: i - state.cursor }).concat(sendInput(controller, 'p3_padlock', { k: 'dial', delta: e.deltaY < 0 ? 1 : -1 })))}
               style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem', outline: i === state.cursor ? '2px solid #c9a24a' : 'none', padding: '0.4rem' }}
             >
-              <button type="button" style={btn} aria-label={`Dial ${i + 1} up`} onClick={() => onEvents(controller.input({ k: 'cursor', delta: i - state.cursor }).concat(controller.input({ k: 'dial', delta: 1 })))}>
+              <button type="button" style={btn} aria-label={`Dial ${i + 1} up`} onClick={() => onEvents(sendInput(controller, 'p3_padlock', { k: 'cursor', delta: i - state.cursor }).concat(sendInput(controller, 'p3_padlock', { k: 'dial', delta: 1 })))}>
                 ▲
               </button>
               <span aria-live="polite" style={{ fontSize: '2.5rem', minWidth: '1.5ch', color: g ? '#ffe9a8' : undefined, textShadow: g ? '0 0 12px #ffd76a' : undefined }}>
                 {digit}
               </span>
-              <button type="button" style={btn} aria-label={`Dial ${i + 1} down`} onClick={() => onEvents(controller.input({ k: 'cursor', delta: i - state.cursor }).concat(controller.input({ k: 'dial', delta: -1 })))}>
+              <button type="button" style={btn} aria-label={`Dial ${i + 1} down`} onClick={() => onEvents(sendInput(controller, 'p3_padlock', { k: 'cursor', delta: i - state.cursor }).concat(sendInput(controller, 'p3_padlock', { k: 'dial', delta: -1 })))}>
                 ▼
               </button>
             </div>
@@ -145,7 +155,7 @@ export function NumberLock({ say, onClose, onEvents, note }: InnerProps) {
       </div>
       {glow.length > 0 && <p style={{ margin: 0, color: '#ffe9a8' }}>Glowing: {glow.map((g) => g.digit).join(' ')}</p>}
       <div style={{ display: 'flex', gap: '1rem' }}>
-        <button type="button" style={btn} onClick={() => onEvents(controller.input({ k: 'try' }))} disabled={solved}>
+        <button type="button" style={btn} onClick={() => onEvents(sendInput(controller, 'p3_padlock', { k: 'try' }))} disabled={solved}>
           Try (E)
         </button>
         <button type="button" style={btn} onClick={onClose}>
@@ -191,7 +201,7 @@ export function TalkingBoard({ say, onClose, onEvents, note }: InnerProps) {
       else if (e.code === 'ArrowDown') move(COLS);
       else if (e.code === 'KeyE' || e.code === 'Enter') {
         e.preventDefault();
-        onEvents(controller.input({ k: 'letter', letter: LETTERS[cursorRef.current]! }));
+        onEvents(sendInput(controller, 'p5_board', { k: 'letter', letter: LETTERS[cursorRef.current]! }));
       }
     };
     window.addEventListener('keydown', onKey);
@@ -214,7 +224,7 @@ export function TalkingBoard({ say, onClose, onEvents, note }: InnerProps) {
             aria-label={`Letter ${l}`}
             onClick={() => {
               setCursor(i);
-              onEvents(controller.input({ k: 'letter', letter: l }));
+              onEvents(sendInput(controller, 'p5_board', { k: 'letter', letter: l }));
             }}
           >
             {l}
@@ -222,7 +232,7 @@ export function TalkingBoard({ say, onClose, onEvents, note }: InnerProps) {
         ))}
       </div>
       <div style={{ display: 'flex', gap: '1rem' }}>
-        <button type="button" style={btn} onClick={() => onEvents(controller.input({ k: 'reset' }))} disabled={solved}>
+        <button type="button" style={btn} onClick={() => onEvents(sendInput(controller, 'p5_board', { k: 'reset' }))} disabled={solved}>
           Reset board
         </button>
         <button type="button" style={btn} onClick={onClose}>

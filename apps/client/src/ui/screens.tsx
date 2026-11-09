@@ -131,6 +131,7 @@ export function SettingsScreen({ onBack }: { onBack: () => void }) {
       {slider('Master volume', s.volume.master, 0, 1, 0.05, (v) => update({ volume: { master: v } }))}
       {slider('Music', s.volume.music, 0, 1, 0.05, (v) => update({ volume: { music: v } }))}
       {slider('Effects', s.volume.sfx, 0, 1, 0.05, (v) => update({ volume: { sfx: v } }))}
+      {slider('Ambience', s.volume.ambience, 0, 1, 0.05, (v) => update({ volume: { ambience: v } }))}
       {slider('Voice', s.volume.voice, 0, 1, 0.05, (v) => update({ volume: { voice: v } }))}
       {slider('Mouse sensitivity', s.mouseSensitivity, 0.2, 3, 0.1, (v) => update({ mouseSensitivity: v }))}
       {slider('Field of view', s.fieldOfView, FOV_MIN, FOV_MAX, 1, (v) => update({ fieldOfView: v }))}

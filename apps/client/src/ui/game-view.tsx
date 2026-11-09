@@ -26,7 +26,10 @@ import { ExteriorScene } from '../scene/exterior-scene.tsx';
 import { PlayerRig } from '../scene/player-rig.tsx';
 import { loadedLastHouse, loadSceneHook, preloadLastHouse } from '../services/scene-loader.ts';
 import { bindInput } from '../services/input-bindings.ts';
-import { cueForEnemyEvent, doorCueForFlags, sfx } from '../services/sfx.ts';
+import { cuesForEnemyEvent, cuesForRitualEvent, cuesForSpellEvent } from '../services/audio-cues.ts';
+import { duckForEffect, sfx } from '../services/sfx.ts';
+import { duckAmbienceFor, startSoundDirector, type SoundDirector } from '../services/sound-director.ts';
+import { zoneAt } from '../game/world-runtime.ts';
 import { GATES } from '../content/world/gates.ts';
 import { gameStore, saveStorage, settingsStore, useGame } from '../store/index.ts';
 import { DialogueChoicePanel } from './dialogue-choice.tsx';
@@ -91,30 +94,75 @@ export function GameView() {
         onRespawn: () => feedback.noteRespawn(),
         onTick: (dt) => feedback.step(dt),
         loadScene: loadSceneHook,
-        onEffect: (e) => sfx.handleEffect(e),
+        onEffect: (e) => {
+          sfx.handleEffect(e);
+          const duck = duckForEffect(e);
+          if (duck) duckAmbienceFor(duck.level, duck.seconds);
+        },
       }),
     [enemies, spells, feedback],
   );
-  // Placeholder combat sounds (hit, hurt, stun, purify done, destroy, slam, teleport).
-  useEffect(() => enemies.on((e) => {
-    const cue = cueForEnemyEvent(e);
-    if (cue) sfx.play(cue);
-  }), [enemies]);
+  // Sound: ambience by zone, footsteps, flag cues (the director), and the event streams below.
+  const director = useRef<SoundDirector | null>(null);
+  const playAll = useCallback((requests: Parameters<SoundDirector['playAll']>[0]) => director.current?.playAll(requests), []);
+  useEffect(() => {
+    sfx.preload();
+    const doorFlags = GATES.filter((g) => g.id.startsWith('door.') && g.opensOn).map((g) => g.opensOn as string);
+    director.current = startSoundDirector({ store: gameStore, zoneAt, doorFlags });
+    return () => {
+      director.current?.dispose();
+      director.current = null;
+    };
+  }, []);
+  useEffect(() => enemies.on((e) => playAll(cuesForEnemyEvent(e))), [enemies, playAll]);
+  useEffect(() => ritual.on((e) => playAll(cuesForRitualEvent(e))), [ritual, playAll]);
   useSyncExternalStore(runtime.subscribe, () => runtime.version);
   const skipHold = useMemo(() => createSkipHold(runtime.sequences, ALL_SEQUENCES), [runtime]);
   const spellContext = useCallback((): SpellContext => {
     const f = gameStore.getState().progress.flags;
     return { hostileActive: encounters.hostileActive(), ritualActive: f.includes('ritual_active') && !f.includes('anchors_all') };
   }, [encounters]);
-  useEffect(() => spells.on((e) => {
-    if (e.type !== 'cast') return;
-    if (e.spell === 'arcane_bolt') sfx.play('sfx_spell_bolt');
-    else if (e.spell === 'purify') sfx.play('sfx_spell_purify');
-    else if (e.spell === 'ward') {
-      sfx.play('sfx_spell_ward');
-      encounters.castWard({ free: true }); // the telegraphed first attack counts a real Ward (magic already paid)
-    }
-  }), [spells, encounters]);
+  // Spell sounds: the cast / block cues, plus two loops (the bolt charge and the Purify channel).
+  useEffect(() => {
+    let purifyLoop: { stop(): void } | null = null;
+    const stopPurify = () => {
+      purifyLoop?.stop();
+      purifyLoop = null;
+    };
+    const off = spells.on((e) => {
+      playAll(cuesForSpellEvent(e));
+      if (e.type === 'cast' && e.spell === 'ward') {
+        encounters.castWard({ free: true }); // the telegraphed first attack counts a real Ward (magic already paid)
+      } else if (e.type === 'purify_started') {
+        stopPurify();
+        purifyLoop = sfx.loop('sfx_spell_purify_loop');
+      } else if (e.type === 'purify_cancelled') stopPurify();
+    });
+    const offEnemies = enemies.on((e) => {
+      if (e.type === 'resolved') stopPurify();
+    });
+    return () => {
+      off();
+      offEnemies();
+      stopPurify();
+    };
+  }, [spells, enemies, encounters, playAll]);
+  // The bolt charge hums while LMB is held (a loop, stopped on release).
+  useEffect(() => {
+    let loop: { stop(): void } | null = null;
+    const timer = setInterval(() => {
+      const charging = gameStore.getState().game.phase === 'playing' && spells.view(input.state).charging;
+      if (charging && !loop) loop = sfx.loop('sfx_spell_charge');
+      else if (!charging && loop) {
+        loop.stop();
+        loop = null;
+      }
+    }, 100);
+    return () => {
+      clearInterval(timer);
+      loop?.stop();
+    };
+  }, [spells, input]);
   // Dev only: a practice hound off the route near the garden start (?start=garden, or ?start=training for all spells and a closer hound). It changes no progress.
   useEffect(() => {
     if (shouldSpawnTraining(import.meta.env.DEV, window.location.search)) spawnTrainingEnemy(enemies, trainingSpawnFor(window.location.search));
@@ -170,28 +218,16 @@ export function GameView() {
     });
   }, [input]);
 
-  // Placeholder sound the runtime does not emit: a door-opening flag (creak).
-  useEffect(() => {
-    const doorFlags = GATES.filter((g) => g.id.startsWith('door.') && g.opensOn).map((g) => g.opensOn as string);
-    let prev = gameStore.getState().progress.flags;
-    const unsub = gameStore.subscribe((s) => {
-      const next = s.progress.flags;
-      if (next === prev) return;
-      const cue = doorCueForFlags(prev, next, doorFlags);
-      prev = next;
-      if (cue) sfx.play(cue);
-    });
-    return unsub;
-  }, []);
-
   const openLocket = useCallback(() => {
     const next = runtime.locketLine();
     if (!next) return;
     setLocket(next);
+    sfx.play('sfx_locket_open');
     gameStore.getState().setPhase('locket'); // freezes the sim; the rig only ticks while playing
     if (document.pointerLockElement) document.exitPointerLock();
   }, [runtime]);
   const closeLocket = useCallback(() => {
+    sfx.play('sfx_locket_close');
     setLocket(null);
     gameStore.getState().setPhase('paused'); // shows "Click to resume"
   }, []);

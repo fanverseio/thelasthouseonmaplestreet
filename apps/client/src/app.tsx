@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { endingOfFlags } from './game/ending.ts';
+import { sfx } from './services/sfx.ts';
 import { useGame, gameStore, settingsStore } from './store/index.ts';
 import { BootCheck } from './ui/boot-check.tsx';
 import { GameView } from './ui/game-view.tsx';
@@ -13,6 +14,15 @@ export function App() {
   const flags = useGame((s) => s.progress.flags);
   const [view, setView] = useState<MenuView>('main');
   const developerPage = new URLSearchParams(window.location.search).has('bootcheck');
+
+  // A soft click for every button press (menus, settings, the pause screen).
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      if (e.target instanceof Element && e.target.closest('button:not(:disabled)')) sfx.play('sfx_ui_click');
+    };
+    document.addEventListener('click', onClick, true);
+    return () => document.removeEventListener('click', onClick, true);
+  }, []);
 
   useEffect(() => {
     if (phase !== 'boot') return;

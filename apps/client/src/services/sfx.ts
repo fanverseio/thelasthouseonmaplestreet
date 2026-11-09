@@ -1,13 +1,15 @@
 /**
- * Placeholder sound cues, synthesised with WebAudio (no files). The runtime only emits cue ids
- * (amb_*, sfx_*, mus_*); this plays a short oscillator / noise burst for the few known sfx ids until real
- * audio arrives. Never throws, silent without an AudioContext, follows settings volume.master x volume.sfx,
- * and rate-limits each cue.
+ * Sound effects. The runtime only emits cue ids (amb_*, sfx_*, mus_*). A cue plays its mp3 from
+ * /assets/audio/sfx on the sfx bus once loaded; when the file does not exist (or has not loaded in time), the few
+ * cues in CUE_TABLE fall back to a short WebAudio synth burst. Never throws, silent without an AudioContext,
+ * follows the mixer (master x sfx), and rate-limits each cue.
  */
 import { settingsStore } from '../store/index.ts';
-import type { EnemyEvent } from '../game/enemies.ts';
 import type { SequenceEffect } from '../game/sequences.ts';
-import { ensureAudioContext } from './audio-engine.ts';
+import { audioEngine, ensureAudioContext, getBuses, type AudioEngine, type PlayingCue } from './audio-engine.ts';
+import { isSfxCue, SFX_CUE_IDS } from './cue-ids.ts';
+
+export { cueForEnemyEvent } from './audio-cues.ts';
 
 export interface CueLayer {
   type: 'tone' | 'noise';
@@ -68,29 +70,11 @@ export const CUE_TABLE: Readonly<Record<string, readonly CueLayer[]>> = {
   ],
 };
 
-/** Which cue (if any) an enemy-system event should sound (task 5.11). Quiet events return null. */
-export function cueForEnemyEvent(e: EnemyEvent): string | null {
-  switch (e.type) {
-    case 'hit':
-      return 'sfx_hit';
-    case 'player_damaged':
-      return e.amount > 0 ? 'sfx_hurt' : null;
-    case 'stunned':
-      return 'sfx_stun';
-    case 'resolved':
-      return e.outcome === 'purify' ? 'sfx_purify_done' : 'sfx_destroy';
-    case 'attack':
-      return e.ability === 'groundSlam' && e.hit ? 'sfx_slam' : null;
-    case 'teleported':
-      return 'sfx_teleport';
-    default:
-      return null;
-  }
-}
-
 /** Minimum seconds between two plays of the same cue. */
 export const CUE_MIN_INTERVAL_S = 0.15;
 const MASTER_HEADROOM = 0.5;
+/** A cue whose file was still loading plays when it arrives only if it is this fresh (seconds). */
+export const LATE_CUE_MAX_AGE_S = 1.2;
 
 /** Linear gain for sfx: master x sfx, clamped 0..1, times headroom. Bad numbers give 0. */
 export function sfxGain(volume: { master: number; sfx: number }): number {
@@ -99,19 +83,40 @@ export function sfxGain(volume: { master: number; sfx: number }): number {
   return Math.min(1, Math.max(0, v)) * MASTER_HEADROOM;
 }
 
+const FX_CUES: Readonly<Record<string, string>> = {
+  veilRecede: 'sfx_veil_recede',
+  mirrorCrack: 'sfx_mirror_crack',
+  smoke: 'sfx_smoke_breathing',
+};
+
 /** Which cue (if any) a sequence effect should sound. */
 export function cueForEffect(e: SequenceEffect): string | null {
-  if (e.k === 'audio' && e.bus === 'sfx') return e.cue in CUE_TABLE ? e.cue : null;
-  if (e.k === 'light' && e.effect === 'flicker') return 'sfx_light_flicker';
+  if (e.k === 'audio') return e.bus === 'sfx' && (e.cue in CUE_TABLE || isSfxCue(e.cue)) ? e.cue : null;
+  if (e.k === 'light') return e.effect === 'flicker' ? 'sfx_light_flicker' : e.effect === 'burst' ? 'sfx_bulb_burst' : null;
+  if (e.k === 'fx') return FX_CUES[e.effect] ?? null;
   return null;
 }
 
+/** A sequence audio cue that asks the ambience to sit lower (amb_street_duck) instead of playing a sound. */
+export function duckForEffect(e: SequenceEffect): { level: number; seconds: number } | null {
+  return e.k === 'audio' && e.bus === 'amb' && e.cue.endsWith('_duck') ? { level: 0.2, seconds: 6 } : null;
+}
+
 /** A newly set door-opening flag gives the creak. Wholesale changes (a load, a reset) stay silent. */
-export function doorCueForFlags(prev: readonly string[], next: readonly string[], doorFlags: readonly string[]): string | null {
+export function doorCueForFlags(prev: readonly string[], next: readonly string[], doorFlags: readonly string[], cue = 'sfx_door_open'): string | null {
   if (!prev.every((f) => next.includes(f))) return null;
   const added = next.filter((f) => !prev.includes(f));
   if (added.length === 0 || added.length > 2) return null;
-  return added.some((f) => doorFlags.includes(f)) ? 'sfx_door_open' : null;
+  return added.some((f) => doorFlags.includes(f)) ? cue : null;
+}
+
+export interface SfxPlayOptions {
+  /** 0..1 on top of the mixer. */
+  gain?: number;
+  /** Playback rate (pitch variation). */
+  rate?: number;
+  /** Seconds to wait before the cue starts. */
+  delayS?: number;
 }
 
 export interface SfxDeps {
@@ -119,22 +124,34 @@ export interface SfxDeps {
   getVolume?: () => number;
   /** Seconds, monotonic. */
   now?: () => number;
+  /** Cue files (the shared engine by default). Pass null for synth only. With a custom `getContext` the default is null. */
+  files?: Pick<AudioEngine, 'cueState' | 'load' | 'playCue' | 'cues'> | null;
+  /** Route through the mixer buses (default: yes, unless a custom `getContext` is given). */
+  useBuses?: boolean;
+}
+
+export interface SfxLoop {
+  stop(): void;
 }
 
 export interface Sfx {
-  /** Play a known cue now. Returns whether anything was started. */
-  play(cue: string): boolean;
+  /** Play a known cue now. Returns whether anything was started (or is about to, while its file loads). */
+  play(cue: string, options?: SfxPlayOptions): boolean;
+  /** Start a looping cue (charge, purify channel). Null when there is no file for it. */
+  loop(cue: string): SfxLoop | null;
   handleEffect(effect: SequenceEffect): void;
+  /** Load every sfx file now (the game calls this once, on entering play). */
+  preload(): void;
 }
 
-function renderLayer(ctx: AudioContext, layer: CueLayer, gain: number): void {
-  const t0 = ctx.currentTime + layer.start;
+function renderLayer(ctx: AudioContext, layer: CueLayer, gain: number, destination: AudioNode, delayS: number): void {
+  const t0 = ctx.currentTime + layer.start + delayS;
   const t1 = t0 + layer.seconds;
   const env = ctx.createGain();
   env.gain.setValueAtTime(0.0001, t0);
   env.gain.linearRampToValueAtTime(Math.max(0.0001, layer.gain * gain), t0 + Math.min(0.02, layer.seconds / 4));
   env.gain.exponentialRampToValueAtTime(0.0001, t1);
-  env.connect(ctx.destination);
+  env.connect(destination);
   if (layer.type === 'tone') {
     const osc = ctx.createOscillator();
     osc.type = layer.wave ?? 'sine';
@@ -162,7 +179,10 @@ function renderLayer(ctx: AudioContext, layer: CueLayer, gain: number): void {
 }
 
 export function createSfx(deps: SfxDeps = {}): Sfx {
+  const custom = deps.getContext !== undefined;
   const getContext = deps.getContext ?? ensureAudioContext;
+  const useBuses = deps.useBuses ?? !custom;
+  const files = deps.files === undefined ? (custom ? null : audioEngine) : deps.files;
   const getVolume =
     deps.getVolume ??
     (() => {
@@ -172,30 +192,89 @@ export function createSfx(deps: SfxDeps = {}): Sfx {
   const now = deps.now ?? (() => (typeof performance === 'undefined' ? Date.now() : performance.now()) / 1000);
   const last = new Map<string, number>();
 
-  function play(cue: string): boolean {
+  function synth(ctx: AudioContext, cue: string, options: SfxPlayOptions): boolean {
+    const layers = CUE_TABLE[cue];
+    if (!layers) return false;
+    const buses = useBuses ? getBuses(ctx) : null;
+    const gain = (buses ? MASTER_HEADROOM : getVolume()) * (options.gain ?? 1);
+    for (const layer of layers) renderLayer(ctx, layer, gain, buses?.sfx ?? ctx.destination, options.delayS ?? 0);
+    return true;
+  }
+
+  function play(cue: string, options: SfxPlayOptions = {}): boolean {
     try {
-      const layers = CUE_TABLE[cue];
-      if (!layers) return false;
+      const hasSynth = cue in CUE_TABLE;
+      const hasFile = files !== null && isSfxCue(cue);
+      if (!hasSynth && !hasFile) return false;
       const t = now();
       const prev = last.get(cue);
       if (prev !== undefined && t - prev < CUE_MIN_INTERVAL_S) return false;
-      const gain = getVolume();
-      if (gain <= 0) return false;
+      if (getVolume() <= 0) return false;
       const ctx = getContext();
       if (!ctx) return false;
       last.set(cue, t);
-      for (const layer of layers) renderLayer(ctx, layer, gain);
-      return true;
+      if (hasFile) {
+        const state = files.cueState(cue);
+        if (state === 'ready') {
+          const started = files.playCue(cue, { ...(options.gain !== undefined && { gain: options.gain }), ...(options.rate !== undefined && { rate: options.rate }) });
+          if (started) return true;
+        } else if (state !== 'missing') {
+          // Not loaded yet: play it when it arrives, if that is soon enough; the synth stands in when there is no file.
+          void files.load(cue).then((buffer) => {
+            try {
+              if (now() - t > LATE_CUE_MAX_AGE_S) return;
+              if (buffer && files.playCue(cue, { ...(options.gain !== undefined && { gain: options.gain }), ...(options.rate !== undefined && { rate: options.rate }) })) return;
+              if (!buffer && hasSynth) synth(ctx, cue, options);
+            } catch {
+              // never throws
+            }
+          });
+          return true;
+        }
+      }
+      return hasSynth ? synth(ctx, cue, options) : false;
     } catch {
       return false;
     }
   }
 
   return {
-    play,
+    play(cue, options = {}) {
+      if (options.delayS && options.delayS > 0) {
+        const { delayS, ...rest } = options;
+        setTimeout(() => void play(cue, rest), delayS * 1000);
+        return true;
+      }
+      return play(cue, options);
+    },
+    loop(cue) {
+      try {
+        if (!files || !isSfxCue(cue)) return null;
+        let stopped = false;
+        let playing: PlayingCue | null = null;
+        const start = () => {
+          if (stopped || playing) return;
+          playing = files.playCue(cue, { loop: true });
+        };
+        if (files.cueState(cue) === 'ready') start();
+        else void files.load(cue).then(start);
+        return {
+          stop() {
+            stopped = true;
+            playing?.stop(0.15);
+            playing = null;
+          },
+        };
+      } catch {
+        return null;
+      }
+    },
     handleEffect(effect) {
       const cue = cueForEffect(effect);
       if (cue) play(cue);
+    },
+    preload() {
+      void files?.cues.preload(SFX_CUE_IDS);
     },
   };
 }
