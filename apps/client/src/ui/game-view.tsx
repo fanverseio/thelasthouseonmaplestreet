@@ -6,7 +6,7 @@ import { attachRuntime } from '../game/save.ts';
 import { TUTORIAL_TEXT } from '../content/interactions/beat2.ts';
 import { ALL_SEQUENCES } from '../content/sequences/index.ts';
 import { createEncounterWorld } from '../game/encounter-runtime.ts';
-import { shouldSpawnTraining, spawnTrainingEnemy } from '../game/dev-training.ts';
+import { shouldSpawnTraining, spawnTrainingEnemy, trainingSpawnFor } from '../game/dev-training.ts';
 import { EnemySystem } from '../game/enemies.ts';
 import type { Collider } from '../game/collision.ts';
 import { exteriorColliders } from '../content/world/exterior-layout.ts';
@@ -36,6 +36,7 @@ import { PuzzleOverlay } from './puzzle-overlay.tsx';
 import { HoldBar, SmokeStrike } from './ritual-hud.tsx';
 import { SettingsScreen } from './screens.tsx';
 import { SkipRing } from './skip-ring.tsx';
+import { SmokePuffOverlay } from './smoke-puff.tsx';
 import { SpellHud } from './spell-hud.tsx';
 import { Subtitles, type SubtitleLine } from './subtitles.tsx';
 import { VideoPlaceholder } from './video-placeholder.tsx';
@@ -86,9 +87,9 @@ export function GameView() {
       encounters.castWard({ free: true }); // the telegraphed first attack counts a real Ward (magic already paid)
     }
   }), [spells, encounters]);
-  // Dev only: a practice hound off the route near the garden start (?start=garden). It changes no progress.
+  // Dev only: a practice hound off the route near the garden start (?start=garden, or ?start=training for all spells and a closer hound). It changes no progress.
   useEffect(() => {
-    if (shouldSpawnTraining(import.meta.env.DEV, window.location.search)) spawnTrainingEnemy(enemies);
+    if (shouldSpawnTraining(import.meta.env.DEV, window.location.search)) spawnTrainingEnemy(enemies, trainingSpawnFor(window.location.search));
   }, [enemies]);
   useEffect(() => attachRuntime(runtime), [runtime]); // autosave reads / Continue restores the runtime state
   const phase = useGame((s) => s.game.phase);
@@ -196,6 +197,7 @@ export function GameView() {
       {phase === 'playing' && <PositionReadout />}
       {phase === 'playing' && <Subtitles line={runtime.subtitle} />}
       {phase === 'playing' && <EncounterPanel encounters={encounters} />}
+      {phase === 'playing' && <SmokePuffOverlay enemies={enemies} />}
       {phase === 'playing' && <DialogueChoicePanel choices={choices} />}
       {phase === 'playing' && <HoldBar runtime={runtime} />}
       {phase === 'playing' && <SmokeStrike ritual={ritual} />}

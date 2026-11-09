@@ -1,6 +1,6 @@
 import { useFrame } from '@react-three/fiber';
 import { useRef, useSyncExternalStore } from 'react';
-import type { Group, MeshStandardMaterial } from 'three';
+import type { Group, Mesh, MeshStandardMaterial } from 'three';
 import type { Enemy, EnemyState, EnemySystem } from '../game/enemies.ts';
 import { useGame } from '../store/index.ts';
 
@@ -24,6 +24,8 @@ function size(e: Enemy): { h: number; w: number } {
 function EnemyBox({ enemy }: { enemy: Enemy }) {
   const group = useRef<Group>(null);
   const material = useRef<MeshStandardMaterial>(null);
+  const ring = useRef<Mesh>(null);
+  const mark = useRef<Mesh>(null);
   useFrame(() => {
     const g = group.current;
     const m = material.current;
@@ -32,6 +34,22 @@ function EnemyBox({ enemy }: { enemy: Enemy }) {
     g.position.set(enemy.x, h / 2, enemy.z);
     g.scale.y = 1;
     const v = enemy.view();
+    // Greybox telegraphs: the slam's ground ring (grows to its radius) and the Watcher's destination mark.
+    if (ring.current) {
+      ring.current.visible = v.ring !== null;
+      if (v.ring !== null) {
+        const r = v.ring * (0.4 + 0.6 * (v.telegraph ?? 1));
+        ring.current.scale.set(r, r, 1);
+        ring.current.position.set(0, 0.06 - h / 2, 0);
+      }
+    }
+    if (mark.current) {
+      mark.current.visible = v.mark !== null;
+      if (v.mark !== null) {
+        mark.current.position.set(v.mark.x - enemy.x, 0.6 - h / 2, v.mark.z - enemy.z);
+        mark.current.scale.setScalar(0.3 + 0.7 * v.mark.t);
+      }
+    }
     m.color.set(v.telegraph !== null ? '#ff7a18' : COLOR[enemy.state]);
     m.emissive.set(v.telegraph !== null ? '#ff4a00' : enemy.state === 'stunned' ? '#2a3a6a' : '#000000');
     m.emissiveIntensity = v.telegraph !== null ? 0.4 + v.telegraph : enemy.state === 'stunned' ? 0.6 : 0;
@@ -42,6 +60,14 @@ function EnemyBox({ enemy }: { enemy: Enemy }) {
       <mesh castShadow>
         <boxGeometry args={[s.w, s.h, s.w]} />
         <meshStandardMaterial ref={material} color={COLOR[enemy.state]} roughness={0.8} />
+      </mesh>
+      <mesh ref={ring} rotation={[-Math.PI / 2, 0, 0]} visible={false}>
+        <ringGeometry args={[0.92, 1, 48]} />
+        <meshBasicMaterial color="#ff4a00" transparent opacity={0.7} />
+      </mesh>
+      <mesh ref={mark} visible={false}>
+        <sphereGeometry args={[0.6, 12, 8]} />
+        <meshBasicMaterial color="#1a1a22" transparent opacity={0.55} />
       </mesh>
     </group>
   );

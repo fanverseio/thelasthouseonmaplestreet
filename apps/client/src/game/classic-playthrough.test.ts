@@ -119,14 +119,14 @@ function tryCode(lock: PuzzleController<NumberLockState>, code: string) {
   return lock.input({ k: 'try' });
 }
 
-function fightEnemy(g: HeadlessGame, id: 'hound_1' | 'hound_2' | 'interior_cat' | 'watcher' | 'street_fox', entity: string, choice: Choice, stunSeconds: number) {
+/** A real fight (task 5.6-5.9): Bolt taps to the persistent stun, then a Purify channel or a charged Bolt. */
+function fightEnemy(g: HeadlessGame, id: 'hound_1' | 'hound_2' | 'interior_cat' | 'watcher' | 'street_fox', entity: string, choice: Choice) {
   g.goTo(entity);
   expect(g.encounters.view(id).engaged, `${id} engaged`).toBe(true);
-  expect(g.press()).toMatchObject({ status: 'done', id: entity });
-  expect(g.encounters.view(id).state).toBe('weakened');
-  g.tick(stunSeconds);
+  expect(g.press()).toMatchObject({ status: 'done', id: entity }); // nothing to weaken: the spells do it
+  g.fight.stun(id);
   expect(g.encounters.view(id).state).toBe('stunned');
-  expect(g.encounters.choose(id, choice)).toEqual({ ok: true });
+  g.fight.defeat(id, choice);
   expect(g.encounters.view(id).outcome).toBe(choice);
 }
 
@@ -190,7 +190,7 @@ function buildSteps(plan: Plan): Step[] {
       morality: -10,
       run(g) {
         g.goTo('trg.street.fox');
-        fightEnemy(g, 'street_fox', 'enemy.street.fox', 'destroy', 1.2);
+        fightEnemy(g, 'street_fox', 'enemy.street.fox', 'destroy');
       },
     });
   }
@@ -214,13 +214,15 @@ function buildSteps(plan: Plan): Step[] {
         g.goTo('enemy.garden.briggs');
         g.tick(6.2);
         expect(g.encounters.view('briggs').telegraphing).toBe(true);
-        if (plan.briggs === 'purify') expect(g.encounters.castWard()).toBe(true); // the dark run takes the hit instead
+        expect(g.flags()).toContain('spell_ward'); // Ward is taught the moment the wind-up starts (requirement 5.2)
+        if (plan.briggs === 'purify') g.fight.ward(); // LMB with spell 3; the dark run takes the hit instead
         g.tick(2.6); // the wind-up is 2.5 s (Q31)
-        expect(g.press()).toMatchObject({ status: 'done', id: 'enemy.garden.briggs' });
-        expect(g.encounters.view('briggs').state).toBe('weakened');
-        g.tick(1.7);
+        expect(g.encounters.view('briggs').telegraphing).toBe(false);
+        expect(g.press()).toMatchObject({ status: 'done', id: 'enemy.garden.briggs' }); // nothing to weaken: the spells do it
+        g.fight.stun('briggs');
         expect(g.encounters.view('briggs').state).toBe('stunned');
-        expect(g.encounters.choose('briggs', plan.briggs)).toEqual({ ok: true });
+        g.fight.defeat('briggs', plan.briggs);
+        expect(g.encounters.view('briggs').outcome).toBe(plan.briggs);
         g.goTo('clue.garden.walkie');
         expect(g.press()).toMatchObject({ status: 'done', id: 'clue.garden.walkie' });
         g.tick(1);
@@ -270,7 +272,7 @@ function buildSteps(plan: Plan): Step[] {
         g.tick(3.2);
         g.goTo('enemy.house66.watcher', 3);
         expect(g.flags()).toContain('watcher_started');
-        fightEnemy(g, 'watcher', 'enemy.house66.watcher', plan.watcher, 2.6);
+        fightEnemy(g, 'watcher', 'enemy.house66.watcher', plan.watcher);
         g.goTo('pickup.house66.fence_key');
         expect(g.press()).toMatchObject({ status: 'done', id: 'pickup.house66.fence_key' });
         expect(g.store.getState().progress.carried).toEqual(['fence_key']);
@@ -306,9 +308,9 @@ function buildSteps(plan: Plan): Step[] {
       morality: 10 * (DELTA[plan.hounds[0]] + DELTA[plan.hounds[1]]),
       run(g) {
         g.goTo('trg.grounds.enter');
-        fightEnemy(g, 'hound_1', 'enemy.grounds.hound_1', plan.hounds[0], 1.7);
+        fightEnemy(g, 'hound_1', 'enemy.grounds.hound_1', plan.hounds[0]);
         expect(g.flags()).not.toContain('enc_approach_resolved'); // both hounds are needed
-        fightEnemy(g, 'hound_2', 'enemy.grounds.hound_2', plan.hounds[1], 1.7);
+        fightEnemy(g, 'hound_2', 'enemy.grounds.hound_2', plan.hounds[1]);
       },
     },
     {
@@ -372,7 +374,7 @@ function buildSteps(plan: Plan): Step[] {
         // The talking board waits for the cat.
         g.goTo('puzzle.interior.board');
         expect(g.press()).toMatchObject({ status: 'refused', id: 'puzzle.interior.board', reason: 'requires' });
-        fightEnemy(g, 'interior_cat', 'enemy.interior.cat', plan.cat, 2.1);
+        fightEnemy(g, 'interior_cat', 'enemy.interior.cat', plan.cat);
       },
     },
     {

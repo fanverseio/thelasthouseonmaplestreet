@@ -2,7 +2,9 @@ import type { EnemyDef } from '../../game/enemies.ts';
 
 /**
  * Mr Briggs (garden mini-boss), a victim of the smoke. docs/combat-tuning.md sections 4 and 5.
- * Swipe is live. The slam (phase 2, below 60% HP) and the smoke puff are typed stubs until task 5.7.
+ * All three abilities are live (task 5.7): the swipe, the ground slam (phase 2, strictly below 60% HP: a 3 m ring,
+ * 20 damage through the Ward) and the harmless smoke puff (dims Elena's vision for 2 s). His scripted FIRST attack
+ * (2.5 s wind-up, capped at 30 HP) is the encounter binding's `telegraph`, not one of these.
  * Swipe cooldown, slam cooldown, puff cooldown, reach and aggro are invented.
  */
 export const BRIGGS: EnemyDef = {
