@@ -83,3 +83,6 @@ Author playtest: 289 pass, 0 fail, 3 N/A (death steps). Screenshots stay local i
 
 ## 2026-11-09 | milestone | Playtest answers applied (f73cf39..02acd5f)
 Q1, Q3, Q8 (cp_grounds), Q11, Q14-Q17, Q20-Q26, Q31 done; 643 tests. New: settings persist under tlh.settings (services/settings-storage.ts), dev-only F9 kills Elena, front doorway opens on home_done. Retest steps ANS.1-ANS.47 in playtest-plan.md section 9. Follow-ups: beat-sheet checkpoint table lacks cp_grounds; cp_grounds respawn is ~4 m from the hounds (they wake at once).
+
+## 2026-11-09 | decision | M2 accepted; flaws deferred to near-production
+Author: game logic and design are mostly good; section 9 retest skipped for now; tweak flaws near production. Known follow-ups parked: cp_grounds 4 m from hounds, beat-sheet cp table, B2.7 flicker repeat, placeholder lines, unused settings. Next: section 5 combat.

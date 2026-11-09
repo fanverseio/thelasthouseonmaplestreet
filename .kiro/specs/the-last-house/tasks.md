@@ -113,7 +113,7 @@ Each milestone includes a README sync check (task 9.7 rules).
   - Play beats 1-4 on placeholders; record time per beat against targets; README sync check.
   - _Requirements: 1.1, 1.5, 21.8_
 
-- [ ] 4. Classic Mode completable (Nov 13-20)
+- [x] 4. Classic Mode completable (Nov 13-20)
 - [x] 4.1 Save system
   - `SaveStorage`, `LocalStorageSaveStorage` (`tlh.save`), `SaveFileV1` with zod, migration chain, autosave at checkpoints, Continue and New Game (overwrite confirm), corrupt and newer-version handling, Reset progress, finished saves.
   - Verify: unit tests P4 (round trip) and P5 (no key-like data); manual corrupt-save test.
@@ -153,7 +153,7 @@ Each milestone includes a README sync check (task 9.7 rules).
   - Scripted playthroughs to both endings from every checkpoint with network disabled (P13); line ID and asset reference checks.
   - Verify: `npm test` green.
   - _Requirements: 1.1, 8.7, 10.4_
-- [ ] 4.13 **M2 (Nov 20)**: Classic complete on placeholders
+- [x] 4.13 **M2 (Nov 20)**: Classic complete on placeholders
   - Full manual playthrough; record total time; README sync check.
   - _Requirements: 1.1, 21.8_
 

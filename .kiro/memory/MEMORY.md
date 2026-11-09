@@ -4,7 +4,7 @@ Short, durable notes that a future session needs and cannot easily re-derive. Ke
 
 ## Status
 - 2026-11-07: Phase 1 foundations committed (e6cb6e1) and pushed to `feat/phase1-foundations`; no PR yet. tasks.md 1.7 (CI) stays open until a PR runs green. `npm run dev` shows a boot-check page only.
-- 2026-11-07 evening: tasks.md 1-4.12 done; Classic is completable on placeholders to both endings. Author is playtesting from docs/playtest-plan.md. Next: 4.13 M2 review from the author's results, then section 5 (combat). No PR yet (no gh).
+- 2026-11-09: tasks.md sections 1-4 done (M2 accepted by the author, 289/292 playtest pass). Flaws parked for near-production (see dev-log 2026-11-09). Next: section 5 combat. No PR yet (no gh).
 ## Decisions that are easy to forget
 - Everyone starts at Elena's home. No chapter select, judge start or shortcuts (author decision).
 - Good ending = Elena takes over the seal's duty from Felix and leaves with him. Bad ending = seal broken, evil escapes. Ending depends only on the final choice.
