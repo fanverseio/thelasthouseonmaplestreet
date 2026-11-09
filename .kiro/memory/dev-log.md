@@ -86,3 +86,6 @@ Q1, Q3, Q8 (cp_grounds), Q11, Q14-Q17, Q20-Q26, Q31 done; 643 tests. New: settin
 
 ## 2026-11-09 | decision | M2 accepted; flaws deferred to near-production
 Author: game logic and design are mostly good; section 9 retest skipped for now; tweak flaws near production. Known follow-ups parked: cp_grounds 4 m from hounds, beat-sheet cp table, B2.7 flicker repeat, placeholder lines, unused settings. Next: section 5 combat.
+
+## 2026-11-09 | milestone | 5.1-5.2 spells (b4ee904)
+game/spells.ts SpellSystem: register(target) / on(hit events) / absorbDamage (Ward). Numbers from combat-tuning.md; invented: pool 16, anchors purify free, charged bolt same speed. Open: release 200 ms-1.2 s cancels free; no early-release Purify refund; spell_ward set at end of first Briggs telegraph (fix in 5.7); damage not yet routed via absorbDamage; bolts ignore walls.

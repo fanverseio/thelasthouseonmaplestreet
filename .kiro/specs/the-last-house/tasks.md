@@ -158,10 +158,10 @@ Each milestone includes a README sync check (task 9.7 rules).
   - _Requirements: 1.1, 21.8_
 
 - [ ] 5. Combat, purification and the final ritual (Nov 14-24)
-- [ ] 5.1 Spell config and Arcane Bolt (tap and charged), pooled projectiles
+- [x] 5.1 Spell config and Arcane Bolt (tap and charged), pooled projectiles
   - Verify: unit tests for costs, cooldowns, charge time; tap on a stunned enemy deals 0.
   - _Requirements: 5.5, 5.6_
-- [ ] 5.2 Ward and Purify (channel, range, refund, rune and anchor targets) with unlock hooks
+- [x] 5.2 Ward and Purify (channel, range, refund, rune and anchor targets) with unlock hooks
   - Verify: unit tests; unlock order matches `docs/combat-tuning.md`.
   - _Requirements: 5.1-5.5_
 - [ ] 5.3 Enemy FSM, steering, leash, stun floor, persistent stun, magic floor on stun
