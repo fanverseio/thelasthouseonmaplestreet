@@ -4,6 +4,7 @@ import type { MeshStandardMaterial, Mesh, PointLight } from 'three';
 import type { EntityId, ProgressFlag } from '@tlh/shared';
 import { useSettings } from '../store/index.ts';
 import { EXTERIOR_LIGHTING } from './lighting.ts';
+import { Model } from './models.tsx';
 import { GroundsScene } from './grounds-scene.tsx';
 import { veilOpacity } from '../game/gates.ts';
 import type { WorldRuntime } from '../game/world-runtime.ts';
@@ -22,6 +23,21 @@ function WallBox({ r, color }: { r: WallRect; color: string }) {
   );
 }
 
+/** The hollow greybox of No. 12: floor, walls and a front door that stays shut until its gate opens. */
+function HomeGreybox({ flags }: { flags: readonly ProgressFlag[] }) {
+  return (
+    <>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[(HOME_BOUNDS.minX + HOME_BOUNDS.maxX) / 2, 0.02, (HOME_BOUNDS.minZ + HOME_BOUNDS.maxZ) / 2]} receiveShadow>
+        <planeGeometry args={[HOME_BOUNDS.maxX - HOME_BOUNDS.minX, HOME_BOUNDS.maxZ - HOME_BOUNDS.minZ]} />
+        <meshStandardMaterial color="#2a241f" roughness={1} />
+      </mesh>
+      {HOME_WALLS.map((r) => (
+        <WallBox key={r.id} r={r} color="#6b5a4a" />
+      ))}
+      {!homeDoorOpen(flags) && <WallBox r={HOME_FRONT_DOOR} color="#4a3526" />}
+    </>
+  );
+}
 /** Greybox exterior: debug-coloured boxes, smoke veils, ground, streetlights. View only. */
 const STREETLIGHTS: readonly [number, number][] = [
   [-35, 28], [60, 5], [60, -18], [48, -28], [10, -28], [-35, -28], [-56, -10], [-56, 15],
@@ -140,16 +156,18 @@ export function ExteriorScene({ flags, runtime }: { flags: readonly ProgressFlag
         </mesh>
       ))}
 
-      {/* No. 12: hollow greybox with a floor, a hall light and a front door that stays shut until its gate opens. */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[(HOME_BOUNDS.minX + HOME_BOUNDS.maxX) / 2, 0.02, (HOME_BOUNDS.minZ + HOME_BOUNDS.maxZ) / 2]} receiveShadow>
-        <planeGeometry args={[HOME_BOUNDS.maxX - HOME_BOUNDS.minX, HOME_BOUNDS.maxZ - HOME_BOUNDS.minZ]} />
-        <meshStandardMaterial color="#2a241f" roughness={1} />
-      </mesh>
-      {HOME_WALLS.map((r) => (
-        <WallBox key={r.id} r={r} color="#6b5a4a" />
-      ))}
-      {!homeDoorOpen(flags) && <WallBox r={HOME_FRONT_DOOR} color="#4a3526" />}
+      {/* No. 12 and its front street: GLBs when present, the hollow greybox otherwise. Colliders are data (home-layout.ts). */}
+      <Model
+        url="/assets/models/home_elena.glb"
+        runtime={runtime}
+        hidden={homeDoorOpen(flags) ? ['door_home_front'] : []}
+        fallback={<HomeGreybox flags={flags} />}
+      />
+      <Model url="/assets/models/street_front.glb" runtime={runtime} fallback={null} />
       <pointLight position={[-20, 2.8, 38]} intensity={4} distance={14} color="#ffcf8a" />
+      {/* Porch lantern and the streetlight in front of No. 12 (lights stay in code, not in the GLBs). */}
+      <pointLight position={[-17.6, 2.0, 33.2]} intensity={3} distance={8} color="#ffb35c" />
+      <pointLight position={[-14.5, 4.1, 29.15]} intensity={6} distance={14} color="#ffb35c" />
 
       {VEILS.map((v) => (
         <VeilWall key={v.gate} v={v} open={veilIsOpen(v, flags)} />

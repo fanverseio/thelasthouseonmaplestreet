@@ -3,6 +3,7 @@ import { useRef, useSyncExternalStore } from 'react';
 import type { Mesh, MeshStandardMaterial } from 'three';
 import type { ProgressFlag } from '@tlh/shared';
 import type { VisibleEntity, WorldRuntime } from '../game/world-runtime.ts';
+import { hasModelNode, modelNodesVersion, subscribeModelNodes } from './model-nodes.ts';
 
 const COLORS: Record<string, string> = {
   clue: '#8a7a3a',
@@ -36,11 +37,13 @@ function GreyProp({ e }: { e: VisibleEntity }) {
 export function Interactables({ runtime }: { runtime: WorldRuntime; flags: readonly ProgressFlag[] }) {
   // Re-render on flag changes (prop) and on runtime changes (hint highlight).
   useSyncExternalStore(runtime.subscribe, () => runtime.version);
+  // Entities with a real model node are drawn by the GLB; the rest keep their greybox.
+  useSyncExternalStore(subscribeModelNodes, modelNodesVersion);
   return (
     <>
       {runtime
         .visibleEntities()
-        .filter((e) => !e.id.startsWith('door.') && !e.id.startsWith('enemy.') && !e.id.startsWith('seal.') && !e.id.startsWith('rune.') && !e.id.startsWith('mirror.'))
+        .filter((e) => !e.id.startsWith('door.') && !e.id.startsWith('enemy.') && !e.id.startsWith('seal.') && !e.id.startsWith('rune.') && !e.id.startsWith('mirror.') && !hasModelNode(e.id))
         .map((e) => (
           <GreyProp key={e.id} e={e} />
         ))}
