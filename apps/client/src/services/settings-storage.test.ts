@@ -1,8 +1,8 @@
-import { SAVE_STORAGE_KEY } from '@tlh/shared';
+import { SAVE_STORAGE_KEY, SETTINGS_STORAGE_KEY } from '@tlh/shared';
 import { describe, expect, it } from 'vitest';
 import { createSettingsStore, defaultSettings } from '../store/settings-store.ts';
 import { LocalStorageSaveStorage, type KeyValueBackend } from './save-storage.ts';
-import { parseSettings, SETTINGS_STORAGE_KEY, SettingsStorage } from './settings-storage.ts';
+import { parseSettings, SettingsStorage } from './settings-storage.ts';
 
 function memoryBackend(): KeyValueBackend & { map: Map<string, string> } {
   const map = new Map<string, string>();

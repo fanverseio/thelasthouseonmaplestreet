@@ -57,6 +57,7 @@ type CheckpointId =
   | "cp_house66"
   | "cp_watcher"
   | "cp_lane"
+  | "cp_grounds"
   | "cp_outbuilding"
   | "cp_interior"
   | "cp_ritual";
@@ -377,6 +378,7 @@ interface SaveFileV1 {
     yaw: number;
   };
   world: Record<EntityId, Record<string, unknown>>; // doors, gates, lights, clues, enemies, anchors, sockets
+  runtime?: RuntimeState; // optional, see below; saved as a plain record (z.record(z.string(), z.unknown()))
   angel: {
     summary: string;
     recent: Array<{ role: "player" | "angel"; text: string }>;
@@ -395,6 +397,33 @@ interface SaveFileV1 {
 ```
 
 Never included: API keys, base URLs, access codes, session cookies, provider settings.
+
+### The `runtime` field
+
+`runtime` is optional and holds the client world runtime's snapshot (`game/world-runtime.ts` `getState()`), written with every autosave and handed back to `restore()` on Continue. A save without it (older files) still loads: the runtime then starts fresh. Sequence progress is not saved; a loaded game restarts the active sequence from the last checkpoint. It is plain JSON, scrubbed like the rest of the save.
+
+```ts
+interface RuntimeState {
+  simTime: number; // sim seconds since the game view started (drives every timer below)
+  firedTriggers: string[]; // trigger volumes that already fired, plus `flag:<flag>` / `cond:<id>` rule keys
+  scheduled: Array<{
+    // delayed lines and tutorial prompts not yet due
+    at: number; // sim time when due
+    line?: string; // voice line id
+    tut?: { textId: string; seconds: number };
+  }>;
+  hints: Record<string, { elapsed: number; fired: number; cancelled: boolean }>; // idle puzzle hint clocks, by hint id
+  played: Record<string, number>; // Classic locket lines already played, by line id (count)
+  subtitle: {
+    // the subtitle on screen, if any
+    lineId: string;
+    speaker: string;
+    text: string;
+    until: number; // sim time when it hides
+  } | null;
+}
+```n
+Not in `runtime` (rebuilt after a load): the P6 anchor hint clock (45 s without anchor progress), encounter wind-up and stun timers, and the sequence runner. Encounter state lives in `world` (`enemy.*` entries: `state`, `engaged`, `outcome`).
 
 ## 9. Correctness properties (tested)
 

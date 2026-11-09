@@ -1,3 +1,4 @@
+import { SETTINGS_STORAGE_KEY } from '@tlh/shared';
 import { z } from 'zod';
 import {
   defaultSettings,
@@ -10,9 +11,7 @@ import {
 } from '../store/settings-store.ts';
 import type { KeyValueBackend } from './save-storage.ts';
 
-/** Settings live under their own key, never inside the save (Reset progress leaves them alone). */
-export const SETTINGS_STORAGE_KEY = 'tlh.settings';
-
+/** Settings live under their own key (	lh.settings, from @tlh/shared), never inside the save. */
 const d = defaultSettings();
 const unit = (fallback: number) => z.number().min(0).max(1).catch(fallback);
 const flag = (fallback: boolean) => z.boolean().catch(fallback);
