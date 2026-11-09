@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { SequenceEffect } from '../game/sequences.ts';
-import { CUE_MIN_INTERVAL_S, CUE_TABLE, createSfx, cueForEffect, doorCueForFlags, sfxGain } from './sfx.ts';
+import { CUE_MIN_INTERVAL_S, CUE_TABLE, LATE_CUE_MAX_AGE_S, createSfx, cueForEffect, doorCueForFlags, duckForEffect, sfxGain } from './sfx.ts';
 
 /** Just enough of an AudioContext to count what a cue starts. */
 function fakeContext() {
@@ -109,5 +109,107 @@ describe('playback', () => {
     t += CUE_MIN_INTERVAL_S;
     expect(sfx.play('sfx_door_open')).toBe(true);
     expect(started.osc).toBe(2);
+  });
+});
+
+describe('cue files and the synth fallback', () => {
+  type Files = NonNullable<Parameters<typeof createSfx>[0]>['files'];
+  const filesStub = (state: 'ready' | 'missing' | 'unknown', buffer: AudioBuffer | null = {} as AudioBuffer) => {
+    const calls = { played: [] as string[], loaded: 0 };
+    let resolveLoad: (b: AudioBuffer | null) => void = () => undefined;
+    const files = {
+      cues: { preload: () => Promise.resolve() },
+      cueState: () => state,
+      load: () => {
+        calls.loaded++;
+        return new Promise<AudioBuffer | null>((r) => (resolveLoad = r));
+      },
+      playCue: (cue: string) => (buffer ? (calls.played.push(cue), { stop() {} }) : null),
+    } as unknown as NonNullable<Files>;
+    return { files, calls, finish: (b: AudioBuffer | null) => resolveLoad(b) };
+  };
+
+  it('plays the file, not the synth, when the file is loaded', () => {
+    const { ctx, started } = fakeContext();
+    const f = filesStub('ready');
+    const sfx = createSfx({ getContext: () => ctx, getVolume: () => 0.5, now: () => 0, files: f.files });
+    expect(sfx.play('sfx_door_open')).toBe(true);
+    expect(f.calls.played).toEqual(['sfx_door_open']);
+    expect(started.osc).toBe(0);
+  });
+
+  it('uses the synth when the file does not exist', () => {
+    const { ctx, started } = fakeContext();
+    const f = filesStub('missing');
+    const sfx = createSfx({ getContext: () => ctx, getVolume: () => 0.5, now: () => 0, files: f.files });
+    expect(sfx.play('sfx_door_open')).toBe(true);
+    expect(f.calls.played).toEqual([]);
+    expect(started.osc).toBe(1);
+  });
+
+  it('plays a file that was still loading when it arrives soon enough, and falls back when it never comes', async () => {
+    const { ctx, started } = fakeContext();
+    let t = 0;
+    const loading = filesStub('unknown');
+    const sfx = createSfx({ getContext: () => ctx, getVolume: () => 0.5, now: () => t, files: loading.files });
+    expect(sfx.play('sfx_door_open')).toBe(true);
+    loading.finish({} as AudioBuffer);
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(loading.calls.played).toEqual(['sfx_door_open']);
+
+    const absent = filesStub('unknown', null);
+    const sfx2 = createSfx({ getContext: () => ctx, getVolume: () => 0.5, now: () => t, files: absent.files });
+    sfx2.play('sfx_door_open');
+    absent.finish(null);
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(started.osc).toBe(1); // the synth stood in
+
+    const late = filesStub('unknown');
+    const sfx3 = createSfx({ getContext: () => ctx, getVolume: () => 0.5, now: () => t, files: late.files });
+    sfx3.play('sfx_door_open');
+    t += LATE_CUE_MAX_AGE_S + 1;
+    late.finish({} as AudioBuffer);
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(late.calls.played).toEqual([]); // too late to be worth playing
+  });
+
+  it('plays file-only cues (no synth) and ignores ids that are neither', () => {
+    const { ctx } = fakeContext();
+    const f = filesStub('ready');
+    const sfx = createSfx({ getContext: () => ctx, getVolume: () => 0.5, now: () => 0, files: f.files });
+    expect(sfx.play('sfx_whisper_1')).toBe(true);
+    expect(sfx.play('sfx_not_a_cue')).toBe(false);
+    expect(createSfx({ getContext: () => ctx, getVolume: () => 0.5, files: null }).play('sfx_whisper_1')).toBe(false);
+  });
+
+  it('starts a loop once the file is ready and stops it, even before it loaded', async () => {
+    const { ctx } = fakeContext();
+    const f = filesStub('unknown');
+    const sfx = createSfx({ getContext: () => ctx, getVolume: () => 0.5, files: f.files });
+    const handle = sfx.loop('sfx_spell_charge');
+    expect(handle).not.toBeNull();
+    handle!.stop();
+    f.finish({} as AudioBuffer);
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(f.calls.played).toEqual([]);
+    expect(sfx.loop('sfx_not_a_cue')).toBeNull();
+  });
+});
+
+describe('sequence effects to cues', () => {
+  it('maps flicker, burst, veil, mirror and smoke effects, and the ambience duck', () => {
+    const light = (effect: string) => ({ k: 'light', target: 'light.street.01', effect, sequenceId: 'seq1_empty_street' }) as unknown as SequenceEffect;
+    const fx = (effect: string) => ({ k: 'fx', effect, target: 'x', sequenceId: 'seq1_empty_street' }) as unknown as SequenceEffect;
+    expect(cueForEffect(light('burst'))).toBe('sfx_bulb_burst');
+    expect(cueForEffect(fx('veilRecede'))).toBe('sfx_veil_recede');
+    expect(cueForEffect(fx('mirrorCrack'))).toBe('sfx_mirror_crack');
+    expect(cueForEffect(fx('smoke'))).toBe('sfx_smoke_breathing');
+    expect(cueForEffect(fx('runes'))).toBeNull();
+    expect(duckForEffect(audio('amb_street_duck', 'amb'))).toMatchObject({ level: expect.any(Number), seconds: expect.any(Number) });
+    expect(duckForEffect(audio('sfx_door_open'))).toBeNull();
   });
 });
