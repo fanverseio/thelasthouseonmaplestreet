@@ -29,6 +29,7 @@ import { bindInput } from '../services/input-bindings.ts';
 import { cuesForEnemyEvent, cuesForRitualEvent, cuesForSpellEvent } from '../services/audio-cues.ts';
 import { duckForEffect, sfx } from '../services/sfx.ts';
 import { duckAmbienceFor, startSoundDirector, type SoundDirector } from '../services/sound-director.ts';
+import { createVoicePlayer } from '../services/voice-player.ts';
 import { zoneAt } from '../game/world-runtime.ts';
 import { GATES } from '../content/world/gates.ts';
 import { gameStore, saveStorage, settingsStore, useGame } from '../store/index.ts';
@@ -82,6 +83,8 @@ export function GameView() {
     () => new CombatFeedback({ enemies, spells, player: () => ({ x: gameStore.getState().player.pos[0], z: gameStore.getState().player.pos[2] }), reduceFlashing: () => settingsStore.getState().reduceFlashing }),
     [enemies, spells],
   );
+  // Voice-over: one line at a time, started by the runtime's onLine with the subtitle.
+  const voice = useMemo(() => createVoicePlayer(), []);
   // One world runtime per game view: New Game mounts a fresh view, so timers and fired triggers start clean.
   const { world: runtime, encounters, choices, ritual, ending } = useMemo(
     () =>
@@ -94,14 +97,16 @@ export function GameView() {
         onRespawn: () => feedback.noteRespawn(),
         onTick: (dt) => feedback.step(dt),
         loadScene: loadSceneHook,
+        onLine: (line) => voice.speak(line), // voice-over plays with every subtitle and locket line
         onEffect: (e) => {
           sfx.handleEffect(e);
           const duck = duckForEffect(e);
           if (duck) duckAmbienceFor(duck.level, duck.seconds);
         },
       }),
-    [enemies, spells, feedback],
+    [enemies, spells, feedback, voice],
   );
+  useEffect(() => () => voice.stop(), [voice]); // leaving the game stops any line still playing
   // Sound: ambience by zone, footsteps, flag cues (the director), and the event streams below.
   const director = useRef<SoundDirector | null>(null);
   const playAll = useCallback((requests: Parameters<SoundDirector['playAll']>[0]) => director.current?.playAll(requests), []);

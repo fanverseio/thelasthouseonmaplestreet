@@ -1,6 +1,6 @@
 import type { ProgressFlag, SceneId, ZoneId } from '@tlh/shared';
 import { describe, expect, it } from 'vitest';
-import { WHISPER_MIN_S, ZONE_CHECK_S, startSoundDirector, type DirectorState, type DirectorStore } from './sound-director.ts';
+import { FOOTSTEP_GAIN, WHISPER_MIN_S, ZONE_CHECK_S, startSoundDirector, type DirectorState, type DirectorStore } from './sound-director.ts';
 
 function fakeStore(initial: Partial<DirectorState> = {}) {
   let state: DirectorState = {
@@ -69,6 +69,8 @@ describe('sound director', () => {
     for (let x = 0.5; x <= 6; x += 0.5) s.walkTo(x);
     const steps = s.played.filter((p) => p.cue.startsWith('sfx_footsteps_pavement_'));
     expect(steps).toHaveLength(3);
+    // Footsteps play quieter than other effects.
+    for (const p of steps) expect(p.gain).toBe(FOOTSTEP_GAIN);
   });
 
   it('is silent while the game is not playing (menu, locket, overlay) and restarts from where she stands', () => {

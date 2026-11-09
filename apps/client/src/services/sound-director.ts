@@ -42,6 +42,8 @@ export const ZONE_CHECK_S = 0.4;
 export const WHISPER_MIN_S = 45;
 export const WHISPER_MAX_S = 100;
 export const WHISPER_GAIN = 0.45;
+/** Footsteps sit well under voice and effects (author: they were too loud at full gain). */
+export const FOOTSTEP_GAIN = 0.3;
 
 export interface SoundDirector {
   /** Play a list of cue requests (with their delays). */
@@ -111,7 +113,7 @@ export function startSoundDirector(deps: DirectorDeps): SoundDirector {
       const [x, , z] = s.player.pos;
       const step = stepFootsteps(walker, x, z, random);
       walker = step.state;
-      if (step.step !== null && zone) sfx.play(footstepCue(surfaceForZone(zone), step.step));
+      if (step.step !== null && zone) sfx.play(footstepCue(surfaceForZone(zone), step.step), { gain: FOOTSTEP_GAIN });
       if (zone && WHISPER_ZONES.includes(zone) && now() >= nextWhisper) {
         nextWhisper = now() + WHISPER_MIN_S + random() * (WHISPER_MAX_S - WHISPER_MIN_S);
         const pick = WHISPER_CUES[Math.floor(random() * WHISPER_CUES.length)];
