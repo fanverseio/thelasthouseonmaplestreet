@@ -19,11 +19,20 @@ export const ITEM_LABELS: Record<ItemId, { glyph: string; name: string }> = {
   photo: { glyph: '🖼', name: 'Photo' },
 };
 
-function Bar({ label, value, kind }: { label: string; value: number; kind: 'health' | 'magic' }) {
+/** One HUD row: short label | bar | rounded number. The meter keeps its full name for assistive tech. */
+function Bar({ label, short, value, kind }: { label: string; short: string; value: number; kind: 'health' | 'magic' }) {
   const pct = Math.max(0, Math.min(100, value));
   return (
-    <div className={`hud-bar hud-bar-${kind}`} role="meter" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct}>
-      <div className="hud-bar-fill" style={{ width: `${pct}%` }} />
+    <div className="hud-row">
+      <span className="hud-row-label" aria-hidden="true">
+        {short}
+      </span>
+      <div className={`hud-bar hud-bar-${kind}`} role="meter" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct}>
+        <div className="hud-bar-fill" style={{ width: `${pct}%` }} />
+      </div>
+      <span className="hud-row-value" aria-hidden="true">
+        {Math.round(pct)}
+      </span>
     </div>
   );
 }
@@ -55,8 +64,8 @@ export function Hud({ actions = [], tutorial }: { actions?: readonly ActionOptio
       ) : null}
       {tutorial ? <div className="hud-tutorial">{tutorial}</div> : null}
       <div className="hud-bottom-left">
-        <Bar label="Health" value={hp} kind="health" />
-        <Bar label="Magic" value={magic} kind="magic" />
+        <Bar label="Health" short="HL" value={hp} kind="health" />
+        <Bar label="Magic" short="ML" value={magic} kind="magic" />
       </div>
       <div className="hud-spell">
         <span aria-hidden="true">{spell.glyph}</span> {spell.name}

@@ -124,6 +124,9 @@ body,
 .hud-objective { position: absolute; top: 1rem; left: 1.25rem; max-width: 40ch; }
 .hud-prompt { position: absolute; top: 58%; left: 50%; transform: translateX(-50%); }
 .hud-bottom-left { position: absolute; left: 1.25rem; bottom: 1.25rem; display: grid; gap: 0.4rem; }
+.hud-row { display: grid; grid-template-columns: 1.6rem 14rem 2.4rem; align-items: center; column-gap: 0.5rem; }
+.hud-row-label { font-size: 0.75rem; letter-spacing: 0.1em; color: var(--muted); }
+.hud-row-value { font-size: 0.8rem; font-variant-numeric: tabular-nums; text-align: left; }
 .hud-bar { width: 14rem; height: 0.7rem; border: 1px solid var(--muted); background: rgba(0, 0, 0, 0.5); }
 .hud-bar-fill { height: 100%; }
 .hud-bar-health .hud-bar-fill { background: #b5483a; }
@@ -170,3 +173,10 @@ body,
 
 .position-readout { position: absolute; top: 1rem; right: 1.25rem; padding: 0.3rem 0.6rem; background: rgba(7, 8, 12, 0.7); border: 1px solid var(--muted); font-family: Consolas, 'Courier New', monospace; font-size: 0.85rem; pointer-events: none; text-align: right; }
 .position-readout small { display: block; color: var(--muted); font-size: 0.7rem; }
+
+/* Angel panel: bottom-left, directly above the HUD bars (two rows, about 2.4rem). */
+.angel-panel { position: absolute; left: 1.25rem; bottom: 4rem; max-width: 22rem; display: flex; flex-direction: column; align-items: flex-start; gap: 0.15rem; pointer-events: none; }
+.angel-cluster { display: block; }
+.angel-text { font-family: Georgia, 'Times New Roman', serif; color: #f2eee6; text-shadow: 0 1px 3px #000, 0 0 8px rgba(0, 0, 0, 0.85); line-height: 1.35; transition: opacity 0.4s ease-out; }
+.angel-name { font-size: 0.8em; letter-spacing: 0.12em; text-transform: uppercase; }
+@media (prefers-reduced-motion: reduce) { .angel-text { transition: none; } }

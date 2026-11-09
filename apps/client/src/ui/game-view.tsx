@@ -37,6 +37,8 @@ import { DialogueChoicePanel } from './dialogue-choice.tsx';
 import { EndingChoicePanel } from './ending-choice.tsx';
 import { EncounterPanel } from './encounter-stub.tsx';
 import { CombatOverlays } from './combat-overlays.tsx';
+import { routeLine } from '../game/speech-target.ts';
+import { AngelPanel } from './angel-panel.tsx';
 import { Hud } from './hud.tsx';
 import { PositionReadout } from './position-readout.tsx';
 import { Locket } from './locket.tsx';
@@ -122,6 +124,7 @@ export function GameView() {
   useEffect(() => enemies.on((e) => playAll(cuesForEnemyEvent(e))), [enemies, playAll]);
   useEffect(() => ritual.on((e) => playAll(cuesForRitualEvent(e))), [ritual, playAll]);
   useSyncExternalStore(runtime.subscribe, () => runtime.version);
+  const speech = routeLine(runtime.subtitle); // Angel lines go to the Angel panel, everyone else to the subtitles
   const skipHold = useMemo(() => createSkipHold(runtime.sequences, ALL_SEQUENCES), [runtime]);
   const spellContext = useCallback((): SpellContext => {
     const f = gameStore.getState().progress.flags;
@@ -224,6 +227,13 @@ export function GameView() {
   }, [input]);
 
   const openLocket = useCallback(() => {
+    // Classic: T asks for the next line and the Angel panel shows it. Play never pauses, pointer lock stays.
+    // (Each press plays the next line, if any.)
+    if (gameStore.getState().game.activeMode !== 'ai') {
+      if (runtime.locketLine()) sfx.play('sfx_locket_open');
+      return;
+    }
+    // Later AI mode: the full locket overlay, which pauses the game only while the player types.
     const next = runtime.locketLine();
     if (!next) return;
     setLocket(next);
@@ -267,7 +277,8 @@ export function GameView() {
       {phase === 'playing' && <div className="crosshair" aria-hidden="true" />}
       {phase === 'playing' && <SpellHud spells={spells} input={input} />}
       {phase === 'playing' && <PositionReadout />}
-      {phase === 'playing' && <Subtitles line={runtime.subtitle} />}
+      {phase === 'playing' && <AngelPanel line={speech.angel} />}
+      {phase === 'playing' && <Subtitles line={speech.subtitle} />}
       {phase === 'playing' && <EncounterPanel encounters={encounters} />}
       {phase === 'playing' && <SmokePuffOverlay enemies={enemies} />}
       {phase === 'playing' && <DialogueChoicePanel choices={choices} />}
