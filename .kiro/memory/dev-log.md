@@ -95,3 +95,6 @@ game/enemies.ts FSM + content/enemies; game/morality.ts; death/respawn rules. Op
 
 ## 2026-11-09 | milestone | 5.6-5.9 every encounter on the real FSM (12da2ef..275b384)
 863 tests. Purify = 2 + hold LMB, destroy = 1 + hold LMB on a stunned enemy (2 / hold Enter kept as fallback). Briggs: spell_ward set at telegraph start, slam below 60%, smoke puff. Watcher: teleports to node.house66.tp_1..6, decoys at 60/40%, voice at 90/50/30%. HP regen; stunned mini-boss stays stunned on death; dev start ?start=training. Next: 5.10 ritual, 5.11 feedback.
+
+## 2026-11-09 | milestone | Section 5 done (4e18903, 87fc917)
+898 tests. Ritual = smoke pattern director (rings, pools, wraiths) + real anchors (north: bolt the 100 HP shell then hold E 3 s; east: hold E 6 s, Ward blocks strikes; west: Purify channel 4 s); magic floors near anchors. Feedback: hit flash, hurt vignette (reduce flashing softer), 1.5 s death fade, hand poses, VFX, SFX. Open: anchor progress not saved across save/load; east suspends rings. Playtest sections 10-13 appended (uncommitted, author commits). Next: art track or video API.

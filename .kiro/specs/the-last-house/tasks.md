@@ -157,7 +157,7 @@ Each milestone includes a README sync check (task 9.7 rules).
   - Full manual playthrough; record total time; README sync check.
   - _Requirements: 1.1, 21.8_
 
-- [ ] 5. Combat, purification and the final ritual (Nov 14-24)
+- [x] 5. Combat, purification and the final ritual (Nov 14-24)
 - [x] 5.1 Spell config and Arcane Bolt (tap and charged), pooled projectiles
   - Verify: unit tests for costs, cooldowns, charge time; tap on a stunned enemy deals 0.
   - _Requirements: 5.5, 5.6_
@@ -184,10 +184,10 @@ Each milestone includes a README sync check (task 9.7 rules).
   - _Requirements: 6.7_
 - [x] 5.9 Hounds and cat replace the stubs
   - _Requirements: 6.1, 6.10_
-- [ ] 5.10 Final ritual: smoke director and the three anchor mechanics replace the stub
+- [x] 5.10 Final ritual: smoke director and the three anchor mechanics replace the stub
   - Verify: unit tests for pressure scaling and anchor progress keeping; magic never blocks an anchor.
   - _Requirements: 8.2, 8.4, 6.10_
-- [ ] 5.11 Combat feedback: hit reactions, hand animations, VFX and SFX hooks
+- [x] 5.11 Combat feedback: hit reactions, hand animations, VFX and SFX hooks
   - _Requirements: 4.6, 19.3_
 
 - [ ] 6. Cinematics and horror (Nov 17-24)
