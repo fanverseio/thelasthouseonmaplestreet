@@ -2,7 +2,7 @@ import { createStore } from 'zustand/vanilla';
 
 /**
  * Player settings (docs/input-ux.md section 8). Stored separately from saves under `tlh.settings`
- * (persistence arrives with the save system in tasks.md task 4.1).
+ * (see services/settings-storage.ts; Reset progress never touches them).
  */
 export const GRAPHICS_PRESETS = ['low', 'medium', 'high'] as const;
 export type GraphicsPreset = (typeof GRAPHICS_PRESETS)[number];
@@ -60,9 +60,9 @@ export interface SettingsState extends SettingsData {
   resetSettings: () => void;
 }
 
-export function createSettingsStore() {
+export function createSettingsStore(initial: SettingsData = defaultSettings()) {
   return createStore<SettingsState>()((set) => ({
-    ...defaultSettings(),
+    ...initial,
     setFieldOfView: (fov) => set({ fieldOfView: Math.min(FOV_MAX, Math.max(FOV_MIN, Math.round(fov))) }),
     updateSettings: (patch) =>
       set((s) => {

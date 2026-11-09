@@ -1,6 +1,7 @@
-﻿import { useStore } from 'zustand';
+import { useStore } from 'zustand';
 import { beginNewSave, saveNow } from '../game/save.ts';
 import { LocalStorageSaveStorage } from '../services/save-storage.ts';
+import { SettingsStorage } from '../services/settings-storage.ts';
 import { createGameStore, type GameState } from './game-store.ts';
 import { createSettingsStore, type SettingsState } from './settings-store.ts';
 
@@ -13,7 +14,10 @@ export const gameStore = createGameStore({
     saveNow(gameStore, saveStorage);
   },
 });
-export const settingsStore = createSettingsStore();
+// Settings load from 	lh.settings at start-up and are written back on every change (Q23).
+export const settingsStorage = new SettingsStorage();
+export const settingsStore = createSettingsStore(settingsStorage.load());
+settingsStore.subscribe((state) => void settingsStorage.save(state));
 
 const IN_GAME = new Set(['playing', 'paused', 'locket', 'overlay', 'sequence']);
 // Also save on pause and when quitting to the menu.
