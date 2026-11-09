@@ -89,3 +89,6 @@ Author: game logic and design are mostly good; section 9 retest skipped for now;
 
 ## 2026-11-09 | milestone | 5.1-5.2 spells (b4ee904)
 game/spells.ts SpellSystem: register(target) / on(hit events) / absorbDamage (Ward). Numbers from combat-tuning.md; invented: pool 16, anchors purify free, charged bolt same speed. Open: release 200 ms-1.2 s cancels free; no early-release Purify refund; spell_ward set at end of first Briggs telegraph (fix in 5.7); damage not yet routed via absorbDamage; bolts ignore walls.
+
+## 2026-11-09 | milestone | 5.3-5.5 enemy FSM, morality, death (a79d74f..5f68e53)
+game/enemies.ts FSM + content/enemies; game/morality.ts; death/respawn rules. Opt a binding into the FSM with mode:'fsm' in content/encounters/index.ts (adapter keeps stub flags/drops/morality). Dev-only training hound at (49,-2) on ?start=garden. Open: magic floor 70 vs 55; slam/smoke/teleport/decoys/voice are no-op stubs for 5.7/5.8; only the training hound is on the FSM.

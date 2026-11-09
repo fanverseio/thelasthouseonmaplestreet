@@ -164,13 +164,13 @@ Each milestone includes a README sync check (task 9.7 rules).
 - [x] 5.2 Ward and Purify (channel, range, refund, rune and anchor targets) with unlock hooks
   - Verify: unit tests; unlock order matches `docs/combat-tuning.md`.
   - _Requirements: 5.1-5.5_
-- [ ] 5.3 Enemy FSM, steering, leash, stun floor, persistent stun, magic floor on stun
+- [x] 5.3 Enemy FSM, steering, leash, stun floor, persistent stun, magic floor on stun
   - Verify: unit tests P16; stunned enemies deal no damage.
   - _Requirements: 6.2-6.5_
-- [ ] 5.4 Morality system (deltas, clamp, bands, history) and outcome wiring
+- [x] 5.4 Morality system (deltas, clamp, bands, history) and outcome wiring
   - Verify: property test P1; no morality reads in progression code (static test).
   - _Requirements: 9.1-9.3, 9.5_
-- [ ] 5.5 Death and respawn rules
+- [x] 5.5 Death and respawn rules
   - Verify: unit tests: flags kept, resolved enemies kept, active mini-boss reset.
   - _Requirements: 6.8_
 - [ ] 5.6 Street fox (skippable; stunned without Purify stays stunned)
