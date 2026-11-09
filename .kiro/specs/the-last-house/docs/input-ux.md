@@ -20,8 +20,9 @@
 
 - T does nothing until `angel_awake`.
 - T opens the locket only in `playing`, and only when the current policy allows it (`beat-sheet.md`).
-- While open: phase `locket`, sim time paused, pointer lock released.
-- **Classic Mode**: no text input. The Angel speaks one authored line for the current context (beat, zone, morality band, pending hint). Pressing T or E again plays the next line, if any. Esc or T closes it.
+- **Classic Mode** does not pause: T asks for the next line, which shows in the Angel panel (section 5) while play continues. The phase stays `playing` and pointer lock is kept.
+- **AI-Enhanced Mode** opens the locket overlay (phase `locket`, pointer lock released) and pauses only while the player is typing.
+- **Classic Mode**: no text input. The Angel speaks one authored line for the current context (beat, zone, morality band, pending hint). Pressing T again plays the next line, if any. There is nothing to close.
 - **AI-Enhanced Mode**: a text box is focused. Max 300 characters. Enter sends. One request in flight. A "thinking" state (the locket glows and pulses). Over 8 s gives a stock in-character line, and the request is treated as a timeout.
 - Typing never triggers game keys. While the input is focused, only Esc and Enter are intercepted. T closes the locket only when the input is empty.
 - Angel effects proposed during the conversation apply after the locket closes, after re-validation.
@@ -38,7 +39,8 @@
 
 ## 5. HUD
 
-- Bottom left: health and magic bars (no numbers).
+- Bottom left: health and magic rows, each `label | bar | number`: `HL` and `ML`, with the rounded value to the right of the bar.
+- Bottom left, directly above the bars: the Angel panel. A small cluster of about 18 glowing lights (dim and tight when idle, brighter and wider while the Angel speaks), then the label `The Angel` and the line in a serif face. The cluster appears once `angel_awake` is set. Its colour follows the Angel's hidden mood (blue, pale violet or red); the UI never states why. Every line spoken by the Angel (hints, sequences, locket) shows here instead of the bottom-centre subtitle, for the length of the voice line; other speakers keep the bottom-centre subtitles. Reduced motion draws a static frame; reduce flashing removes the twinkle flicker.
 - Bottom centre: the selected spell, with icon and name (colour is never the only cue).
 - Top left: the current objective (one line).
 - Bottom right: carried key items, max 4 icons, shown only while carrying something.
