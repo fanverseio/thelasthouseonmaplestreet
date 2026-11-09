@@ -12,6 +12,9 @@
 # apps/client/public/assets/ so a fresh clone runs.
 # ---------------------------------------------------------------
 assets/raw/
+# The author's local asset-creation workspace (Blender scenes, working files).
+# Only finished exports under apps/client/public/assets/ are committed.
+/asset_creation/
 
 # Dependencies and build output
 node_modules/
