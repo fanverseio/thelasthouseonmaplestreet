@@ -17,6 +17,8 @@ export interface ClassicLine {
     notFlags?: ProgressFlag[];
     puzzle?: PuzzleId;
     hintLevel?: number;
+    /** Every one of these enemies has engaged (or been resolved). */
+    engaged?: string[];
   };
   /** Higher plays first within a tier. */
   priority: number;
@@ -42,6 +44,8 @@ export interface ClassicContext {
   band: MoralityBand;
   flags: readonly ProgressFlag[];
   zone?: ZoneId;
+  /** Enemy entity ids that have engaged (or been resolved). */
+  engaged?: readonly string[];
   /** The puzzle currently in progress, with its hint level. */
   puzzle?: { id: PuzzleId; hintLevel: number };
   played: PlayedLines;
@@ -54,6 +58,7 @@ function conditionsMet(line: ClassicLine, ctx: ClassicContext): boolean {
   if (w.zone !== undefined && w.zone !== ctx.zone) return false;
   if (w.flags && !w.flags.every((f) => ctx.flags.includes(f))) return false;
   if (w.notFlags && w.notFlags.some((f) => ctx.flags.includes(f))) return false;
+  if (w.engaged && !w.engaged.every((e) => ctx.engaged?.includes(e))) return false;
   return true;
 }
 

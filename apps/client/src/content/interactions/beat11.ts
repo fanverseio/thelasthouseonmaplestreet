@@ -11,7 +11,8 @@ const ANCHOR_FLAGS = ['anchor_north', 'anchor_east', 'anchor_west'] as const sat
  * three anchors. The `show` conditions mirror game/progression.ts `sealState`, so exactly one seal def is shown.
  *
  * Anchors (any order; docs/puzzles.md P6, greybox stub): each is a hold-E interaction. North needs Arcane Bolt
- * selected (it stands for breaking the smoke shell first). The smoke strikes are a harmless timed warning
+ * selected (it stands for breaking the smoke shell first); pressing E on it selects Arcane Bolt by itself when
+ * it is unlocked (Q14). The smoke strikes are a harmless timed warning
  * (game/ritual.ts). Anchors, `ritual_active` and the other flags are flags, so death and respawn keep them.
  */
 const anchor = (dir: 'north' | 'east' | 'west', extra: Partial<InteractionDef> = {}): InteractionDef => ({
@@ -53,6 +54,7 @@ export const BEAT11: InteractionContent = {
     anchor('north', {
       lockedPrompt: 'Smoke shell: select Arcane Bolt (1) to break it',
       requires: { spell: 'arcane_bolt' },
+      autoSelect: 'arcane_bolt',
       onRefuse: [{ do: 'say', line: 'vo_angel_p6_h_north' }],
     }),
     anchor('east'),

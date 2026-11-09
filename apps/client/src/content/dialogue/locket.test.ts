@@ -44,6 +44,7 @@ describe('Classic locket catalogue (task 4.11)', () => {
     for (const id of PUZZLE_IDS) {
       expect(levels[id], id).toBeGreaterThan(0);
       for (let n = 1; n <= levels[id]; n++) {
+        if (id === 'p1_drawer' && n === 2) continue; // Q21: the 90 s step is the pumpkin glow only, no locket line
         expect(CLASSIC_LINES.some((l) => l.when?.puzzle === id && l.when.hintLevel === n), `${id} level ${n}`).toBe(true);
       }
     }
@@ -107,5 +108,45 @@ describe('Classic locket catalogue (task 4.11)', () => {
     expect(anchorHintLevel(['ritual_active', 'anchor_north'])).toBe(2);
     expect(anchorHintLevel(['ritual_active', 'anchor_north', 'anchor_east'])).toBe(3);
     expect(anchorHintLevel(['ritual_active', 'anchors_all', 'anchor_north'])).toBe(0);
+  });
+});
+
+describe('Classic locket: Q16, Q17 and Q21', () => {
+  const K4: ProgressFlag[] = ['locket_taken', 'angel_awake', 'home_done', 'seq1_done', 'seq2_done', 'seq3_done', 'seq4_done', 'seq5_done', 'runes_done'];
+  const play = (flags: ProgressFlag[], engaged: string[], times: number, band: MoralityBand = 'neutral') => {
+    let played = emptyPlayed();
+    const out: string[] = [];
+    for (let n = 0; n < times; n++) {
+      const line = selectClassicLine({ beat: beatOfFlags(flags), band, flags, engaged, played });
+      if (!line) break;
+      out.push(line.id);
+      played = { ...played, [line.id]: (played[line.id] ?? 0) + 1 };
+    }
+    return out;
+  };
+
+  it('vo_angel_b9_01 is held until the cat has engaged', () => {
+    expect(play(K4, [], 8)).not.toContain('vo_angel_b9_01');
+    expect(play(K4, ['enemy.interior.cat'], 8)).toContain('vo_angel_b9_01');
+  });
+
+  it('plays two new lines between board_solved and seq6_done, none of them above K4', () => {
+    const flags: ProgressFlag[] = [...K4, 'enc_interior_resolved', 'board_solved'];
+    expect(knowledgeLevelFromFlags(flags)).toBe(4);
+    const ids = play(flags, ['enemy.interior.cat'], 6);
+    expect(ids).toContain('vo_angel_b10_board_c1');
+    expect(ids).toContain('vo_angel_b10_board_c2');
+    for (const id of ['vo_angel_b10_board_c1', 'vo_angel_b10_board_c2']) {
+      expect(CLASSIC_LINES.find((l) => l.id === id)?.minK, id).toBe(4);
+      expect(getLine(id)?.placeholder, id).toBe(true);
+      expect(getLine(id)?.speaker, id).toBe('Angel');
+    }
+    // After seq6_done they are gone.
+    expect(play([...flags, 'seq6_done'], ['enemy.interior.cat'], 8)).not.toContain('vo_angel_b10_board_c1');
+  });
+
+  it('vo_angel_p1_h2 is gone from the catalogue and the content', () => {
+    expect(CLASSIC_LINES.some((l) => l.id === 'vo_angel_p1_h2')).toBe(false);
+    expect(getLine('vo_angel_p1_h2')).toBeUndefined();
   });
 });

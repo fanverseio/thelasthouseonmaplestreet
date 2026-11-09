@@ -533,6 +533,27 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
     if (highlights().join() !== before) changed();
   }
 
+  /** Q15: the Angel hints the first unrestored anchor after this many sim seconds without anchor progress. */
+  const ANCHOR_HINT_SECONDS = 45;
+  const ANCHOR_HINT_LINES = ['', 'vo_angel_p6_h_north', 'vo_angel_p6_h_east', 'vo_angel_p6_h_west'] as const;
+  const anchorHint = { level: 0, elapsed: 0, said: false };
+
+  function advanceAnchorHint(dt: number): void {
+    const level = anchorHintLevel(progress().flags);
+    if (level !== anchorHint.level) {
+      anchorHint.level = level;
+      anchorHint.elapsed = 0;
+      anchorHint.said = false;
+      return;
+    }
+    if (level === 0 || anchorHint.said || runner.active || video) return;
+    anchorHint.elapsed += dt;
+    if (anchorHint.elapsed >= ANCHOR_HINT_SECONDS) {
+      anchorHint.said = true;
+      say(ANCHOR_HINT_LINES[level]!);
+    }
+  }
+
   function tick(dt: number, pose: PlayerPose): void {
     simTime += dt;
     // Delayed lines
@@ -571,6 +592,7 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
       run(rule.actions);
     }
     advanceHints(dt);
+    advanceAnchorHint(dt);
     options.onTick?.(dt, pose);
     if (tutorial && simTime >= tutorial.until) {
       tutorial = null;
@@ -623,6 +645,7 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
     if (!hit) return { status: 'none' };
     const id = hit.target.id;
     const def = defOf(id)!;
+    if (def.autoSelect && holds(def.show)) store.getState().selectSpell(def.autoSelect);
     if (!holds(def.requires)) {
       if (def.onRefuse) run(def.onRefuse);
       return { status: 'refused', id, reason: 'requires' };
@@ -642,10 +665,14 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
 
   function locketLine() {
     const { flags, morality } = progress();
+    const engaged = Object.entries(store.getState().world.entities)
+      .filter(([, e]) => e?.['engaged'] === true || e?.['state'] === 'resolved')
+      .map(([id]) => id);
     const ctx = {
       beat: beatOfFlags(flags),
       band: moralityBand(morality.value),
       flags,
+      engaged,
       zone: zoneAt(lastPose.x, lastPose.z, store.getState().game.scene, flags),
       ...(activePuzzle(flags) && { puzzle: activePuzzle(flags)! }),
       played,

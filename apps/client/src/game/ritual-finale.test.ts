@@ -123,18 +123,49 @@ describe('hold interactions', () => {
     expect(t.flags()).not.toContain('anchor_east');
   });
 
-  it('the north anchor needs Arcane Bolt selected, otherwise it refuses and the Angel hints', () => {
+  it('the north anchor selects Arcane Bolt by itself when it is unlocked (Q14)', () => {
     const t = setup();
     t.activate();
-    t.store.setState((s) => ({ player: { ...s.player, selectedSpell: 'ward' } }));
+    t.store.setState((s) => ({ player: { ...s.player, selectedSpell: 'purify' } }));
+    t.goTo(ANCHORS.north);
+    expect(t.press()).toMatchObject({ status: 'holding' });
+    expect(t.store.getState().player.selectedSpell).toBe('arcane_bolt');
+  });
+
+  it('the north anchor still refuses and the Angel hints when Arcane Bolt is not unlocked', () => {
+    const t = setup();
+    t.activate();
+    t.store.setState((s) => ({ player: { ...s.player, selectedSpell: 'ward', spellsUnlocked: ['ward', 'purify'] } }));
     t.goTo(ANCHORS.north);
     expect(t.press()).toMatchObject({ status: 'refused', id: 'anchor.ritual.north' });
     expect(t.world.hold).toBeNull();
     expect(t.world.spoken).toContain('vo_angel_p6_h_north');
     t.tick(0.1);
     expect(t.world.prompt).toContain('Arcane Bolt');
-    t.store.setState((s) => ({ player: { ...s.player, selectedSpell: 'arcane_bolt' } }));
-    expect(t.press()).toMatchObject({ status: 'holding' });
+  });
+
+  it('the Angel hints the first unrestored anchor after 45 s without progress, one at a time (Q15)', () => {
+    const t = setup();
+    expect(t.flags()).not.toContain('ritual_active');
+    t.tick(60);
+    expect(t.world.spoken).not.toContain('vo_angel_p6_h_north'); // not before the ritual is active
+    t.activate();
+    t.tick(44);
+    expect(t.world.spoken).not.toContain('vo_angel_p6_h_north');
+    t.tick(2);
+    expect(t.world.spoken.filter((l) => l === 'vo_angel_p6_h_north')).toHaveLength(1);
+    t.tick(120); // said once per stall, not nagging
+    expect(t.world.spoken.filter((l) => l === 'vo_angel_p6_h_north')).toHaveLength(1);
+    expect(t.world.spoken).not.toContain('vo_angel_p6_h_east');
+    t.hold('north');
+    t.world.setHeld(false);
+    t.finishCinematic();
+    expect(t.flags()).toContain('anchor_north');
+    t.tick(40);
+    expect(t.world.spoken).not.toContain('vo_angel_p6_h_east');
+    t.tick(10);
+    expect(t.world.spoken).toContain('vo_angel_p6_h_east');
+    expect(t.world.spoken).not.toContain('vo_angel_p6_h_west');
   });
 
   it('switching spell mid-hold cancels the north anchor', () => {

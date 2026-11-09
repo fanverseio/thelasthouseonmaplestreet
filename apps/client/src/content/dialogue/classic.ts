@@ -10,7 +10,6 @@ import type { ClassicLine } from '../../game/dialogue.ts';
 export const CLASSIC_LINES: readonly ClassicLine[] = [
   // Beat 1
   { id: 'vo_elena_b1_h1', beat: 1, band: 'any', when: { puzzle: 'p1_drawer', hintLevel: 1 }, priority: 20 },
-  { id: 'vo_angel_p1_h2', beat: 1, band: 'any', when: { puzzle: 'p1_drawer', hintLevel: 2 }, priority: 20 },
   { id: 'vo_angel_b1_c1', beat: 1, band: 'any', priority: 10, once: true },
   { id: 'vo_angel_b1_c2', beat: 1, band: 'any', when: { flags: ['angel_awake'] }, priority: 5 },
   // Beat 2
@@ -75,7 +74,7 @@ export const CLASSIC_LINES: readonly ClassicLine[] = [
   { id: 'vo_angel_p5_h1', beat: 9, band: 'any', when: { puzzle: 'p5_board', hintLevel: 1 }, priority: 20, minK: 4 },
   { id: 'vo_angel_p5_h2', beat: 9, band: 'any', when: { puzzle: 'p5_board', hintLevel: 2 }, priority: 20, minK: 4 },
   { id: 'vo_angel_p5_h3', beat: 9, band: 'any', when: { puzzle: 'p5_board', hintLevel: 3 }, priority: 20, minK: 4 },
-  { id: 'vo_angel_b9_01', beat: 9, band: 'any', priority: 20, once: true, minK: 4 },
+  { id: 'vo_angel_b9_01', beat: 9, band: 'any', when: { engaged: ['enemy.interior.cat'] }, priority: 20, once: true, minK: 4 },
   { id: 'vo_angel_b9_kind_c1', beat: 9, band: 'kind', priority: 10, once: true, minK: 4 },
   { id: 'vo_angel_b9_kind_c2', beat: 9, band: 'kind', priority: 5, minK: 4 },
   { id: 'vo_angel_b9_neutral_c1', beat: 9, band: 'neutral', priority: 10, once: true, minK: 4 },
@@ -84,6 +83,9 @@ export const CLASSIC_LINES: readonly ClassicLine[] = [
   { id: 'vo_angel_b9_dark_c2', beat: 9, band: 'dark', priority: 5, minK: 4 },
   // Beat 10: the seal (board solved) and the two Living Keys (K5 after `seq6_done`)
   { id: 'vo_angel_b10_any_c1', beat: 10, band: 'any', priority: 1, minK: 4 },
+  // Q17: between `board_solved` and `seq6_done` (K4 at most, placeholder)
+  { id: 'vo_angel_b10_board_c1', beat: 10, band: 'any', when: { flags: ['board_solved'], notFlags: ['seq6_done'] }, priority: 15, once: true, minK: 4 },
+  { id: 'vo_angel_b10_board_c2', beat: 10, band: 'any', when: { flags: ['board_solved'], notFlags: ['seq6_done'] }, priority: 6, minK: 4 },
   { id: 'vo_angel_b10_kind', beat: 10, band: 'kind', when: { flags: ['seq6_done'] }, priority: 10, once: true, minK: 5 },
   { id: 'vo_angel_b10_kind_c2', beat: 10, band: 'kind', when: { flags: ['seq6_done'] }, priority: 5, minK: 5 },
   { id: 'vo_angel_b10_neutral', beat: 10, band: 'neutral', when: { flags: ['seq6_done'] }, priority: 10, once: true, minK: 5 },

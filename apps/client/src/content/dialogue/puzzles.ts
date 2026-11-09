@@ -8,5 +8,5 @@ export const PUZZLE_LINES: readonly DialogueLine[] = [
   { id: 'vo_angel_p3_h4', speaker: 'Angel', text: 'Every dial is glowing now. Follow them in order.' },
   { id: 'vo_angel_p5_h1', speaker: 'Angel', text: 'What does a house that holds something need?' },
   { id: 'vo_angel_p5_h2', speaker: 'Angel', text: 'Someone who keeps it.' },
-  { id: 'vo_angel_p5_h3', speaker: 'Angel', text: 'Keeper, child.' },
+  { id: 'vo_angel_p5_h3', speaker: 'Angel', text: 'Keeper, child. Spell it before I do.' },
 ];

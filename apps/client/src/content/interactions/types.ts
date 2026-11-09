@@ -63,6 +63,8 @@ export interface InteractionDef {
   /** Pressing E while this is unmet is refused (nothing changes except `onRefuse`). */
   requires?: Cond;
   onRefuse?: readonly Action[];
+  /** Pressing E selects this spell first, when it is unlocked (so `requires: { spell }` then holds). */
+  autoSelect?: SpellId;
   /**
    * Hold E: `actions` run only after E has been held for `seconds` sim seconds within range (the progress is
    * shown on the HUD). Releasing E, leaving range or `requires` failing cancels it.

@@ -25,7 +25,6 @@ const P = true as const;
 
 export const LOCKET_PLACEHOLDER_LINES: readonly DialogueLine[] = [
   // Hints with no authored line
-  { id: 'vo_angel_p1_h2', speaker: 'Angel', text: 'Boys hide treasure in the silliest places. A ceramic pumpkin, perhaps?', placeholder: P },
   { id: 'vo_angel_p2_h2', speaker: 'Angel', text: 'That light at number thirty-one is flickering for a reason, child. Go and look.', placeholder: P },
   { id: 'vo_angel_p4_h1', speaker: 'Angel', text: 'The boy told you where to look, child. Where did he stand?', placeholder: P },
   // Beat 3
@@ -53,6 +52,8 @@ export const LOCKET_PLACEHOLDER_LINES: readonly DialogueLine[] = [
   { id: 'vo_angel_b9_neutral_c2', speaker: 'Angel', text: 'Every house has a room it hides. This one has several.', placeholder: P },
   { id: 'vo_angel_b9_dark_c2', speaker: 'Angel', text: 'Cellar stairs, a cat, a board. Rosalind did love a locked door.', placeholder: P },
   // Beat 10
+  { id: 'vo_angel_b10_board_c1', speaker: 'Angel', text: 'A table that answers without asking me first. Rosalind did enjoy her little theatrics, child.', placeholder: P },
+  { id: 'vo_angel_b10_board_c2', speaker: 'Angel', text: 'The cellar door is open and the dark behind it is only dark. Mostly. Shall we go and be dramatic about it?', placeholder: P },
   { id: 'vo_angel_b10_any_c1', speaker: 'Angel', text: 'Below us the seal waits, child. I have never seen it. I find I am rather nervous.', placeholder: P },
   { id: 'vo_angel_b10_kind_c2', speaker: 'Angel', text: 'Whatever it said, you are more than a key. Remember that, dear heart.', placeholder: P },
   { id: 'vo_angel_b10_neutral_c2', speaker: 'Angel', text: 'Two keys of one blood. Rosalind planned for more than she ever told me.', placeholder: P },
