@@ -63,3 +63,22 @@ test('the dev training start (all spells, practice hound near the spawn) loads w
   await page.waitForTimeout(500);
   expect(errors).toEqual([]);
 });
+
+test('the first-art GLBs (home and front street) load on the street start without errors', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  const models: number[] = [];
+  page.on('response', (r) => {
+    if (/\/assets\/models\/(home_elena|street_front)\.glb/.test(r.url())) models.push(r.status());
+  });
+  await page.goto('/?start=street');
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await page.getByRole('button', { name: 'New Game' }).click();
+  await page.getByRole('button', { name: 'Classic Story Mode' }).click();
+  await expect(page.getByTestId('game-view')).toBeVisible();
+  await expect(page.locator('canvas')).toBeVisible();
+  await expect.poll(() => models.length, { timeout: 15_000 }).toBeGreaterThanOrEqual(2);
+  await page.waitForTimeout(500);
+  expect(models.every((s) => s === 200)).toBe(true);
+  expect(errors).toEqual([]);
+});
