@@ -101,3 +101,6 @@ game/enemies.ts FSM + content/enemies; game/morality.ts; death/respawn rules. Op
 
 ## 2026-11-09 | milestone | ElevenLabs hooked up (tools/gen-voice.mjs)
 Starter tier, 64,440 chars/month (reset 2026-11-30); all 176 lines are ~11k chars. Models: eleven_v4, v4_turbo, v3, multilingual_v2 (default), flash/turbo v2.5. Auditions in assets/raw/vo (ignored). Gotcha: Voice Design blocks child voices (Felix, Gartner) by safety policy; use young adult/cartoon voices instead. Added library voice 'TLH test Teddy' to the account. Author .env uses ELEVENLABS_VOICE_ID_NEIGHBOUR; the tool reads ELEVENLABS_VOICE_ID_BRIGGS.
+
+## 2026-11-09 | decision | Voices: American/neutral accent, gender must fit
+Kept: Rosalind = 'TLH Rosalind' r1ofF5Guklr3ZOTPynhH, Angel = 'TLH Angel' T4Mic6C0zjGCeuKq3xja, Smoke = True Crime tZssYepgGaQmegsMEXjK. All others redone American. Voice Design blocks any boyish/child description, so boys come from library voices. Test voices added to the account are named 'TLH test ...' (remove the unused ones after picking).

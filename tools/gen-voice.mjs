@@ -129,7 +129,7 @@ switch (command) {
   }
   case 'library': {
     // The public Voice Library (community voices). `add` copies one into the account so it can be used.
-    const q = new URLSearchParams({ page_size: '30', ...(arg('search') && { search: arg('search') }), ...(arg('age') && { age: arg('age') }), ...(arg('gender') && { gender: arg('gender') }) });
+    const q = new URLSearchParams({ page_size: '30', ...(arg('search') && { search: arg('search') }), ...(arg('age') && { age: arg('age') }), ...(arg('gender') && { gender: arg('gender') }), ...(arg('accent') && { accent: arg('accent') }), ...(arg('use') && { use_cases: arg('use') }) });
     const data = await (await api(`/v1/shared-voices?${q}`)).json();
     for (const v of data.voices ?? []) {
       console.log(`${v.voice_id}  owner=${v.public_owner_id}  ${String(v.name).slice(0, 34).padEnd(34)} ${[v.gender, v.age, v.accent, v.use_case].filter(Boolean).join(', ')}`);
@@ -148,6 +148,14 @@ switch (command) {
       body: JSON.stringify({ new_name: name }),
     });
     console.log(`Added "${name}": ${(await res.json()).voice_id}`);
+    break;
+  }
+  case 'remove': {
+    // Delete a voice from the account (frees a custom voice slot). Premade voices cannot be removed.
+    const id = arg('id');
+    if (!id) fail('Usage: remove --id <voice_id>');
+    await api(`/v1/voices/${encodeURIComponent(id)}`, { method: 'DELETE' });
+    console.log(`Removed voice ${id}.`);
     break;
   }
   case 'design': {
