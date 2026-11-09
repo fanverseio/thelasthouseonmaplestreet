@@ -13,6 +13,8 @@ export const MAX_QUEUED = 2;
 
 export interface VoicePlayer {
   speak(line: { lineId: string; text: string }): void;
+  /** Cut the line playing now (it fades out) and anything waiting, then play this one at once. */
+  interrupt(line: { lineId: string; text: string }): void;
   stop(): void;
 }
 
@@ -55,23 +57,30 @@ export function createVoicePlayer(deps: VoicePlayerDeps | ((id: string, text?: s
     }
   };
 
+  const stop = () => {
+    epoch++;
+    queue = [];
+    if (gap !== null) clearTimer(gap);
+    gap = null;
+    try {
+      current?.stop();
+    } catch {
+      // already stopped
+    }
+    current = null;
+  };
+
   return {
     speak(line) {
       queue.push(line);
       if (queue.length > MAX_QUEUED) queue = queue.slice(-MAX_QUEUED);
       next();
     },
-    stop() {
-      epoch++;
-      queue = [];
-      if (gap !== null) clearTimer(gap);
-      gap = null;
-      try {
-        current?.stop();
-      } catch {
-        // already stopped
-      }
-      current = null;
+    interrupt(line) {
+      stop();
+      queue.push(line);
+      next();
     },
+    stop,
   };
 }

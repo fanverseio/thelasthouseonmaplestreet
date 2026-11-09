@@ -69,6 +69,18 @@ describe('voice player', () => {
     expect(r.calls.map((c) => c.id)).toEqual(['a']);
   });
 
+  it('interrupt() cuts the line playing and plays the new one at once (T skips)', async () => {
+    const r = rig();
+    r.v.speak({ lineId: 'a', text: '' });
+    r.v.speak({ lineId: 'b', text: '' });
+    r.v.interrupt({ lineId: 'c', text: '' });
+    expect(r.calls[0]!.stopped).toBe(true);
+    expect(r.calls.map((c) => c.id)).toEqual(['a', 'c']); // b was dropped, no gap before c
+    await r.flush();
+    r.fireTimers();
+    expect(r.calls.map((c) => c.id)).toEqual(['a', 'c']); // a ending late starts nothing
+  });
+
   it('never throws when playback fails', () => {
     const v = createVoicePlayer(() => {
       throw new Error('no audio');

@@ -87,6 +87,8 @@ export function GameView() {
   );
   // Voice-over: one line at a time, started by the runtime's onLine with the subtitle.
   const voice = useMemo(() => createVoicePlayer(), []);
+  // Set while T asks for a locket line: that line cuts the one playing instead of waiting (author: T skips).
+  const locketSkip = useRef(false);
   // One world runtime per game view: New Game mounts a fresh view, so timers and fired triggers start clean.
   const { world: runtime, encounters, choices, ritual, ending } = useMemo(
     () =>
@@ -99,7 +101,8 @@ export function GameView() {
         onRespawn: () => feedback.noteRespawn(),
         onTick: (dt) => feedback.step(dt),
         loadScene: loadSceneHook,
-        onLine: (line) => voice.speak(line), // voice-over plays with every subtitle and locket line
+        // Voice-over plays with every subtitle and locket line. A T press skips straight to its line.
+        onLine: (line) => (locketSkip.current ? voice.interrupt(line) : voice.speak(line)),
         onEffect: (e) => {
           sfx.handleEffect(e);
           const duck = duckForEffect(e);
@@ -227,10 +230,15 @@ export function GameView() {
   }, [input]);
 
   const openLocket = useCallback(() => {
-    // Classic: T asks for the next line and the Angel panel shows it. Play never pauses, pointer lock stays.
-    // (Each press plays the next line, if any.)
+    // Classic: T plays one line in the Angel panel; it fades by itself. Pressing T again skips to the next
+    // line at once (the current voice fades out). Play never pauses, pointer lock stays.
     if (gameStore.getState().game.activeMode !== 'ai') {
-      if (runtime.locketLine()) sfx.play('sfx_locket_open');
+      locketSkip.current = true;
+      try {
+        if (runtime.locketLine()) sfx.play('sfx_locket_open');
+      } finally {
+        locketSkip.current = false;
+      }
       return;
     }
     // Later AI mode: the full locket overlay, which pauses the game only while the player types.
