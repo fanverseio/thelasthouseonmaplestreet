@@ -173,16 +173,16 @@ Each milestone includes a README sync check (task 9.7 rules).
 - [x] 5.5 Death and respawn rules
   - Verify: unit tests: flags kept, resolved enemies kept, active mini-boss reset.
   - _Requirements: 6.8_
-- [ ] 5.6 Street fox (skippable; stunned without Purify stays stunned)
+- [x] 5.6 Street fox (skippable; stunned without Purify stays stunned)
   - Verify: skipping changes nothing; morality only on resolution.
   - _Requirements: 6.9_
-- [ ] 5.7 Mr Briggs mini-boss replaces the stub (scripted first attack capped at 30 HP, Ward prompt, phase 2 slam, smoke puff)
+- [x] 5.7 Mr Briggs mini-boss replaces the stub (scripted first attack capped at 30 HP, Ward prompt, phase 2 slam, smoke puff)
   - Verify: unit tests for the cap and phases; playtest about 3 min.
   - _Requirements: 5.2, 5.3, 6.1_
-- [ ] 5.8 The Watcher mini-boss replaces the stub (abilities layer: teleport to nodes, decoys, voice at HP)
+- [x] 5.8 The Watcher mini-boss replaces the stub (abilities layer: teleport to nodes, decoys, voice at HP)
   - Verify: unit tests for node-only teleports and decoy thresholds; playtest about 3 min.
   - _Requirements: 6.7_
-- [ ] 5.9 Hounds and cat replace the stubs
+- [x] 5.9 Hounds and cat replace the stubs
   - _Requirements: 6.1, 6.10_
 - [ ] 5.10 Final ritual: smoke director and the three anchor mechanics replace the stub
   - Verify: unit tests for pressure scaling and anchor progress keeping; magic never blocks an anchor.

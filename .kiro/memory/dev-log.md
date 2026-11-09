@@ -92,3 +92,6 @@ game/spells.ts SpellSystem: register(target) / on(hit events) / absorbDamage (Wa
 
 ## 2026-11-09 | milestone | 5.3-5.5 enemy FSM, morality, death (a79d74f..5f68e53)
 game/enemies.ts FSM + content/enemies; game/morality.ts; death/respawn rules. Opt a binding into the FSM with mode:'fsm' in content/encounters/index.ts (adapter keeps stub flags/drops/morality). Dev-only training hound at (49,-2) on ?start=garden. Open: magic floor 70 vs 55; slam/smoke/teleport/decoys/voice are no-op stubs for 5.7/5.8; only the training hound is on the FSM.
+
+## 2026-11-09 | milestone | 5.6-5.9 every encounter on the real FSM (12da2ef..275b384)
+863 tests. Purify = 2 + hold LMB, destroy = 1 + hold LMB on a stunned enemy (2 / hold Enter kept as fallback). Briggs: spell_ward set at telegraph start, slam below 60%, smoke puff. Watcher: teleports to node.house66.tp_1..6, decoys at 60/40%, voice at 90/50/30%. HP regen; stunned mini-boss stays stunned on death; dev start ?start=training. Next: 5.10 ritual, 5.11 feedback.
