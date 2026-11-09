@@ -116,3 +116,6 @@ Elena = Lauren (American), Angel = designed 'TLH Angel', Felix = Don Kim, Gartne
 
 ## 2026-11-09 | decision | Asset workspace and Blender link
 Author keeps creation files in /asset_creation/ (git-ignored, e.g. asset_creation/blender/the_last_house.blend). Only finished exports under apps/client/public/assets/ are committed; a download-from-server option may come later. Blender 4.5.4 LTS runs a socket add-on on 127.0.0.1:9876 (Blender MCP protocol: JSON {type, params}; get_scene_info and execute_code both work; glTF exporter present). Use it to build the 3D assets.
+
+## 2026-11-09 | milestone | First art: home_elena.glb + street_front.glb (598d758..9741577)
+Built in the author's Blender via the socket (collections ASSET-home_elena, ASSET-street_front; copy asset_creation/blender/home_elena.blend, build scripts there, ignored). Flat PBR, ~4.3k + 0.8k tris, 250 KB + 52 KB. scene/models.tsx loads GLBs with greybox fallback; nodes named after entity ids (dots -> underscores) replace greybox props. Rules in docs/art-style.md. Open: furniture has no colliders; street layout guessed (road z 25-29) so greybox pole and light.street.01 sit in the road; strip ends hard at x -36 and -4; no textures yet.
