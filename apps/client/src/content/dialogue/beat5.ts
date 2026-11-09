@@ -6,13 +6,13 @@ import type { DialogueLine } from './types.ts';
  * in the task report for the canon review.
  */
 export const BEAT5_LINES: readonly DialogueLine[] = [
-  { id: 'vo_elena_b5_01', speaker: 'Elena', text: "Gartner? It's Elena. Felix's mum. You're safe. Open the door." },
+  { id: 'vo_elena_b5_01', speaker: 'Elena', text: "Gartner? It's Elena. Felix's mom. You're safe. Open the door." },
   { id: 'vo_gartner_b5_01', speaker: 'Gartner', text: 'Is it really you? It does voices. It did Felix\'s voice.' },
   { id: 'vo_elena_b5_02', speaker: 'Elena', text: "It's me. Look at me. Where's Felix?" },
   {
     id: 'vo_gartner_b5_02',
     speaker: 'Gartner',
-    text: "There was a voice on the walkies. A nice voice. It said Felix's great-gran left him treasure. A game, just for him.",
+    text: "There was a voice on the walkies. A nice voice. It said Felix's great-grandma left him treasure. A game, just for him.",
   },
   {
     id: 'vo_gartner_b5_03',
@@ -22,7 +22,7 @@ export const BEAT5_LINES: readonly DialogueLine[] = [
   {
     id: 'vo_gartner_b5_04',
     speaker: 'Gartner',
-    text: "The door of the old house was open, and Felix went in, and it shut. And the voice laughed. It wasn't nice any more.",
+    text: "The door of the old house was open, and Felix went in, and it shut. And the voice laughed. It wasn't nice anymore.",
   },
   { id: 'vo_gartner_b5_05', speaker: 'Gartner', text: "I banged on it. I did. Then I ran. I'm sorry. I didn't know." },
   {
@@ -41,9 +41,9 @@ export const BEAT5_LINES: readonly DialogueLine[] = [
   {
     id: 'vo_gartner_b5_08',
     speaker: 'Gartner',
-    text: "The lane gate's locked now. Mr Corwin at sixty-six has the key. He took the fuses out of all his lights. He says the dark lets him see.",
+    text: "The lane gate's locked now. Mr. Corwin at sixty-six has the key. He took the fuses out of all his lights. He says the dark lets him see.",
   },
-  { id: 'vo_gartner_b5_09', speaker: 'Gartner', text: 'Mr Briggs had loads of fuses. For his Halloween lights.' },
+  { id: 'vo_gartner_b5_09', speaker: 'Gartner', text: 'Mr. Briggs had tons of fuses. For his Halloween lights.' },
   { id: 'vo_elena_b5_03', speaker: 'Elena', text: "Stay here. Lock the door. I'll bring him back." },
   { id: 'vo_gartner_b5_10', speaker: 'Gartner', text: "Tell him I'm sorry." },
 ];

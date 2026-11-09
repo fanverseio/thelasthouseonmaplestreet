@@ -82,5 +82,5 @@ interface ClassicLine { id: VoiceLineId; beat: number; band: MoralityBand | 'any
   when?: { zone?: ZoneId; flags?: ProgressFlag[]; notFlags?: ProgressFlag[]; puzzle?: PuzzleId; hintLevel?: number };
   priority: number; once?: boolean }
 ```
-Selection order: (1) an unplayed puzzle hint at the current hint level; (2) an unplayed `once` line for the beat and band; (3) a repeatable line for the beat and band; (4) a repeatable `any` line for the beat. Morality is always neutral before the cursed neighbour is resolved, so beats 1-4 need only `any` lines.
+Selection order: (1) an unplayed puzzle hint at the current hint level; (2) an unplayed `once` line for the beat and band; (3) a repeatable line for the beat and band; (4) a repeatable `any` line for the beat. Morality is always neutral before the cursed neighbor is resolved, so beats 1-4 need only `any` lines.
 Coverage target: per beat, at least 2 lines per band from beat 4 onward, plus all hint lines. Lines are in `script/act1.md` and `script/act2-3.md`.

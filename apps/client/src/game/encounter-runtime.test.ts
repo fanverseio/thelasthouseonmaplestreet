@@ -78,7 +78,7 @@ function throughAttack(g: Game, ward: boolean, hpAtAttack?: number) {
 
 /** Weaken with E, wait for the stub's stun. */
 function weakenAndStun(g: Game) {
-  expect(g.world.prompt).toBe('E  Face Mr Briggs');
+  expect(g.world.prompt).toBe('E  Face Mr. Briggs');
   expect(g.press()).toMatchObject({ status: 'done', id: BRIGGS });
   expect(g.encounters.view('briggs').state).toBe('weakened');
   g.tick(1.7);
@@ -123,7 +123,7 @@ describe.each([
     g.walkTo(57, 7.4);
 
     // Too early: not weakened yet, no Ward.
-    expect(g.world.prompt).toBe('E  Speak to Mr Briggs');
+    expect(g.world.prompt).toBe('E  Speak to Mr. Briggs');
     expect(g.press()).toMatchObject({ status: 'refused', id: BRIGGS });
     expect(g.encounters.view('briggs').state).toBe('idle');
 
@@ -235,7 +235,7 @@ describe('Beat 4 rules', () => {
     g.walkTo(57, 8);
     expect(g.encounters.view('briggs').engaged).toBe(true);
     expect(g.world.sequences.active).toBe('seq3_cursed_neighbour');
-    expect(g.world.prompt).toBe('E  Face Mr Briggs'); // the Ward is already hers
+    expect(g.world.prompt).toBe('E  Face Mr. Briggs'); // the Ward is already hers
     expect(g.press()).toMatchObject({ status: 'done' });
     g.tick(1.7);
     expect(g.encounters.choose('briggs', 'destroy')).toEqual({ ok: true });

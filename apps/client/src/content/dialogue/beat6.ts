@@ -26,7 +26,7 @@ export const BEAT6_LINES: readonly DialogueLine[] = [
   {
     id: 'vo_angel_b6_hint1',
     speaker: 'Angel',
-    text: 'Your neighbour with the garish lights, perhaps?',
+    text: 'Your neighbor with the garish lights, perhaps?',
     placeholder: true,
   },
 ];

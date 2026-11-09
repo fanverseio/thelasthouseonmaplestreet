@@ -23,7 +23,7 @@ Authoritative for triggers, flags, unlocks and per-beat policies. Entity IDs: `l
   3. Interact `prop.home.pumpkin_jar` -> pick up `pickup.home.drawer_key` -> `drawer_key_taken` (carried icon).
   4. Use the key on `socket.home.drawer` (hall table by the front door) -> key consumed, locket acquired -> `locket_taken`. `clue.home.journal_1` lies in the drawer (optional read -> `journal_1`).
   5. The locket opens itself: Angel introduction (interactive, voice and subtitles, player can move) -> `angel_awake`. T now works.
-  6. Felix's voice outside: "Mum?" (positional, from the street).
+  6. Felix's voice outside: "Mom?" (positional, from the street).
   7. Interact `door.home.front` (requires `locket_taken`) -> `home_done`.
 - **Puzzle**: locket drawer (`puzzles.md` P1).
 - **Opens**: `door.home.front`. **CP**: `cp_street`.
@@ -35,7 +35,7 @@ Authoritative for triggers, flags, unlocks and per-beat policies. Entity IDs: `l
 - **Trigger**: enter `trg.street.seq1` (10 m past the porch). Pre `home_done`.
 - **Steps** (sequence `seq1_empty_street`, fully interactive):
   1. Ambience ducks to near silence. No trick-or-treaters, decorations still lit.
-  2. Streetlights `light.street.01`..`06` flicker in a chain towards the intersection.
+  2. Streetlights `light.street.01`..`06` flicker in a chain toward the intersection.
   3. Footsteps behind Elena (positional), stopping when she turns.
   4. A shadow crosses the upstairs window `prop.street.window_14`.
   5. Smoke veil `gate.street.veil_east` blocks the intersection; it recedes when Elena reaches `trg.street.seq1_end`.
@@ -60,11 +60,11 @@ Authoritative for triggers, flags, unlocks and per-beat policies. Entity IDs: `l
 - **Sets** (optional): `enc_street_resolved` when purified or destroyed. Skipping changes nothing.
 - **Policy**: locket combat-blocked; angelActions blocked while it is hostile.
 
-## Beat 4. Sequence 3: The Cursed Neighbour (4 min) - Quest: The Truth
+## Beat 4. Sequence 3: The Cursed Neighbor (4 min) - Quest: The Truth
 
 - **Trigger**: enter `trg.garden.enter`. Pre `seq2_done`. CP `cp_garden` (mini-boss respawn point).
 - **Steps** (sequence `seq3_cursed_neighbour`, interactive):
-  1. Mr Briggs rakes leaves with his back to Elena. Approach within 4 m or interact `enemy.garden.briggs` -> `seq3_started`.
+  1. Mr. Briggs rakes leaves with his back to Elena. Approach within 4 m or interact `enemy.garden.briggs` -> `seq3_started`.
   2. Transformation (about 6 s, player keeps control): smoke pours from his mouth and eyes; his limbs lengthen.
   3. First telegraphed attack (scripted, 1.5 s wind-up) -> Ward prompt -> `spell_ward`. The scripted hit cannot drop Elena below 30 HP.
   4. Phase 2 below 60% HP adds a ground slam.
@@ -82,10 +82,10 @@ Authoritative for triggers, flags, unlocks and per-beat policies. Entity IDs: `l
 - **Trigger**: interact `door.hideout.shed` (No. 40). Pre `walkie_found`.
 - **Steps** (sequence `seq4_gartner_confession`, interactive dialogue, control limited):
   1. Gartner opens the shed when he hears Elena's voice. He is shaking, holding the other walkie.
-  2. He explains: a friendly voice on the walkie offered "a treasure game" and said Felix's great-gran left something for him. He led Felix down the back lane behind House 66 to the Last House. Felix went in, the door shut, and the voice laughed. Gartner ran.
+  2. He explains: a friendly voice on the walkie offered "a treasure game" and said Felix's great-grandma left something for him. He led Felix down the back lane behind House 66 to the Last House. Felix went in, the door shut, and the voice laughed. Gartner ran.
   3. One dialogue choice: comfort him (`gartner_comforted`, +5) or press him (`gartner_pressed`, -5). Both get the same information, and his innocence is never in doubt.
   4. He gives Elena a journal page Felix found in the lane (`clue.hideout.journal_2`, optional read -> `journal_2`).
-  5. He tells her Mr Corwin at 66 took the fuses out of his lights ("he says the dark lets him see"), and Mr Briggs had spare fuses for his Halloween lights.
+  5. He tells her Mr. Corwin at 66 took the fuses out of his lights ("he says the dark lets him see"), and Mr. Briggs had spare fuses for his Halloween lights.
 - **Sets**: `seq4_done`. **Opens**: `gate.street.veil_house66`. **CP**: `cp_house66`.
 - **Policy**: locket blocked. angelActions blocked. control limited (interactive dialogue, excluded from the forced-control budget, capped at 120 s).
 - **K**: K3.
@@ -94,7 +94,7 @@ Authoritative for triggers, flags, unlocks and per-beat policies. Entity IDs: `l
 
 - **Objective**: "Find a fuse for House 66."
 - **Steps**:
-  1. Take `pickup.garden.fuse` from Mr Briggs' open garage -> `fuse_taken` (carried icon). It can be taken any time after `seq3_done`; the objective points to it after `seq4_done`.
+  1. Take `pickup.garden.fuse` from Mr. Briggs' open garage -> `fuse_taken` (carried icon). It can be taken any time after `seq3_done`; the objective points to it after `seq4_done`.
   2. Place it in `socket.house66.fusebox` -> `fuse_placed`. The porch light `light.house66.porch` snaps on. The Watcher stands in the yard facing the house. CP `cp_watcher`.
   3. He turns and says Felix's name -> `watcher_started`. Encounter `enc_watcher` (mini-boss, about 3 min): teleports to authored nodes `node.house66.tp_1`..`tp_6` with a 0.8 s telegraph; spawns one-hit shadow decoys at 60% and 40% HP.
   4. At 30% HP: persistent stun. Purify -> `watcher_purified` (+30) or destroy -> `watcher_destroyed` (-30).
@@ -119,7 +119,7 @@ Authoritative for triggers, flags, unlocks and per-beat policies. Entity IDs: `l
 ## Beat 8. Sequence 5: Felix in the Mirror (2 min)
 
 - **Trigger**: interact `mirror.grounds.antique`. Pre `padlock_open`.
-- **Cinematic** `seq5_felix_mirror` (20-30 s, control locked): Elena's reflection lags; Felix appears behind her reflection only; he warns that the seal is cracked, that it is great-gran's, and that it wants her too; whispers rise; the mirror cracks.
+- **Cinematic** `seq5_felix_mirror` (20-30 s, control locked): Elena's reflection lags; Felix appears behind her reflection only; he warns that the seal is cracked, that it is great-grandma's, and that it wants her too; whispers rise; the mirror cracks.
 - **Then**: runes puzzle `puzzle.grounds.runes`. Three runes `rune.grounds.r1`..`r3` are visible only in the mirror. Elena finds each spot using the reflection and casts Purify on it -> `runes_done`. Locks turn across the grounds.
 - **Sets**: `seq5_done`, `runes_done`. **Opens**: `door.grounds.last_house_front`.
 - **Puzzle**: mirror runes (`puzzles.md` P4).
@@ -194,7 +194,7 @@ Authoritative for triggers, flags, unlocks and per-beat policies. Entity IDs: `l
 | `cp_lane`         | `lane_open`              | Lane gate                       |
 | `cp_outbuilding`  | `padlock_open`           | Outbuilding door                |
 | `cp_interior`     | enter the Last House     | Entrance hall                   |
-| `cp_ritual`       | `board_solved`           | Ritual chamber centre           |
+| `cp_ritual`       | `board_solved`           | Ritual chamber center           |
 
 Death: respawn at the last checkpoint with full HP and magic. Resolved enemies stay resolved. An active mini-boss resets to full HP. Flags never roll back.
 
@@ -213,7 +213,7 @@ A content test sums the declared maximum durations and fails above 180 s.
 
 ## Pacing check (targets)
 
-Home 2.5, Seq 1 1.5, Seq 2 1.5, street encounter 1, neighbour 4, Gartner 2, House 66 3, approach 1.5, mirror 2, interior 2, Seq 6 1.5, ritual 4, ending 2 = **28.5 min**. Beats 1-5 = 12.5 min.
+Home 2.5, Seq 1 1.5, Seq 2 1.5, street encounter 1, neighbor 4, Gartner 2, House 66 3, approach 1.5, mirror 2, interior 2, Seq 6 1.5, ritual 4, ending 2 = **28.5 min**. Beats 1-5 = 12.5 min.
 
 ## Open questions for the author
 

@@ -7,8 +7,8 @@ Rules: at most 2 offered per run, 1 active at a time. The Angel offers a quest o
 |---|---|---|---|---|---|
 | `sq_toy_rabbit` | `seq2_done`, zone `street`, not `lane_open` | `pickup.street.toy_rabbit` (hidden in the bandstand) | "Find Felix's toy rabbit" | Pick it up (carried icon `toy_rabbit`; kept to the end) | +20 magic; Angel line `vo_angel_sq_rabbit` |
 | `sq_porch_candles` | `seq2_done`, zone `street` | `socket.street.candle_1`, `_2`, `_3` | "Light the three porch candles" (an old custom to keep the dead from wandering) | Interact with each candle (Arcane Bolt tap also lights it) | Street whispers soften for the rest of the exterior; +20 magic; `vo_angel_sq_candles` |
-| `sq_house66_window` | `seq4_done`, zone `house66` or `street` | `clue.house66.upstairs_window` | "Look into the upstairs window of House 66" | Inspect it within 10 m (the Angel may `reveal_clue` it) | Lore: Mr Corwin's notebook page; `vo_angel_sq_window` |
-| `sq_briggs_photo` | `seq3_done`, zone `garden` | `clue.garden.photo` -> `socket.garden.porch_step` | "Return Mr Briggs' family photo" | Find the photo in the flowerbed (carried `photo`), place it on his porch step | +20 magic; `vo_briggs_sq_photo` if he was purified, a quiet sting if not |
+| `sq_house66_window` | `seq4_done`, zone `house66` or `street` | `clue.house66.upstairs_window` | "Look into the upstairs window of House 66" | Inspect it within 10 m (the Angel may `reveal_clue` it) | Lore: Mr. Corwin's notebook page; `vo_angel_sq_window` |
+| `sq_briggs_photo` | `seq3_done`, zone `garden` | `clue.garden.photo` -> `socket.garden.porch_step` | "Return Mr. Briggs' family photo" | Find the photo in the flowerbed (carried `photo`), place it on his porch step | +20 magic; `vo_briggs_sq_photo` if he was purified, a quiet sting if not |
 
 ## Engine checks on an offer
 1. Mode is `ai`; no quest active; fewer than 2 offered this run.

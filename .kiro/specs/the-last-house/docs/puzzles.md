@@ -20,9 +20,9 @@ Hint sources: Classic = the Angel's authored hint lines (locket glows when a hin
 
 ## P2. The fuse (fetch and place between houses, beat 6)
 - **Goal**: restore power at House 66 so the Watcher shows himself.
-- **Clue**: Gartner: Mr Corwin took the fuses out of his lights; Mr Briggs had spare fuses for his Halloween lights. House 66's fuse box hangs open and empty on the side wall.
+- **Clue**: Gartner: Mr. Corwin took the fuses out of his lights; Mr. Briggs had spare fuses for his Halloween lights. House 66's fuse box hangs open and empty on the side wall.
 - **Solution**: `pickup.garden.fuse` from No. 31's garage, carried to `socket.house66.fusebox`.
-- **Hints**: objective text "Find a fuse for House 66". After 60 s near House 66 without the fuse: Angel hint "Your neighbour with the garish lights, perhaps?". After 120 s: the garage light in No. 31 flickers (authored, not an Angel action).
+- **Hints**: objective text "Find a fuse for House 66". After 60 s near House 66 without the fuse: Angel hint "Your neighbor with the garish lights, perhaps?". After 120 s: the garage light in No. 31 flickers (authored, not an Angel action).
 - **No softlock**: one fuse; it cannot be dropped; the socket accepts only it.
 - **Target**: 45-60 s including the walk back (about 25 s).
 

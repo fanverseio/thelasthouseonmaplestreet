@@ -53,7 +53,7 @@ export function SpellHud({ spells, input }: { spells: SpellSystem; input: InputC
       {view.channeling ? (
         <div className="hud-charge" role="progressbar" aria-label="Channel" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(view.channel * 100)}>
           <div className="hud-charge-fill" style={{ width: `${view.channel * 100}%` }} />
-          <span>Channelling: hold</span>
+          <span>Channeling: hold</span>
         </div>
       ) : null}
       {view.wardLeft > 0 ? <div className="hud-ward">Ward {view.wardLeft.toFixed(1)}s</div> : null}

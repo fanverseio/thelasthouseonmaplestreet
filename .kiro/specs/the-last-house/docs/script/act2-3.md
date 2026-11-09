@@ -1,7 +1,7 @@
 # Script, Acts 2-3: Beats 6-12 and both endings
 
 Status: DRAFT, needs author approval.
-Format and conventions as in `act1.md`. New voices: the Watcher (Mr Corwin, 80s, brittle, repeating), the smoke (no face; layered whisper chorus, generated then processed), Rosalind (journal).
+Format and conventions as in `act1.md`. New voices: the Watcher (Mr. Corwin, 80s, brittle, repeating), the smoke (no face; layered whisper chorus, generated then processed), Rosalind (journal).
 
 ## Beat 6. House 66: The Watcher
 
@@ -19,7 +19,7 @@ Format and conventions as in `act1.md`. New voices: the Watcher (Mr Corwin, 80s,
 | `vo_elena_b6_03`         | Elena   | "Rest now."                                                                                       | Destroyed                                                   |
 | `vo_elena_b6_04`         | Elena   | "The lane gate."                                                                                  | Picking up the fence key                                    |
 | `vo_angel_b6_kind_c1`    | Angel   | "Your light is warmer than it was an hour ago. I can feel it through the silver."                 | C, after `lane_open`, kind                                  |
-| `vo_angel_b6_neutral_c1` | Angel   | "The lane. Children's road. Mind the nettles, and the things that aren't nettles."                | C, after `lane_open`, neutral                               |
+| `vo_angel_b6_neutral_c1` | Angel   | "The lane. Children's road. Watch out for the nettles, and the things that aren't nettles."                | C, after `lane_open`, neutral                               |
 | `vo_angel_b6_dark_c1`    | Angel   | "Doors open faster when you stop knocking politely. Remember that."                               | C, after `lane_open`, dark                                  |
 | `vo_angel_b6_any_c1`     | Angel   | "He moves when you blink. Watch the smoke, not the man."                                          | C, during the encounter (locket allowed only while stunned) |
 
@@ -31,21 +31,21 @@ Format and conventions as in `act1.md`. New voices: the Watcher (Mr Corwin, 80s,
 | `vo_angel_b7_kind_c1`    | Angel    | "A memory, or a lure. Either way, he loves that room. You'll see it again."                                                                                                         | C, beat 7, kind                 |
 | `vo_angel_b7_neutral_c1` | Angel    | "The house is showing you what you want. Houses do that."                                                                                                                           | C, beat 7, neutral              |
 | `vo_angel_b7_dark_c1`    | Angel    | "It knows where you live, Elena. Of course it does."                                                                                                                                | C, beat 7, dark                 |
-| `vo_rosalind_j3`         | Rosalind | "Thirty-first of October, nineteen sixty-six. The night I closed it. I used the oldest words and the last of my courage. Let it sleep until there is no one left of us to wake it." | Journal page 3                  |
-| `vo_angel_b7_02`         | Angel    | "Hounds. The smoke has run out of neighbours."                                                                                                                                      | C, entering `trg.grounds.enter` |
-| `vo_elena_b7_02`         | Elena    | "Gran's old carriage house. Locked."                                                                                                                                                | Inspect the padlock             |
+| `vo_rosalind_j3`         | Rosalind | "October thirty-first, nineteen sixty-six. The night I closed it. I used the oldest words and the last of my courage. Let it sleep until there is no one left of us to wake it." | Journal page 3                  |
+| `vo_angel_b7_02`         | Angel    | "Hounds. The smoke has run out of neighbors."                                                                                                                                      | C, entering `trg.grounds.enter` |
+| `vo_elena_b7_02`         | Elena    | "Grandma's old carriage house. Locked."                                                                                                                                                | Inspect the padlock             |
 | `vo_angel_p3_h1`         | Angel    | "Your grandmother was fond of dates."                                                                                                                                               | H, P3 hint 1                    |
 | `vo_angel_p3_h2`         | Angel    | "The page in the lane. The year."                                                                                                                                                   | H, P3 hint 2                    |
-| `vo_angel_p3_h3`         | Angel    | "Nineteen... there. You'll manage the rest."                                                                                                                                        | H, P3 hint 3                    |
-| `vo_angel_p3_h4`         | Angel    | "One, nine, six, six. Shall I turn the dials for you too?"                                                                                                                          | H, P3 hint 4                    |
+| `vo_angel_p3_h3`         | Angel    | "Look closely. The first two dials are glowing. Nineteen."                                                                                                                                        | H, P3 hint 3                    |
+| `vo_angel_p3_h4`         | Angel    | "Every dial is glowing now. Follow them in order."                                                                                                                          | H, P3 hint 4                    |
 
 ## Beat 8. Sequence 5: Felix in the Mirror
 
 | ID                       | Speaker | Line                                                                                                     | Delivery / trigger            |
 | ------------------------ | ------- | -------------------------------------------------------------------------------------------------------- | ----------------------------- |
 | `vo_elena_b8_01`         | Elena   | "That's not right. My reflection's slow."                                                                | Cinematic start               |
-| `vo_felix_b8_01`         | Felix   | "Mum. Behind you. No, don't turn round. I'm only in here."                                               | Spirit, in the reflection     |
-| `vo_felix_b8_02`         | Felix   | "It's cracked. Great-gran's lock. I made it crack. I didn't mean to, I was only playing with the light." | Ashamed                       |
+| `vo_felix_b8_01`         | Felix   | "Mom. Behind you. No, don't turn around. I'm only in here."                                               | Spirit, in the reflection     |
+| `vo_felix_b8_02`         | Felix   | "It's cracked. Great-grandma's lock. I made it crack. I didn't mean to, I was only playing with the light." | Ashamed                       |
 | `vo_felix_b8_03`         | Felix   | "It wants you too. It needs you too. Don't let it..."                                                    | The mirror cracks             |
 | `vo_elena_b8_02`         | Elena   | "Felix! ...Felix."                                                                                       |                               |
 | `vo_felix_p4_h1`         | Felix   | "Look where I was."                                                                                      | H, P4 hint 1, whisper         |
@@ -59,9 +59,9 @@ Format and conventions as in `act1.md`. New voices: the Watcher (Mr Corwin, 80s,
 
 | ID                       | Speaker  | Line                                                                                                                        | Delivery / trigger                                                   |
 | ------------------------ | -------- | --------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| `vo_elena_b9_01`         | Elena    | "Gran's house. I was here once, when I was little. I don't remember this hall."                                             | Entering                                                             |
+| `vo_elena_b9_01`         | Elena    | "Grandma's house. I was here once, when I was little. I don't remember this hall."                                             | Entering                                                             |
 | `vo_rosalind_j4`         | Rosalind | "This house does not need a lock. It needs a... A lock can be broken. What I am can only be handed on, and only by choice." | Journal page 4; the key word is blotted, the reader stumbles over it |
-| `vo_angel_b9_01`         | Angel    | "A cat. The smoke has a sense of humour."                                                                                   | C, `enc_interior` start                                              |
+| `vo_angel_b9_01`         | Angel    | "A cat. The smoke has a sense of humor."                                                                                   | C, `enc_interior` start                                              |
 | `vo_elena_b9_02`         | Elena    | "A talking board. Six letters."                                                                                             | Inspect `puzzle.interior.board`                                      |
 | `vo_angel_p5_h1`         | Angel    | "What does a house that holds something need?"                                                                              | H, P5 after reset 1                                                  |
 | `vo_angel_p5_h2`         | Angel    | "Someone who keeps it."                                                                                                     | H, P5 after reset 2                                                  |
@@ -81,7 +81,7 @@ Format and conventions as in `act1.md`. New voices: the Watcher (Mr Corwin, 80s,
 | `vo_smoke_b10_03`      | Smoke    | "I called him with her voice. I called you with his. Every road on this street led here."                                                                                |                                 |
 | `vo_smoke_b10_04`      | Smoke    | "You will open it wide."                                                                                                                                                 | Cinematic peak                  |
 | `vo_angel_b10_kind`    | Angel    | "Elena. Listen to me, not to it. Your grandmother built this, which means it can be mended."                                                                             | Authored reaction, kind         |
-| `vo_angel_b10_neutral` | Angel    | "Well. Now we both know what you are. A key. Rather a lot rides on what you open."                                                                                       | Authored reaction, neutral      |
+| `vo_angel_b10_neutral` | Angel    | "Well. Now we both know what you are. A key. Quite a lot rides on what you open."                                                                                       | Authored reaction, neutral      |
 | `vo_angel_b10_dark`    | Angel    | "Two keys. You and the boy. You could walk out of here with him in a minute. Only a minute. Think about it."                                                             | Authored reaction, dark         |
 | `vo_rosalind_j5`       | Rosalind | "If you are reading this, my blood has come back to the house. Two of us can open it. One of us can carry it. Mend the anchors, and then choose what I chose, or don't." | Journal page 5                  |
 
@@ -89,11 +89,11 @@ Format and conventions as in `act1.md`. New voices: the Watcher (Mr Corwin, 80s,
 
 | ID                    | Speaker | Line                                                                    | Delivery / trigger             |
 | --------------------- | ------- | ----------------------------------------------------------------------- | ------------------------------ |
-| `vo_elena_b11_01`     | Elena   | "Three anchors. Gran, show me how."                                     | Activating the seal            |
+| `vo_elena_b11_01`     | Elena   | "Three anchors. Grandma, show me how."                                     | Activating the seal            |
 | `vo_angel_b11_01`     | Angel   | "North wants force. East wants patience. West wants mercy. Go."         | Immediately after              |
 | `vo_smoke_b11_01`     | Smoke   | "Little keeper. Little lock."                                           | Ambient taunt, during pressure |
 | `vo_smoke_b11_02`     | Smoke   | "Open. Open."                                                           | Ambient taunt, after 2 anchors |
-| `vo_felix_b11_01`     | Felix   | "Mum! It's letting go a bit. Every time you fix one, it holds me less." | `cin_felix_anchor`             |
+| `vo_felix_b11_01`     | Felix   | "Mom! It's letting go a bit. Every time you fix one, it holds me less." | `cin_felix_anchor`             |
 | `vo_felix_b11_02`     | Felix   | "You're doing it. You're really doing it. Keep going."                  | `cin_felix_anchor`             |
 | `vo_angel_p6_h_north` | Angel   | "Break the shell. Your bolt, Elena."                                    | H, north anchor, 45 s          |
 | `vo_angel_p6_h_east`  | Angel   | "Hold it, and shield yourself while you do."                            | H, east anchor, 45 s           |
@@ -115,7 +115,7 @@ UI text (not voiced): option A "Restore the seal and take Felix's place as its k
 | ID                | Speaker | Line                                                                                    | Delivery / trigger                                  |
 | ----------------- | ------- | --------------------------------------------------------------------------------------- | --------------------------------------------------- |
 | `vo_elena_end_k1` | Elena   | "Felix. Let go of it, baby. I've got it now."                                           | Hands on the seal; light flows from Felix to Elena  |
-| `vo_felix_end_k1` | Felix   | "Mum? It's gone heavy. Are you okay?"                                                   | Awake, physically present, in her arms              |
+| `vo_felix_end_k1` | Felix   | "Mom? It's gone heavy. Are you okay?"                                                   | Awake, physically present, in her arms              |
 | `vo_elena_end_k2` | Elena   | "I'm okay. It's mine to hold now. Let's go home."                                       | Walking out of the front door into early dawn light |
 | `vo_angel_end_k1` | Angel   | "The keeper walks out of her own house. Rosalind never managed that. Well done, Elena." | Over the walk out                                   |
 
@@ -126,7 +126,7 @@ End card text: "THE BLOODLINE KEEPER. Every Halloween after, Elena walks to the 
 | ID                | Speaker | Line                                          | Delivery / trigger                                       |
 | ----------------- | ------- | --------------------------------------------- | -------------------------------------------------------- |
 | `vo_elena_end_b1` | Elena   | "I don't care what it costs. Give me my son." | Striking the seal                                        |
-| `vo_felix_end_b1` | Felix   | "Mum! I'm out! ...Mum? What's that noise?"    | Free, clinging to her                                    |
+| `vo_felix_end_b1` | Felix   | "Mom! I'm out! ...Mom? What's that noise?"    | Free, clinging to her                                    |
 | `vo_smoke_end_b1` | Smoke   | "Thank you."                                  | The smoke pours out past them                            |
 | `vo_elena_end_b2` | Elena   | "Run, Felix. Don't look back."                | Running down Maple Street as streetlights die one by one |
 

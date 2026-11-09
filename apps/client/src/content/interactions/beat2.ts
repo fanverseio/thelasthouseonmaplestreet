@@ -16,7 +16,7 @@ export const BEAT2: InteractionContent = {
   interactions: [
     {
       id: 'clue.street.candy_bag',
-      prompt: "Look at Felix's sweets bag",
+      prompt: "Look at Felix's candy bag",
       show: { flags: ['seq2_done'] },
       actions: [{ do: 'say', line: 'vo_elena_b3_03' }],
     },

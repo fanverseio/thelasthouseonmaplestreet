@@ -2,7 +2,7 @@ import type { DialogueLine } from './types.ts';
 
 /** Beat 4: Sequence 3, the cursed neighbour (script/act1.md). */
 export const BEAT4_LINES: readonly DialogueLine[] = [
-  { id: 'vo_elena_b4_01', speaker: 'Elena', text: 'Mr Briggs? Have you seen Felix? Mr Briggs?' },
+  { id: 'vo_elena_b4_01', speaker: 'Elena', text: 'Mr. Briggs? Have you seen Felix? Mr. Briggs?' },
   { id: 'vo_briggs_b4_01', speaker: 'Briggs', text: "Lovely night. Lovely... night. It said you'd come." },
   { id: 'vo_briggs_b4_02', speaker: 'Briggs', text: "It's warm in here, Elena. Come inside." },
   { id: 'vo_angel_b4_01', speaker: 'Angel', text: 'Raise your arm! Like a door closing. Now!' },

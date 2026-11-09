@@ -52,10 +52,10 @@ export const VIDEO_CLIPS: readonly VideoClipDef[] = [
       'Cinematic, night, an empty suburban street on Halloween, thick low fog, one old streetlight flickering and then ' +
       'steadying to a pale warm glow. Beneath it stands the translucent spirit of an eight-year-old boy in a ' +
       'half-finished homemade ghost costume, soft and sad, faintly glowing, feet not touching the ground. A woman in a ' +
-      'dark coat with a silver locket on a chain runs towards him with her arms out and stops short. The boy looks at ' +
-      'her gently, lifts one small hand and points down the street towards a darkened house with a garden. He fades ' +
+      'dark coat with a silver locket on a chain runs toward him with her arms out and stops short. The boy looks at ' +
+      'her gently, lifts one small hand and points down the street toward a darkened house with a yard. He fades ' +
       'into the fog. The bulb bursts into harmless sparks and the woman looks down at her hands, which glow with a soft ' +
-      'blue light. Slow handheld camera, shallow depth of field, muted teal and amber colour grade.',
+      'blue light. Slow handheld camera, shallow depth of field, muted teal and amber color grade.',
     negativePrompt: NEGATIVE,
     voiceLines: ['vo_felix_b3_01', 'vo_elena_b3_01', 'vo_felix_b3_02', 'vo_felix_b3_03'],
   },
@@ -86,10 +86,10 @@ export const VIDEO_CLIPS: readonly VideoClipDef[] = [
     prompt:
       'Cinematic, a circular stone cellar chamber with a carved seal in the floor. Ancient runes in the floor and walls ' +
       'ignite one by one with a cold violet light. Thick black smoke, faceless and shapeless, with no eyes and no mouth, ' +
-      'rises slowly from the seal in the centre and coils through the air like slow ink in water. A woman in a dark ' +
+      'rises slowly from the seal in the center and coils through the air like slow ink in water. A woman in a dark ' +
       'coat with a silver locket stands at the edge of the light, frightened but holding her ground. Inside the glowing ' +
       'light above the seal, a boy of eight in a half-finished ghost costume floats asleep, peaceful, unharmed, ' +
-      'surrounded by gentle light. The smoke leans towards the woman, then towards the boy, then gathers above the seal. ' +
+      'surrounded by gentle light. The smoke leans toward the woman, then toward the boy, then gathers above the seal. ' +
       'Slow orbiting camera, dark palette with violet and pale gold accents, ominous but calm.',
     negativePrompt: NEGATIVE,
     voiceLines: ['vo_smoke_b10_01', 'vo_smoke_b10_02', 'vo_elena_b10_01', 'vo_smoke_b10_03', 'vo_smoke_b10_04'],
@@ -124,7 +124,7 @@ export const VIDEO_CLIPS: readonly VideoClipDef[] = [
       'faceless and shapeless, is pressed back down into the seal and the runes go calm. The boy wakes, solid and ' +
       'warm, unharmed, and she lifts him into her arms. Cut to the old front door opening on a quiet dawn street, pale ' +
       'orange sky, thin mist; the mother and son walk out together, his small hand in hers, and the door closes ' +
-      'behind them. Gentle camera, bittersweet and hopeful, warm sunrise colour grade.',
+      'behind them. Gentle camera, bittersweet and hopeful, warm sunrise color grade.',
     negativePrompt: NEGATIVE,
     voiceLines: ['vo_elena_end_k1', 'vo_felix_end_k1', 'vo_elena_end_k2', 'vo_angel_end_k1'],
   },
@@ -141,7 +141,7 @@ export const VIDEO_CLIPS: readonly VideoClipDef[] = [
       'costume drops safely into her arms, awake, unharmed and clinging to her. Black smoke, faceless and shapeless, ' +
       'pours out of the broken seal past them and up through the house. Cut to Maple Street at night: the mother and ' +
       'son run hand in hand down the middle of the road while the smoke rolls out behind them and the streetlights ' +
-      'go out one by one. Fast tracking camera, cold desaturated colours, urgent and ominous, no violence.',
+      'go out one by one. Fast tracking camera, cold desaturated colors, urgent and ominous, no violence.',
     negativePrompt: NEGATIVE,
     voiceLines: ['vo_elena_end_b1', 'vo_felix_end_b1', 'vo_smoke_end_b1', 'vo_elena_end_b2'],
   },

@@ -33,7 +33,7 @@ const RULES: readonly Rule[] = [
   { when: 'fuse_taken', text: 'Bring the fuse to House 66.', needs: 'seq4_done' },
   { when: 'seq4_done', text: 'Find a fuse for House 66.' },
   { when: 'walkie_found', text: 'Find Gartner at No. 40.' },
-  { when: 'seq2_done', text: 'Search the garden at No. 31.' },
+  { when: 'seq2_done', text: 'Search the yard at No. 31.' },
   { when: 'seq1_done', text: 'Go to the streetlight.' },
   { when: 'home_done', text: 'Follow Felix\'s voice down Maple Street.' },
   { when: 'locket_taken', text: 'Leave the house.' },

@@ -6,7 +6,7 @@ import type { DialogueLine } from './types.ts';
  * The Angel's final line is authored per morality band; the id suffix is the band name.
  */
 export const BEAT11_LINES: readonly DialogueLine[] = [
-  { id: 'vo_elena_b11_01', speaker: 'Elena', text: 'Three anchors. Gran, show me how.' },
+  { id: 'vo_elena_b11_01', speaker: 'Elena', text: 'Three anchors. Grandma, show me how.' },
   { id: 'vo_angel_b11_01', speaker: 'Angel', text: 'North wants force. East wants patience. West wants mercy. Go.' },
   { id: 'vo_smoke_b11_01', speaker: 'Smoke', text: 'Little keeper. Little lock.' },
   { id: 'vo_smoke_b11_02', speaker: 'Smoke', text: 'Open. Open.' },

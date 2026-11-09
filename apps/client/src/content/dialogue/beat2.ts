@@ -14,7 +14,7 @@ export const BEAT2_LINES: readonly DialogueLine[] = [
   {
     id: 'vo_angel_b2_c2',
     speaker: 'Angel',
-    text: 'Walk towards the light at the corner. Whatever wants you, wants you there. So, it seems, do I.',
+    text: 'Walk toward the light at the corner. Whatever wants you, wants you there. So, it seems, do I.',
   },
   {
     id: 'vo_angel_b2_h1',

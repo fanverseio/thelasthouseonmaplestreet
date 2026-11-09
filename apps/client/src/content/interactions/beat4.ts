@@ -23,13 +23,13 @@ export const BEAT4: InteractionContent = {
     // fight itself is spells (Bolt, Ward, Purify), so a press on an engaged Briggs does nothing.
     {
       id: 'enemy.garden.briggs',
-      prompt: 'Speak to Mr Briggs',
+      prompt: 'Speak to Mr. Briggs',
       show: { notFlags: [...UNRESOLVED, 'spell_ward'] },
       actions: [{ do: 'encounter', op: 'interact', id: 'briggs' }],
     },
     {
       id: 'enemy.garden.briggs',
-      prompt: 'Face Mr Briggs',
+      prompt: 'Face Mr. Briggs',
       show: { flags: ['spell_ward'], notFlags: UNRESOLVED },
       actions: [{ do: 'encounter', op: 'interact', id: 'briggs' }],
     },

@@ -6,12 +6,12 @@ import type { DialogueLine } from './types.ts';
  * lines and, from beat 4, two lines per band. Invented lines stay inside the Angel's knowledge level (angel-persona.md).
  */
 export const LOCKET_SCRIPT_LINES: readonly DialogueLine[] = [
-  { id: 'vo_angel_b5_kind_c1', speaker: 'Angel', text: 'That boy is a victim, the same as your neighbour. The smoke chose him because he was kind.' },
+  { id: 'vo_angel_b5_kind_c1', speaker: 'Angel', text: 'That boy is a victim, the same as your neighbor. The smoke chose him because he was kind.' },
   { id: 'vo_angel_b5_neutral_c1', speaker: 'Angel', text: "A voice that does voices. How very theatrical. I'd almost admire it." },
   { id: 'vo_angel_b5_dark_c1', speaker: 'Angel', text: "The smoke picked the softest child on the street to carry its message. Don't waste your anger on the messenger. Find the hand." },
   { id: 'vo_angel_b6_any_c1', speaker: 'Angel', text: 'He moves when you blink. Watch the smoke, not the man.' },
   { id: 'vo_angel_b6_kind_c1', speaker: 'Angel', text: 'Your light is warmer than it was an hour ago. I can feel it through the silver.' },
-  { id: 'vo_angel_b6_neutral_c1', speaker: 'Angel', text: "The lane. Children's road. Mind the nettles, and the things that aren't nettles." },
+  { id: 'vo_angel_b6_neutral_c1', speaker: 'Angel', text: "The lane. Children's road. Watch out for the nettles, and the things that aren't nettles." },
   { id: 'vo_angel_b6_dark_c1', speaker: 'Angel', text: 'Doors open faster when you stop knocking politely. Remember that.' },
   { id: 'vo_angel_b7_kind_c1', speaker: 'Angel', text: "A memory, or a lure. Either way, he loves that room. You'll see it again." },
   { id: 'vo_angel_b7_neutral_c1', speaker: 'Angel', text: 'The house is showing you what you want. Houses do that.' },
@@ -30,7 +30,7 @@ export const LOCKET_PLACEHOLDER_LINES: readonly DialogueLine[] = [
   // Beat 3
   { id: 'vo_angel_b3_c0', speaker: 'Angel', text: 'There is a light at the corner I do not trust, child. Let us go and be disappointed together.', placeholder: P },
   // Beat 5
-  { id: 'vo_angel_b5_any_c1', speaker: 'Angel', text: 'The boy said Mr Briggs kept spare fuses. Hoarders are so useful, in the end.', placeholder: P },
+  { id: 'vo_angel_b5_any_c1', speaker: 'Angel', text: 'The boy said Mr. Briggs kept spare fuses. Hoarders are so useful, in the end.', placeholder: P },
   { id: 'vo_angel_b5_kind_c2', speaker: 'Angel', text: "His guilt is heavier than he is, dear heart. Be gentle with the weight.", placeholder: P },
   { id: 'vo_angel_b5_neutral_c2', speaker: 'Angel', text: 'Fuses. How wonderfully domestic. Even a haunting depends on the wiring.', placeholder: P },
   { id: 'vo_angel_b5_dark_c2', speaker: 'Angel', text: 'A fuse, a Watcher, a gate. Tiresome errands, sweet thing, but they are the quickest way forward.', placeholder: P },
@@ -54,7 +54,7 @@ export const LOCKET_PLACEHOLDER_LINES: readonly DialogueLine[] = [
   // Beat 10
   { id: 'vo_angel_b10_board_c1', speaker: 'Angel', text: 'A table that answers without asking me first. Rosalind did enjoy her little theatrics, child.', placeholder: P },
   { id: 'vo_angel_b10_board_c2', speaker: 'Angel', text: 'The cellar door is open and the dark behind it is only dark. Mostly. Shall we go and be dramatic about it?', placeholder: P },
-  { id: 'vo_angel_b10_any_c1', speaker: 'Angel', text: 'Below us the seal waits, child. I have never seen it. I find I am rather nervous.', placeholder: P },
+  { id: 'vo_angel_b10_any_c1', speaker: 'Angel', text: 'Below us the seal waits, child. I have never seen it. I find I am a little nervous.', placeholder: P },
   { id: 'vo_angel_b10_kind_c2', speaker: 'Angel', text: 'Whatever it said, you are more than a key. Remember that, dear heart.', placeholder: P },
   { id: 'vo_angel_b10_neutral_c2', speaker: 'Angel', text: 'Two keys of one blood. Rosalind planned for more than she ever told me.', placeholder: P },
   { id: 'vo_angel_b10_dark_c2', speaker: 'Angel', text: 'Think quickly, sweet thing. Waiting only gives it time.', placeholder: P },
@@ -62,7 +62,7 @@ export const LOCKET_PLACEHOLDER_LINES: readonly DialogueLine[] = [
   { id: 'vo_angel_b11_any_c1', speaker: 'Angel', text: 'North, east, west. Do them in whatever order frightens you least.', placeholder: P },
   { id: 'vo_angel_b11_kind_c1', speaker: 'Angel', text: 'Three anchors and a mother\'s nerve. Lean on me, dear heart. I weigh nothing.', placeholder: P },
   { id: 'vo_angel_b11_kind_c2', speaker: 'Angel', text: 'Every anchor you restore is a promise to the boy, dear heart. Keep making them.', placeholder: P },
-  { id: 'vo_angel_b11_neutral_c1', speaker: 'Angel', text: 'Force, patience, mercy. Rosalind built a seal that argues with itself. I rather like her.', placeholder: P },
+  { id: 'vo_angel_b11_neutral_c1', speaker: 'Angel', text: 'Force, patience, mercy. Rosalind built a seal that argues with itself. I really do like her.', placeholder: P },
   { id: 'vo_angel_b11_neutral_c2', speaker: 'Angel', text: 'Do not hurry the anchors, my curious one. The seal listens to steady hands.', placeholder: P },
   { id: 'vo_angel_b11_dark_c1', speaker: 'Angel', text: 'Smash, hold, purify, and it is done. Do not dawdle, sweet thing.', placeholder: P },
   { id: 'vo_angel_b11_dark_c2', speaker: 'Angel', text: 'The anchors are a toll. Pay it quickly and see what the end offers.', placeholder: P },
