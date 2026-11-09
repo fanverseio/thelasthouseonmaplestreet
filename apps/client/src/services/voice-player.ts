@@ -1,27 +1,76 @@
 /**
- * Plays the voice-over for each spoken line, one at a time: a new line stops the one before it.
- * Hooked to the world runtime's `onLine`, so subtitles and voice start together. Never throws.
+ * Plays the voice-over for each spoken line, one at a time, with a short pause between lines.
+ * Hooked to the world runtime's `onLine`. Lines that arrive while one is playing wait in a short
+ * queue; if too many pile up, the oldest waiting ones are dropped so voice never falls far behind.
+ * Never throws.
  */
 import { playVoiceLine, type VoicePlayback } from './voice.ts';
+
+/** Silence between two voice lines (author: 0.5 s). */
+export const VOICE_GAP_MS = 500;
+/** At most this many lines wait behind the one playing. */
+export const MAX_QUEUED = 2;
 
 export interface VoicePlayer {
   speak(line: { lineId: string; text: string }): void;
   stop(): void;
 }
 
-export function createVoicePlayer(play: (id: string, text?: string) => VoicePlayback = playVoiceLine): VoicePlayer {
+export interface VoicePlayerDeps {
+  play?: (id: string, text?: string) => VoicePlayback;
+  setTimer?: (fn: () => void, ms: number) => unknown;
+  clearTimer?: (handle: unknown) => void;
+}
+
+export function createVoicePlayer(deps: VoicePlayerDeps | ((id: string, text?: string) => VoicePlayback) = {}): VoicePlayer {
+  const d: VoicePlayerDeps = typeof deps === 'function' ? { play: deps } : deps;
+  const play = d.play ?? playVoiceLine;
+  const setTimer = d.setTimer ?? ((fn, ms) => setTimeout(fn, ms));
+  const clearTimer = d.clearTimer ?? ((h) => clearTimeout(h as ReturnType<typeof setTimeout>));
+
   let current: VoicePlayback | null = null;
+  let gap: unknown = null;
+  let queue: { lineId: string; text: string }[] = [];
+  let epoch = 0; // bumps on stop(), so a finished line from before stop() starts nothing
+
+  const next = () => {
+    if (current || gap !== null) return;
+    const line = queue.shift();
+    if (!line) return;
+    const mine = epoch;
+    try {
+      const playback = play(line.lineId, line.text);
+      current = playback;
+      void playback.done.then(() => {
+        if (mine !== epoch || current !== playback) return;
+        current = null;
+        gap = setTimer(() => {
+          gap = null;
+          if (mine === epoch) next();
+        }, VOICE_GAP_MS);
+      });
+    } catch {
+      current = null; // voice never breaks the game; the subtitle still shows
+      next();
+    }
+  };
+
   return {
     speak(line) {
-      try {
-        current?.stop();
-        current = play(line.lineId, line.text);
-      } catch {
-        current = null; // voice never breaks the game; the subtitle still shows
-      }
+      queue.push(line);
+      if (queue.length > MAX_QUEUED) queue = queue.slice(-MAX_QUEUED);
+      next();
     },
     stop() {
-      current?.stop();
+      epoch++;
+      queue = [];
+      if (gap !== null) clearTimer(gap);
+      gap = null;
+      try {
+        current?.stop();
+      } catch {
+        // already stopped
+      }
       current = null;
     },
   };

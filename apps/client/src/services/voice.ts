@@ -9,6 +9,8 @@ import { audioEngine, ensureAudioContext, getBuses, VOICE_DUCK_LEVEL } from './a
 export const VO_BASE_PATH = '/assets/audio/vo';
 export const MIN_SUBTITLE_MS = 1800;
 const MS_PER_CHAR = 65;
+/** Every voice line fades in and out over this long (author: 0.25 s). */
+export const VOICE_FADE_S = 0.25;
 
 export function voiceUrl(id: string): string {
   return `${VO_BASE_PATH}/${id}.mp3`;
@@ -49,6 +51,7 @@ export function playVoiceLine(id: string, text?: string, deps: VoiceDeps = {}): 
 
   let stopped = false;
   let source: AudioBufferSourceNode | null = null;
+  let fadeOut: (() => void) | null = null;
   let timer: ReturnType<typeof setTimeout> | null = null;
   let finish: () => void = () => undefined;
   // The ambience sits lower while a line is spoken.
@@ -91,13 +94,27 @@ export function playVoiceLine(id: string, text?: string, deps: VoiceDeps = {}): 
       }
       const buses = custom ? null : getBuses(ctx);
       const gain = ctx.createGain();
-      gain.gain.value = buses ? 1 : getVolume();
+      const level = buses ? 1 : getVolume();
+      // Fade in and out so lines never start or end with a click.
+      const t0 = ctx.currentTime;
+      const fade = Math.min(VOICE_FADE_S, buffer.duration / 2);
+      gain.gain.setValueAtTime(0, t0);
+      gain.gain.linearRampToValueAtTime(level, t0 + fade);
+      gain.gain.setValueAtTime(level, t0 + buffer.duration - fade);
+      gain.gain.linearRampToValueAtTime(0, t0 + buffer.duration);
       gain.connect(buses?.voice ?? ctx.destination);
       source = ctx.createBufferSource();
       source.buffer = buffer;
       source.connect(gain);
       source.onended = () => finish();
-      source.start();
+      source.start(t0);
+      fadeOut = () => {
+        const now = ctx.currentTime;
+        gain.gain.cancelScheduledValues(now);
+        gain.gain.setValueAtTime(gain.gain.value, now);
+        gain.gain.linearRampToValueAtTime(0, now + VOICE_FADE_S);
+        source?.stop(now + VOICE_FADE_S);
+      };
       if (buses) {
         ducked = true;
         audioEngine.duck('voice', VOICE_DUCK_LEVEL);
@@ -116,7 +133,9 @@ export function playVoiceLine(id: string, text?: string, deps: VoiceDeps = {}): 
       stopped = true;
       if (timer) clearTimeout(timer);
       try {
-        source?.stop();
+        // A line cut short fades out instead of stopping dead.
+        if (fadeOut) fadeOut();
+        else source?.stop();
       } catch {
         // already stopped
       }

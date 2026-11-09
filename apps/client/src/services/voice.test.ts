@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { fallbackDurationMs, MIN_SUBTITLE_MS, playVoiceLine, voiceUrl } from './voice.ts';
+import { fallbackDurationMs, MIN_SUBTITLE_MS, playVoiceLine, VOICE_FADE_S, voiceUrl } from './voice.ts';
 
 afterEach(() => vi.useRealTimers());
 
@@ -38,5 +38,37 @@ describe('voice', () => {
     const none = playVoiceLine('vo_x_noctx', 'Hello', { getContext: () => null });
     await expect(none.started).resolves.toBe(false);
     none.stop();
+  });
+});
+
+describe('voice fades', () => {
+  it('fades every line in and out over VOICE_FADE_S', async () => {
+    const ramps: [string, number, number][] = [];
+    const param = {
+      value: 0,
+      setValueAtTime: (v: number, t: number) => void ramps.push(['set', v, t]),
+      linearRampToValueAtTime: (v: number, t: number) => void ramps.push(['ramp', v, t]),
+      cancelScheduledValues: () => undefined,
+    };
+    let source: { buffer: unknown; connect: () => void; start: () => void; stop: () => void; onended: (() => void) | null } | null = null;
+    const ctx = {
+      currentTime: 10,
+      decodeAudioData: async () => ({ duration: 2 }),
+      createGain: () => ({ gain: param, connect: () => undefined }),
+      createBufferSource: () => (source = { buffer: null, connect: () => undefined, start: () => undefined, stop: () => undefined, onended: null }),
+      destination: {},
+    } as unknown as AudioContext;
+    const fetchFn = (async () => ({ ok: true, headers: { get: () => 'audio/mpeg' }, arrayBuffer: async () => new ArrayBuffer(8) })) as unknown as typeof fetch;
+    const p = playVoiceLine('vo_test', 'hi', { fetchFn, getContext: () => ctx, getVolume: () => 0.8 });
+    expect(await p.started).toBe(true);
+    expect(ramps).toEqual([
+      ['set', 0, 10],
+      ['ramp', 0.8, 10 + VOICE_FADE_S],
+      ['set', 0.8, 12 - VOICE_FADE_S],
+      ['ramp', 0, 12],
+    ]);
+    expect(VOICE_FADE_S).toBe(0.25);
+    source!.onended?.();
+    await p.done;
   });
 });
