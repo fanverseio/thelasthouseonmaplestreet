@@ -113,3 +113,6 @@ Elena = Lauren (American), Angel = designed 'TLH Angel', Felix = Don Kim, Gartne
 
 ## 2026-11-09 | milestone | SFX + ambience generated and wired (5c0301f..531c84a)
 81 cues (73 sfx, 8 x 30 s ambience) via tools/gen-sound.mjs + tools/sound-cues.mjs; real audio buses (master, sfx, ambience, voice; music reserved at 0), ambience crossfades by zone and ducks under voice, file cues with synth fallback. 14 missing voice lines added (vo_rosalind_j2 + 13 clip lines flagged clip:true). Gotcha: ElevenLabs sound generation costs ~10 credits/s, not 40. Audio total 12.9 MB. 957 tests. Credits left ~53,600. Next: author listen-check (playtest 14-15), then art.
+
+## 2026-11-09 | decision | Asset workspace and Blender link
+Author keeps creation files in /asset_creation/ (git-ignored, e.g. asset_creation/blender/the_last_house.blend). Only finished exports under apps/client/public/assets/ are committed; a download-from-server option may come later. Blender 4.5.4 LTS runs a socket add-on on 127.0.0.1:9876 (Blender MCP protocol: JSON {type, params}; get_scene_info and execute_code both work; glTF exporter present). Use it to build the 3D assets.
