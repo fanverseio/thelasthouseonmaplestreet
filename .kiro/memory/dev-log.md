@@ -104,3 +104,9 @@ Starter tier, 64,440 chars/month (reset 2026-11-30); all 176 lines are ~11k char
 
 ## 2026-11-09 | decision | Voices: American/neutral accent, gender must fit
 Kept: Rosalind = 'TLH Rosalind' r1ofF5Guklr3ZOTPynhH, Angel = 'TLH Angel' T4Mic6C0zjGCeuKq3xja, Smoke = True Crime tZssYepgGaQmegsMEXjK. All others redone American. Voice Design blocks any boyish/child description, so boys come from library voices. Test voices added to the account are named 'TLH test ...' (remove the unused ones after picking).
+
+## 2026-11-09 | decision | Voice cast final (all 8 speakers)
+Elena = Lauren (American), Angel = designed 'TLH Angel', Felix = Don Kim, Gartner = Austin, Briggs = Alden, Watcher = Spuds Oxley, Rosalind = designed 'TLH Rosalind', Smoke = True Crime. IDs live in .env as ELEVENLABS_VOICE_ID_<NAME>. Model eleven_v3. Open: switch script to American English (Mum -> Mom) before the full generation.
+
+## 2026-11-09 | milestone | American text + full voice-over (a4f652f..b0dc2db)
+176 lines voiced with eleven_v3, mp3_44100_64, 7.75 MB in apps/client/public/assets/audio/vo. Tool: node tools/gen-voice.mjs all [--only, --force, --dry-run]. Missing from ALL_LINES (no audio yet): vo_felix_b8_*, vo_felix_b11_*, vo_*_end_*, vo_rosalind_j2. Author decision: no music yet; next is SFX + ambience loops.
