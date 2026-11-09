@@ -2,7 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { createGameStore } from '../store/game-store.ts';
 import { createEncounterWorld } from './encounter-runtime.ts';
 import { SIM_DT } from './player.ts';
+import { moveAndSlide } from './collision.ts';
+import { exteriorColliders } from '../content/world/exterior-layout.ts';
 import { applyDevStart, DEV_STARTS, devKillPlayer, isDevStart } from './dev-start.ts';
+import { shouldSpawnTraining, spawnTrainingEnemy, TRAINING_ENEMY_ID, TRAINING_NEAR_SPAWN, TRAINING_SPAWN, trainingSpawnFor } from './dev-training.ts';
+import { PLAYER_RADIUS } from './player.ts';
+import { createFightRig } from './test-helpers.ts';
 
 describe('dev start', () => {
   it('replays real flags with no rejection and lands on the right checkpoint', () => {
@@ -99,5 +104,73 @@ describe('dev-only F9 (Q22)', () => {
     expect(store.getState().player.respawns).toBe(before + 1);
     expect(store.getState().game.checkpointId).toBe('cp_street');
     expect(encounters.hostileActive()).toBe(false);
+  });
+});
+
+describe('?start=training (dev practice range, tasks 5.6-5.9)', () => {
+  it('is a known start with exactly the garden flags and the garden checkpoint', () => {
+    expect(isDevStart('training')).toBe(true);
+    expect([...DEV_STARTS.training]).toEqual([...DEV_STARTS.garden]);
+    const store = createGameStore();
+    store.getState().startNewGame('classic');
+    expect(applyDevStart(store, 'training')).toEqual([]);
+    expect(store.getState().progress.flags).toEqual([...DEV_STARTS.training]);
+    expect(store.getState().game.checkpointId).toBe('cp_intersection');
+    expect(store.getState().player.pos).toEqual([58, 0, 30]);
+  });
+
+  it('unlocks all three spells (Bolt, Ward, Purify) at once', () => {
+    const store = createGameStore();
+    store.getState().startNewGame('classic');
+    applyDevStart(store, 'training');
+    expect(store.getState().player.spellsUnlocked).toEqual(['arcane_bolt', 'ward', 'purify']);
+    expect(store.getState().player.selectedSpell).toBe('arcane_bolt');
+    expect(store.getState().selectSpell('purify')).toBe(true);
+    expect(store.getState().selectSpell('ward')).toBe(true);
+    // the story flags for the spells are NOT set: the spells are a dev unlock only
+    expect(store.getState().progress.flags).not.toContain('spell_ward');
+    expect(store.getState().progress.flags).not.toContain('spell_purify');
+  });
+
+  it('spawns the practice hound only in a dev build, near the spawn for training and far for garden', () => {
+    expect(shouldSpawnTraining(true, '?start=training')).toBe(true);
+    expect(shouldSpawnTraining(false, '?start=training')).toBe(false);
+    expect(shouldSpawnTraining(true, '?start=lane')).toBe(false);
+    expect(trainingSpawnFor('?start=training')).toBe(TRAINING_NEAR_SPAWN);
+    expect(trainingSpawnFor('?start=garden')).toBe(TRAINING_SPAWN);
+    expect(trainingSpawnFor('')).toBe(TRAINING_SPAWN);
+    const d = Math.hypot(TRAINING_NEAR_SPAWN.x - 58, TRAINING_NEAR_SPAWN.z - 30);
+    expect(d).toBeGreaterThan(3);
+    expect(d).toBeLessThan(10);
+  });
+
+  it('the near spot is free ground, in the exterior street scene', () => {
+    for (const flags of [DEV_STARTS.training, []] as const) {
+      const q = moveAndSlide({ x: TRAINING_NEAR_SPAWN.x, z: TRAINING_NEAR_SPAWN.z }, { x: 0, z: 0 }, PLAYER_RADIUS, exteriorColliders(flags));
+      expect(Math.hypot(q.x - TRAINING_NEAR_SPAWN.x, q.z - TRAINING_NEAR_SPAWN.z)).toBeLessThan(1e-9);
+    }
+  });
+
+  it('Purify and Ward can be practised on it: it bites, a Ward blocks, bolts stun, Purify frees it; no flag or morality moves', () => {
+    const r = createFightRig('training', { keepAlive: false });
+    const hound = spawnTrainingEnemy(r.enemies, trainingSpawnFor('?start=training'));
+    const flagsBefore = [...r.flags()];
+    expect(hound.id).toBe(TRAINING_ENEMY_ID);
+    r.fight.run(0.2);
+    // it hunts her, winds up a bite: a Ward cast now blocks it
+    for (let i = 0; i < 60 * 8 && hound.state !== 'attack'; i++) r.fight.step();
+    expect(hound.state).toBe('attack');
+    r.fight.ward();
+    r.fight.run(1);
+    expect(r.events.some((e) => e.type === 'attack' && e.id === TRAINING_ENEMY_ID && e.blocked)).toBe(true);
+    // bolts to the stun, then Purify (2 + hold LMB)
+    const keep = createFightRig('training', { keepAlive: true });
+    const h2 = spawnTrainingEnemy(keep.enemies, trainingSpawnFor('?start=training'));
+    keep.fight.stun(TRAINING_ENEMY_ID);
+    expect(h2.state).toBe('stunned');
+    keep.fight.purify(TRAINING_ENEMY_ID);
+    expect(h2.state).toBe('purified');
+    expect(keep.flags()).toEqual(flagsBefore);
+    expect(keep.store.getState().progress.morality).toEqual({ value: 0, history: [] });
   });
 });

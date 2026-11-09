@@ -21,6 +21,15 @@ export const DEV_STARTS = {
     'bed_seen', 'drawing_seen', 'drawer_key_taken', 'locket_taken', 'angel_awake', 'journal_1', 'home_done',
     'seq1_done', 'seq2_done', 'spell_bolt',
   ],
+  /**
+   * Dev practice range (task 5.6-5.9): the garden start's flags and checkpoint, but all three spells are unlocked and
+   * the practice hound (game/dev-training.ts) stands about 6 m from the spawn, so Purify and Ward can be tried at once.
+   * Changes no flag and no morality beyond the garden start.
+   */
+  training: [
+    'bed_seen', 'drawing_seen', 'drawer_key_taken', 'locket_taken', 'angel_awake', 'journal_1', 'home_done',
+    'seq1_done', 'seq2_done', 'spell_bolt',
+  ],
   /** Outside Gartner's shed after Beat 5 (seq4_done): fuse and House 66 next. */
   house66: [
     'bed_seen', 'drawing_seen', 'drawer_key_taken', 'locket_taken', 'angel_awake', 'journal_1', 'home_done',
@@ -68,6 +77,11 @@ export function applyDevStart(store: GameStore, start: DevStart): string[] {
   }
   if (start === 'garden') {
     store.setState((s) => ({ player: { ...s.player, spellsUnlocked: ['arcane_bolt'], selectedSpell: 'arcane_bolt' } }));
+  }
+  if (start === 'training') {
+    store.setState((s) => ({
+      player: { ...s.player, spellsUnlocked: ['arcane_bolt', 'ward', 'purify'], selectedSpell: 'arcane_bolt' },
+    }));
   }
   if (start === 'house66' || start === 'lane' || start === 'grounds' || start === 'interior' || start === 'ritual-door' || start === 'ritual' || start === 'ritual-choice') {
     store.setState((s) => ({
