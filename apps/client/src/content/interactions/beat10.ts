@@ -20,7 +20,7 @@ export const BEAT10: InteractionContent = {
       show: { flags: ['board_solved'], notFlags: ['journal_5'] },
       actions: [
         { do: 'setFlag', flag: 'journal_5' },
-        { do: 'say', line: 'vo_rosalind_j5' },
+        { do: 'readPage', page: 'journal_5' },
       ],
     },
   ],

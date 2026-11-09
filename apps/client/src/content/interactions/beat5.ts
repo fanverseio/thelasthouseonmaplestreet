@@ -28,7 +28,7 @@ export const BEAT5: InteractionContent = {
       id: 'clue.hideout.journal_2',
       prompt: 'Read the journal page',
       show: { flags: ['seq4_done'], notFlags: ['journal_2'] },
-      actions: [{ do: 'setFlag', flag: 'journal_2' }, { do: 'say', line: 'vo_rosalind_j2' }],
+      actions: [{ do: 'setFlag', flag: 'journal_2' }, { do: 'readPage', page: 'journal_2' }],
     },
   ],
   triggers: [],

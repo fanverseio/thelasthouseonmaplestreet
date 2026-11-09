@@ -156,6 +156,15 @@ describe('Beat 1 headless playthrough: New Game to home_done', () => {
     // Optional journal page
     walkTo(-18.2, 37.8);
     expect(press()).toMatchObject({ status: 'done', id: 'clue.home.journal_1' });
+    // It opens as a page on screen (not a video, not a subtitle); Rosalind reads it aloud.
+    expect(rt.page).toMatchObject({ id: 'journal_1', title: 'A note in the drawer' });
+    expect(rt.page?.text).toContain('If the locket speaks, listen.');
+    expect(store.getState().game.phase).toBe('overlay');
+    expect(rt.spoken.at(-1)).toBe('vo_rosalind_j1');
+    rt.closePage();
+    expect(rt.page).toBeNull();
+    expect(store.getState().game.phase).toBe('paused');
+    store.getState().setPhase('playing');
 
     // 7. Front door -> home_done, checkpoint cp_street, then the street
     walkTo(-19.5, 36);

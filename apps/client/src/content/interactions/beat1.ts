@@ -41,7 +41,7 @@ export const BEAT1: InteractionContent = {
       show: { flags: ['locket_taken'], notFlags: ['journal_1'] },
       actions: [
         { do: 'setFlag', flag: 'journal_1' },
-        { do: 'say', line: 'vo_rosalind_j1' },
+        { do: 'readPage', page: 'journal_1' },
       ],
     },
     {

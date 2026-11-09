@@ -15,6 +15,7 @@ import { getLine } from '../content/dialogue/index.ts';
 import { ENCOUNTER_BINDINGS } from '../content/encounters/index.ts';
 import { ALL_INTERACTIONS } from '../content/interactions/index.ts';
 import type { Action } from '../content/interactions/types.ts';
+import { JOURNAL_PAGES } from '../content/journal/pages.ts';
 import { P3_PADLOCK, P5_BOARD } from '../content/puzzles/index.ts';
 import { ALL_SEQUENCES } from '../content/sequences/index.ts';
 import { getVideoClip, VIDEO_CLIPS } from '../content/video/clips.ts';
@@ -660,7 +661,10 @@ describe('content: every referenced line id exists', () => {
     if (id !== undefined && !lineIds.has(id)) lineIds.set(id, where);
   };
   const addActions = (actions: readonly Action[], where: string) => {
-    for (const a of actions) if (a.do === 'say') add(a.line, where);
+    for (const a of actions) {
+      if (a.do === 'say') add(a.line, where);
+      if (a.do === 'readPage') add(JOURNAL_PAGES[a.page]?.line, where); // a page is read aloud
+    }
   };
   const walk = (steps: readonly SequenceStep[], visit: (s: SequenceStep) => void) => {
     for (const s of steps) {

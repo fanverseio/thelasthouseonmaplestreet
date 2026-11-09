@@ -24,7 +24,7 @@ export const BEAT9: InteractionContent = {
       show: { notFlags: ['journal_4'] },
       actions: [
         { do: 'setFlag', flag: 'journal_4' },
-        { do: 'say', line: 'vo_rosalind_j4' },
+        { do: 'readPage', page: 'journal_4' },
       ],
     },
     {

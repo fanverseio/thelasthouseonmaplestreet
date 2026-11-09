@@ -22,7 +22,7 @@ export const BEAT7: InteractionContent = {
       id: 'clue.lane.journal_3',
       prompt: 'Read the journal page',
       show: { flags: ['lane_open'], notFlags: ['journal_3'] },
-      actions: [{ do: 'setFlag', flag: 'journal_3' }, { do: 'say', line: 'vo_rosalind_j3' }],
+      actions: [{ do: 'setFlag', flag: 'journal_3' }, { do: 'readPage', page: 'journal_3' }],
     },
     hound(1),
     hound(2),

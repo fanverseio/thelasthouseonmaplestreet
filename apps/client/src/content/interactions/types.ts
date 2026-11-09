@@ -4,6 +4,7 @@
  */
 import type { EntityId, ItemId, ProgressFlag, SequenceId, SpellId } from '@tlh/shared';
 import type { VoiceLineId } from '../dialogue/types.ts';
+import type { JournalPageId } from '../journal/pages.ts';
 
 /** One value in `store.world.entities[id]` (encounter state, rune purified, ...). */
 export interface EntityCheck {
@@ -42,6 +43,8 @@ export type Action =
   | { do: 'encounter'; op: 'interact'; id: string }
   /** Opens an overlay puzzle (phase 'overlay'; the view releases pointer lock). State is kept on close. */
   | { do: 'openPuzzle'; puzzle: 'p3_padlock' | 'p5_board' }
+  /** Opens a journal page on screen (phase 'overlay'); Rosalind reads it aloud. No subtitle: the page is the text. */
+  | { do: 'readPage'; page: JournalPageId }
   /** Writes one value into `store.world.entities[id]` (saved with the game), e.g. a purified rune. */
   | { do: 'setEntity'; id: EntityId; key: string; value: string | boolean }
   /**

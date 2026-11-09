@@ -11,6 +11,7 @@ import { moralityBand, ZONE_IDS, type EntityId, type ProgressFlag, type PuzzleId
 import { ALL_INTERACTIONS } from '../content/interactions/index.ts';
 import type { Action, Cond, EntityCheck, InteractionContent, InteractionDef } from '../content/interactions/types.ts';
 import { getLine } from '../content/dialogue/index.ts';
+import { JOURNAL_PAGES, type JournalPageId } from '../content/journal/pages.ts';
 import { ALL_SEQUENCES } from '../content/sequences/index.ts';
 import { PLACEMENTS, type Placement } from '../content/world/placements.ts';
 import { sceneOfEntity } from '../content/world/scene-of.ts';
@@ -139,6 +140,10 @@ export interface WorldRuntime {
   openOverlay(puzzle: 'p3_padlock' | 'p5_board'): void;
   /** Close the overlay: phase becomes 'paused' (then "Click to resume"). Puzzle state stays in the store. */
   closeOverlay(): void;
+  /** The journal page on screen, or null. While set the phase is 'overlay' and the sim is frozen. */
+  readonly page: { id: JournalPageId; title: string; text: string } | null;
+  /** Put the page away: phase becomes 'paused' (then "Click to resume"). */
+  closePage(): void;
   readonly simTime: number;
   /** Every line spoken so far, in order (capped); handy for tests and the journal later. */
   readonly spoken: readonly string[];
@@ -247,6 +252,7 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
   let sceneLoading: SceneId | null = null;
   let version = 0;
   let overlay: { puzzle: 'p3_padlock' | 'p5_board' } | null = null;
+  let page: { id: JournalPageId; title: string; text: string } | null = null;
   let spoken: string[] = [];
   let held = false;
   let holdState: { id: EntityId; elapsed: number; seconds: number } | null = null;
@@ -369,6 +375,27 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
     changed();
   }
 
+  /** `readPage`: the page goes on screen and Rosalind reads it (voice only; the page itself is the text). */
+  function readPage(id: JournalPageId): string | null {
+    const def = JOURNAL_PAGES[id];
+    const line = def ? getLine(def.line) : undefined;
+    if (!def || !line) return `unknown_page: ${id}`;
+    page = { id, title: def.title, text: line.text };
+    spoken.push(line.id);
+    if (spoken.length > MAX_SPOKEN) spoken = spoken.slice(-MAX_SPOKEN);
+    options.onLine?.({ lineId: line.id, speaker: line.speaker, text: line.text });
+    store.getState().setPhase('overlay');
+    changed();
+    return null;
+  }
+
+  function closePage(): void {
+    if (!page) return;
+    page = null;
+    store.getState().setPhase('paused');
+    changed();
+  }
+
   /** Runs actions in order; stops at the first failure and returns its reason. */
   function run(actions: readonly Action[]): string | null {
     for (const a of actions) {
@@ -411,6 +438,11 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
         case 'openPuzzle':
           openOverlay(a.puzzle);
           break;
+        case 'readPage': {
+          const failure = readPage(a.page);
+          if (failure) return failure;
+          break;
+        }
         case 'enterScene': {
           const failure = enterScene(a.scene, a.event);
           if (failure) return failure;
@@ -768,6 +800,10 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
     },
     openOverlay,
     closeOverlay,
+    get page() {
+      return page;
+    },
+    closePage,
     get simTime() {
       return simTime;
     },

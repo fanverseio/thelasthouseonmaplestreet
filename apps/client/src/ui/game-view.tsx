@@ -41,6 +41,7 @@ import { routeLine } from '../game/speech-target.ts';
 import { AngelPanel } from './angel-panel.tsx';
 import { Hud } from './hud.tsx';
 import { PositionReadout } from './position-readout.tsx';
+import { JournalPage } from './journal-page.tsx';
 import { Locket } from './locket.tsx';
 import { PuzzleOverlay } from './puzzle-overlay.tsx';
 import { AnchorHud, HoldBar, SmokeStrike } from './ritual-hud.tsx';
@@ -263,6 +264,11 @@ export function GameView() {
     if (phase === 'overlay' && document.pointerLockElement) document.exitPointerLock();
   }, [phase]);
   const closeOverlay = useCallback(() => runtime.closeOverlay(), [runtime]);
+  // Putting a journal page away also ends Rosalind's reading (it fades out).
+  const closePage = useCallback(() => {
+    voice.stop();
+    runtime.closePage();
+  }, [runtime, voice]);
   const sayLine = useCallback((id: string) => runtime.say(id), [runtime]);
   const videoEnded = useCallback((clipId: string) => runtime.signal({ videoEnded: clipId }), [runtime]);
 
@@ -301,6 +307,7 @@ export function GameView() {
       {phase === 'locket' && locket && (
         <Locket line={locket.line} hasNext={locket.hasNext} onNext={nextLocket} onClose={closeLocket} />
       )}
+      {phase === 'overlay' && runtime.page && <JournalPage key={runtime.page.id} title={runtime.page.title} text={runtime.page.text} onClose={closePage} />}
       {phase === 'overlay' && runtime.overlay && <PuzzleOverlay puzzle={runtime.overlay.puzzle} say={sayLine} onClose={closeOverlay} />}
       {(loadingHouse || runtime.sceneLoading) && (
         <div className="loading-screen" role="status">
