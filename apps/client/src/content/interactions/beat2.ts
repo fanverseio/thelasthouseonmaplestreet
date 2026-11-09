@@ -38,7 +38,7 @@ export const BEAT2: InteractionContent = {
       actions: [{ do: 'startSequence', sequence: 'seq2_felix_streetlight' }],
     },
     // Optional street fox: walking into the volume engages the stub encounter (game/encounter-runtime.ts).
-    // Skipping it (walking on, 20 m leash) changes nothing.
+    // Skipping it (walking on, 15 m leash) changes nothing.
     {
       id: 'trg.street.fox',
       requires: { flags: ['seq2_done'], notFlags: ['enc_street_resolved'] },
