@@ -77,3 +77,9 @@ Classic is completable on placeholders to both endings; finished save hides Cont
 
 ## 2026-11-07 | handoff | Classic completable on placeholders; playtest plan ready
 4.1-4.12 done (617 tests, typecheck, build, check, e2e green; lint only diag.tmp.mjs). Author tests in one go from .kiro/specs/the-last-house/docs/playtest-plan.md (293 step ids, Q1-Q31 with defaults, results table). Video clip manifest with text-to-video prompts: apps/client/src/content/video/clips.ts. Next after author results: 4.13 M2 review, then section 5 combat (real HP so death can happen), settings persistence (Q23), sound/music. Known: nothing can reduce HP to 0 yet; several settings do nothing yet; encounter panel says LMB but keys are 2/hold Enter.
+
+## 2026-11-09 | decision | Playtest results and answers to Q1-Q31
+Author playtest: 289 pass, 0 fail, 3 N/A (death steps). Screenshots stay local in /test/ (ignored). Answers recorded in docs/playtest-plan.md "Author answers". Q9 kept current padlock hint text (not the script); Q10 r3 stays; Q11-Q31 defaults accepted for now, revisit when the game is more finished; Q18/Q19 lines approved provisionally. Changes to build: Q1, Q3, Q8, Q11, Q14, Q15, Q16, Q17, Q20-Q26, Q31.
+
+## 2026-11-09 | milestone | Playtest answers applied (f73cf39..02acd5f)
+Q1, Q3, Q8 (cp_grounds), Q11, Q14-Q17, Q20-Q26, Q31 done; 643 tests. New: settings persist under tlh.settings (services/settings-storage.ts), dev-only F9 kills Elena, front doorway opens on home_done. Retest steps ANS.1-ANS.47 in playtest-plan.md section 9. Follow-ups: beat-sheet checkpoint table lacks cp_grounds; cp_grounds respawn is ~4 m from the hounds (they wake at once).
