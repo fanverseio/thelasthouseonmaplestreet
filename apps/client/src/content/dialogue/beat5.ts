@@ -46,4 +46,9 @@ export const BEAT5_LINES: readonly DialogueLine[] = [
   { id: 'vo_gartner_b5_09', speaker: 'Gartner', text: 'Mr. Briggs had tons of fuses. For his Halloween lights.' },
   { id: 'vo_elena_b5_03', speaker: 'Elena', text: "Stay here. Lock the door. I'll bring him back." },
   { id: 'vo_gartner_b5_10', speaker: 'Gartner', text: "Tell him I'm sorry." },
+  {
+    id: 'vo_rosalind_j2',
+    speaker: 'Rosalind',
+    text: 'The house at the end of the street is not mine. I only keep it. What sleeps beneath it was here before the street, before the town. I closed the door, and my blood keeps it closed.',
+  },
 ];

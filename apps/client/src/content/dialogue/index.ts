@@ -1,4 +1,5 @@
 import { BEAT1_LINES } from './beat1.ts';
+import { CLIP_LINES } from './clips.ts';
 import { BEAT2_LINES } from './beat2.ts';
 import { BEAT3_LINES } from './beat3.ts';
 import { BEAT4_LINES } from './beat4.ts';
@@ -16,7 +17,7 @@ export type { DialogueLine, Speaker, VoiceLineId } from './types.ts';
 export { VOICE_LINE_ID_PATTERN } from './types.ts';
 
 /** Every line, in script order. */
-export const ALL_LINES: readonly DialogueLine[] = [...BEAT1_LINES, ...BEAT2_LINES, ...BEAT3_LINES, ...BEAT4_LINES, ...BEAT5_LINES, ...BEAT6_LINES, ...BEAT7_LINES, ...BEAT9_LINES, ...BEAT10_LINES, ...BEAT11_LINES, ...BEAT12_LINES, ...PUZZLE_LINES, ...LOCKET_SCRIPT_LINES, ...LOCKET_PLACEHOLDER_LINES];
+export const ALL_LINES: readonly DialogueLine[] = [...BEAT1_LINES, ...BEAT2_LINES, ...BEAT3_LINES, ...BEAT4_LINES, ...BEAT5_LINES, ...BEAT6_LINES, ...BEAT7_LINES, ...BEAT9_LINES, ...BEAT10_LINES, ...BEAT11_LINES, ...BEAT12_LINES, ...CLIP_LINES, ...PUZZLE_LINES, ...LOCKET_SCRIPT_LINES, ...LOCKET_PLACEHOLDER_LINES];
 
 const BY_ID = new Map<VoiceLineId, DialogueLine>(ALL_LINES.map((l) => [l.id, l]));
 

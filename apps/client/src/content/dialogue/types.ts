@@ -11,4 +11,6 @@ export interface DialogueLine {
   speaker: Speaker;
   text: string;
   placeholder?: true;
+  /** Belongs to a cinematic video clip: data and recording only; the locket never picks it. */
+  clip?: true;
 }

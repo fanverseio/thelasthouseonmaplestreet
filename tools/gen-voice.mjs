@@ -103,6 +103,10 @@ const LINE_TAG = {
   vo_angel_b10_dark: '[whispers]',
   vo_elena_b11_02: '[softly]',
   vo_angel_b12_dark: '[whispers]',
+  vo_felix_b8_01: '[whispers]',
+  vo_felix_b8_02: '[sad]',
+  vo_elena_end_k1: '[softly]',
+  vo_elena_end_b2: '[urgently]',
 };
 
 /** The text sent to the TTS model: delivery tag + clean text for eleven_v3, the clean text otherwise. */
