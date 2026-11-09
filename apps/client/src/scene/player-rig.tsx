@@ -7,6 +7,7 @@ import { INTERIOR_SPAWN, interiorColliders } from '../content/world/interior-lay
 import { SPELL_FOR_KEY, type InputController } from '../game/input.ts';
 import { createPlayerBody, EYE_HEIGHT, faceFront, FixedStepper, MOUSE_SENSITIVITY, stepPlayer } from '../game/player.ts';
 import type { SkipHold } from '../game/skip-hold.ts';
+import type { SpellContext, SpellSystem } from '../game/spells.ts';
 import type { WorldRuntime } from '../game/world-runtime.ts';
 import { preloadLastHouse } from '../services/scene-loader.ts';
 import { gameStore, settingsStore } from '../store/index.ts';
@@ -22,7 +23,7 @@ function startBody() {
   return createPlayerBody(at.x, at.z, at.yaw);
 }
 
-export function PlayerRig({ input, runtime, onOpenLocket, skipHold }: { input: InputController; runtime: WorldRuntime; onOpenLocket: () => void; skipHold?: SkipHold }) {
+export function PlayerRig({ input, runtime, onOpenLocket, skipHold, spells, spellContext }: { input: InputController; runtime: WorldRuntime; onOpenLocket: () => void; skipHold?: SkipHold; spells?: SpellSystem; spellContext?: () => SpellContext }) {
   // Start at the current checkpoint's spawn (New Game: the home start; dev shortcuts: later ones).
   const body = useRef(startBody());
   const stepper = useMemo(() => new FixedStepper(), []);
@@ -35,6 +36,7 @@ export function PlayerRig({ input, runtime, onOpenLocket, skipHold }: { input: I
     if (scene !== lastScene.current) {
       // Entering another scene puts Elena at its spawn point.
       lastScene.current = scene;
+      spells?.reset(); // projectiles do not cross scenes
       const spawn = scene === 'last_house' ? INTERIOR_SPAWN : HOME_SPAWN;
       body.current = createPlayerBody(spawn.x, spawn.z, spawn.yaw);
     }
@@ -42,6 +44,7 @@ export function PlayerRig({ input, runtime, onOpenLocket, skipHold }: { input: I
     if (respawns !== lastRespawns.current) {
       // Death: snap the body to the checkpoint spawn (the store's own pos may already be overwritten by the body sync below).
       lastRespawns.current = respawns;
+      spells?.reset();
       const at = getCheckpoint(gameStore.getState().game.checkpointId).spawn;
       body.current = createPlayerBody(at.x, at.z, at.yaw);
     }
@@ -74,6 +77,12 @@ export function PlayerRig({ input, runtime, onOpenLocket, skipHold }: { input: I
         // A playing cinematic clip holds the player in place; the world still ticks.
         if (!runtime.video && runtime.sequences.policy.control !== 'limited') stepPlayer(body.current, input.state, dt, { colliders, sensitivity });
         runtime.tick(dt, pose());
+        if (spells && spellContext) {
+          spells.step(dt, input.state, { x: body.current.x, y: EYE_HEIGHT, z: body.current.z, yaw: body.current.yaw, pitch: body.current.pitch }, spellContext());
+          // The one-frame LMB edges must reach only one step, even when a frame runs several.
+          input.state.lmbTap = false;
+          input.state.lmbReleased = false;
+        }
         input.state.lookDX = 0;
         input.state.lookDY = 0;
         steps++;

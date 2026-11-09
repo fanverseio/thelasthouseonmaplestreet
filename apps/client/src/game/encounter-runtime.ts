@@ -123,8 +123,8 @@ export interface EncounterRuntime {
   interact(id: StubEncounterId): string | null;
   /** Purify or destroy a stunned enemy. */
   choose(id: StubEncounterId, choice: EncounterChoice): ChooseResult;
-  /** Cast Ward during a telegraphed attack. */
-  castWard(): boolean;
+  /** Cast Ward during a telegraphed attack. `free`: the SpellSystem already paid the magic. */
+  castWard(opts?: { free?: boolean }): boolean;
   /** Death: roll the active sequence back, reset unresolved encounters to idle, respawn at the checkpoint. */
   handleDeath(): void;
   tick(dt: number, pose: PlayerPose): void;
@@ -309,12 +309,12 @@ export function createEncounterRuntime(options: EncounterRuntimeOptions): Encoun
     return { ok: true };
   }
 
-  function castWard(): boolean {
+  function castWard(opts: { free?: boolean } = {}): boolean {
     for (const b of bindings) {
       const cur = telegraphs.get(b.id);
       if (!cur || cur.warded || !b.telegraph) continue;
       cur.warded = true;
-      const cost = b.telegraph.magicCost;
+      const cost = opts.free ? 0 : b.telegraph.magicCost;
       store.setState((s) => ({ player: { ...s.player, magic: Math.max(0, s.player.magic - cost) } }));
       bump();
       return true;

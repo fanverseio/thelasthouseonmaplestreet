@@ -7,10 +7,12 @@ import { TUTORIAL_TEXT } from '../content/interactions/beat2.ts';
 import { ALL_SEQUENCES } from '../content/sequences/index.ts';
 import { createEncounterWorld } from '../game/encounter-runtime.ts';
 import { createSkipHold } from '../game/skip-hold.ts';
+import { SpellSystem, type SpellContext } from '../game/spells.ts';
 import { EncounterEnemies } from '../scene/encounter-enemies.tsx';
 import { Interactables } from '../scene/interactables.tsx';
 import { PointGlow } from '../scene/glow.tsx';
 import { Hands } from '../scene/hands.tsx';
+import { SpellFx } from '../scene/spell-fx.tsx';
 import { ExteriorScene } from '../scene/exterior-scene.tsx';
 import { PlayerRig } from '../scene/player-rig.tsx';
 import { loadedLastHouse, loadSceneHook, preloadLastHouse } from '../services/scene-loader.ts';
@@ -28,6 +30,7 @@ import { PuzzleOverlay } from './puzzle-overlay.tsx';
 import { HoldBar, SmokeStrike } from './ritual-hud.tsx';
 import { SettingsScreen } from './screens.tsx';
 import { SkipRing } from './skip-ring.tsx';
+import { SpellHud } from './spell-hud.tsx';
 import { Subtitles, type SubtitleLine } from './subtitles.tsx';
 import { VideoPlaceholder } from './video-placeholder.tsx';
 
@@ -42,6 +45,21 @@ export function GameView() {
   const { world: runtime, encounters, choices, ritual, ending } = useMemo(() => createEncounterWorld({ store: gameStore, storage: saveStorage, loadScene: loadSceneHook, onEffect: (e) => sfx.handleEffect(e) }), []);
   useSyncExternalStore(runtime.subscribe, () => runtime.version);
   const skipHold = useMemo(() => createSkipHold(runtime.sequences, ALL_SEQUENCES), [runtime]);
+  // Spells: one headless system per game view. Targets (5.3+) register with it; for now only the Ward reaches the stub encounter.
+  const spells = useMemo(() => new SpellSystem({ store: gameStore }), []);
+  const spellContext = useCallback((): SpellContext => {
+    const f = gameStore.getState().progress.flags;
+    return { hostileActive: encounters.hostileActive(), ritualActive: f.includes('ritual_active') && !f.includes('anchors_all') };
+  }, [encounters]);
+  useEffect(() => spells.on((e) => {
+    if (e.type !== 'cast') return;
+    if (e.spell === 'arcane_bolt') sfx.play('sfx_spell_bolt');
+    else if (e.spell === 'purify') sfx.play('sfx_spell_purify');
+    else if (e.spell === 'ward') {
+      sfx.play('sfx_spell_ward');
+      encounters.castWard({ free: true }); // the telegraphed first attack counts a real Ward (magic already paid)
+    }
+  }), [spells, encounters]);
   useEffect(() => attachRuntime(runtime), [runtime]); // autosave reads / Continue restores the runtime state
   const phase = useGame((s) => s.game.phase);
   const flags = useGame((s) => s.progress.flags);
@@ -93,7 +111,7 @@ export function GameView() {
     });
   }, [input]);
 
-  // Placeholder sounds the runtime does not emit: a door-opening flag (creak) and the Arcane Bolt (LMB).
+  // Placeholder sound the runtime does not emit: a door-opening flag (creak).
   useEffect(() => {
     const doorFlags = GATES.filter((g) => g.id.startsWith('door.') && g.opensOn).map((g) => g.opensOn as string);
     let prev = gameStore.getState().progress.flags;
@@ -104,16 +122,7 @@ export function GameView() {
       prev = next;
       if (cue) sfx.play(cue);
     });
-    const el = container.current;
-    const down = (e: MouseEvent) => {
-      const s = gameStore.getState();
-      if (e.button === 0 && s.game.phase === 'playing' && s.progress.flags.includes('spell_bolt')) sfx.play('sfx_spell_bolt');
-    };
-    el?.addEventListener('mousedown', down);
-    return () => {
-      unsub();
-      el?.removeEventListener('mousedown', down);
-    };
+    return unsub;
   }, []);
 
   const openLocket = useCallback(() => {
@@ -146,11 +155,13 @@ export function GameView() {
         <Interactables runtime={runtime} flags={flags} />
         <EncounterEnemies encounters={encounters} />
         <PointGlow runtime={runtime} />
-        <PlayerRig input={input} runtime={runtime} onOpenLocket={openLocket} skipHold={skipHold} />
+        <PlayerRig input={input} runtime={runtime} onOpenLocket={openLocket} skipHold={skipHold} spells={spells} spellContext={spellContext} />
+        <SpellFx spells={spells} input={input} />
         <Hands />
       </Canvas>
       {phase === 'playing' && <Hud actions={runtime.actions} tutorial={runtime.tutorial ? (TUTORIAL_TEXT[runtime.tutorial] ?? null) : null} />}
       {phase === 'playing' && <div className="crosshair" aria-hidden="true" />}
+      {phase === 'playing' && <SpellHud spells={spells} input={input} />}
       {phase === 'playing' && <PositionReadout />}
       {phase === 'playing' && <Subtitles line={runtime.subtitle} />}
       {phase === 'playing' && <EncounterPanel encounters={encounters} />}

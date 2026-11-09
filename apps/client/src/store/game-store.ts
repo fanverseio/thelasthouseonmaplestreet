@@ -16,6 +16,7 @@ import {
 import { createStore } from 'zustand/vanilla';
 import { checkpointForEvent, checkpointForFlag, respawnPlan, type CheckpointDef } from '../game/checkpoints.ts';
 import { setFlag as applyFlag, type SetFlagResult } from '../game/progression.ts';
+import { MAX_MAGIC, SPELL_UNLOCK_FLAGS } from '../game/spells.ts';
 
 /**
  * Game state store: serialisable data only, grouped by slice.
@@ -105,6 +106,10 @@ export interface GameActions {
   writeCheckpointForEvent: (event: string) => CheckpointDef | null;
   /** Select a spell (keys 1/2/3). Only an unlocked spell can be selected; returns whether it changed. */
   selectSpell: (spell: SpellId) => boolean;
+  /** Spend magic if there is enough (all or nothing). Returns whether it was spent. */
+  spendMagic: (amount: number) => boolean;
+  /** Add magic, clamped to the maximum. */
+  gainMagic: (amount: number) => void;
   /** Death: back to the last checkpoint with full health and magic. Flags are untouched. */
   respawn: () => void;
   /** Reset everything for a new playthrough in the chosen mode. */
@@ -155,7 +160,7 @@ export function selectGameData(state: GameState): GameData {
 }
 
 /** Spells that a progress flag unlocks (the flag is the source of truth, the list is the quick lookup). */
-const SPELL_OF_FLAG: Partial<Record<string, SpellId>> = { spell_bolt: 'arcane_bolt', spell_ward: 'ward', spell_purify: 'purify' };
+const SPELL_OF_FLAG: Partial<Record<string, SpellId>> = SPELL_UNLOCK_FLAGS;
 
 export interface GameStoreOptions {
   /** Called after a checkpoint is written (the save system hooks in here). */
@@ -199,6 +204,15 @@ export function createGameStore(options: GameStoreOptions = {}) {
         if (p.selectedSpell === spell || !p.spellsUnlocked.includes(spell)) return false;
         set((state) => ({ player: { ...state.player, selectedSpell: spell } }));
         return true;
+      },
+      spendMagic: (amount) => {
+        if (amount < 0 || get().player.magic < amount) return false;
+        set((state) => ({ player: { ...state.player, magic: state.player.magic - amount } }));
+        return true;
+      },
+      gainMagic: (amount) => {
+        if (amount <= 0) return;
+        set((state) => ({ player: { ...state.player, magic: Math.min(MAX_MAGIC, state.player.magic + amount) } }));
       },
       respawn: () => {
         const plan = respawnPlan(get().game.checkpointId);

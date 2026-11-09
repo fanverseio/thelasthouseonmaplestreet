@@ -129,6 +129,14 @@ body,
 .hud-bar-health .hud-bar-fill { background: #b5483a; }
 .hud-bar-magic .hud-bar-fill { background: #5a86c9; }
 .hud-spell { position: absolute; bottom: 1.25rem; left: 50%; transform: translateX(-50%); }
+.hud-spellfx { position: absolute; bottom: 3rem; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 0.3rem; min-width: 12rem; pointer-events: none; }
+.hud-cooldown, .hud-charge { position: relative; width: 12rem; height: 0.5rem; border: 1px solid var(--muted); background: rgba(0, 0, 0, 0.5); }
+.hud-charge { height: 1rem; }
+.hud-cooldown-fill { height: 100%; background: #8a8a96; }
+.hud-charge-fill { height: 100%; background: #c9dcff; }
+.hud-charge span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; color: #fff; text-shadow: 0 0 3px #000; }
+.hud-ward { font-size: 0.8rem; }
+.hud-hint, .hud-spell-note { font-size: 0.85rem; padding: 0.15rem 0.5rem; background: rgba(0, 0, 0, 0.6); border-radius: 4px; }
 .hud-carried { position: absolute; right: 1.25rem; bottom: 1.25rem; display: flex; gap: 0.5rem; list-style: none; margin: 0; padding: 0; font-size: 1.5rem; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
