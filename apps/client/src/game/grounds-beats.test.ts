@@ -13,6 +13,7 @@ import { createGameStore } from '../store/game-store.ts';
 import { moveAndSlide } from './collision.ts';
 import { applyDevStart } from './dev-start.ts';
 import { createEncounterWorld } from './encounter-runtime.ts';
+import { createCombat, createFighter } from './test-helpers.ts';
 import { isGateOpen } from './gates.ts';
 import { objectiveFor } from './objectives.ts';
 import { PLAYER_RADIUS, SIM_DT } from './player.ts';
@@ -24,7 +25,8 @@ function setup(start: 'lane' | 'grounds' = 'lane') {
   const store = createGameStore();
   store.getState().startNewGame('classic');
   expect(applyDevStart(store, start)).toEqual([]);
-  const { world, encounters } = createEncounterWorld({ store });
+  const combat = createCombat(store);
+  const { world, encounters } = createEncounterWorld({ store, enemies: combat.enemies });
   const [px, , pz] = store.getState().player.pos;
   const pos = { x: px, z: pz };
   const flags = () => store.getState().progress.flags;
@@ -62,7 +64,9 @@ function setup(start: 'lane' | 'grounds' = 'lane') {
     }
     return lock.input({ k: 'try' });
   };
-  return { store, world, encounters, pos, flags, tick, walkTo, route, press, morality, lock, tryCode };
+  /** The real fight through the SpellSystem (test-helpers.ts). */
+  const fight = createFighter({ store, ...combat, encounters, world, pos });
+  return { store, world, encounters, pos, flags, tick, walkTo, route, press, morality, lock, tryCode, fight, enemies: combat.enemies };
 }
 type Game = ReturnType<typeof setup>;
 
@@ -87,10 +91,8 @@ function fightHound(g: Game, n: 1 | 2, choice: 'purify' | 'destroy') {
   g.route(n === 1 ? HOUND_1_SPOT : HOUND_2_SPOT);
   expect(g.world.prompt).toBe('E  Face the hound');
   expect(g.press()).toMatchObject({ status: 'done', id: `enemy.grounds.hound_${n}` });
-  expect(g.encounters.view(id).state).toBe('weakened');
-  g.tick(1.7);
-  expect(g.encounters.view(id).state).toBe('stunned');
-  expect(g.encounters.choose(id, choice)).toEqual({ ok: true });
+  g.fight.defeat(id, choice); // the spells do the weakening: bolts to the stun, then Purify or a charged Bolt
+  expect(g.encounters.view(id)).toMatchObject({ state: 'resolved', outcome: choice });
 }
 
 describe('Beat 7/8 content', () => {

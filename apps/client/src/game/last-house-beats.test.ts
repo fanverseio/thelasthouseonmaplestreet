@@ -14,6 +14,7 @@ import { PLACEMENTS } from '../content/world/placements.ts';
 import { createGameStore } from '../store/game-store.ts';
 import { moveAndSlide } from './collision.ts';
 import { createEncounterWorld } from './encounter-runtime.ts';
+import { createCombat, createFighter } from './test-helpers.ts';
 import { DEV_STARTS } from './dev-start.ts';
 import { PLAYER_RADIUS, SIM_DT } from './player.ts';
 import { sealState } from './progression.ts';
@@ -30,7 +31,8 @@ function setup(options: { loadScene?: (scene: string) => Promise<unknown> | null
   const store = createGameStore();
   store.getState().startNewGame('classic');
   for (const f of DEV_STARTS.interior) expect(store.getState().setFlag(f).ok, f).toBe(true);
-  const { world, encounters } = createEncounterWorld({ store, ...(options.loadScene && { loadScene: options.loadScene }) });
+  const combat = createCombat(store);
+  const { world, encounters } = createEncounterWorld({ store, enemies: combat.enemies, ...(options.loadScene && { loadScene: options.loadScene }) });
   const pos = { x: PLACEMENTS[DOOR as EntityId]!.x, z: PLACEMENTS[DOOR as EntityId]!.z };
   const flags = () => store.getState().progress.flags;
   const tick = (seconds: number) => {
@@ -61,21 +63,23 @@ function setup(options: { loadScene?: (scene: string) => Promise<unknown> | null
     pos.x = p[0];
     pos.z = p[2];
   };
-  return { store, world, encounters, pos, flags, tick, walkTo, press, enter };
+  /** The real fight through the SpellSystem (test-helpers.ts). */
+  const fight = createFighter({ store, ...combat, encounters, world, pos });
+  return { store, world, encounters, pos, flags, tick, walkTo, press, enter, fight, enemies: combat.enemies };
 }
 
 type Game = ReturnType<typeof setup>;
 
-/** Face the cat, let the stub stun it, resolve it. */
+/** Face the cat, fight it for real (bolts to the stun, then Purify or a charged Bolt), resolve it. */
 function resolveCat(g: Game, choice: 'purify' | 'destroy') {
   expect(g.walkTo(0, -1)).toBeLessThan(0.1);
   expect(g.encounters.view('interior_cat').engaged).toBe(true);
   expect(g.world.prompt).toBe('E  Face the cat');
-  expect(g.press()).toMatchObject({ status: 'done', id: CAT });
-  expect(g.encounters.view('interior_cat').state).toBe('weakened');
-  g.tick(2.1);
+  expect(g.press()).toMatchObject({ status: 'done', id: CAT }); // nothing to weaken: the spells do it
+  g.fight.stun('interior_cat');
   expect(g.encounters.view('interior_cat').state).toBe('stunned');
-  expect(g.encounters.choose('interior_cat', choice)).toEqual({ ok: true });
+  g.fight.defeat('interior_cat', choice);
+  expect(g.encounters.view('interior_cat')).toMatchObject({ state: 'resolved', outcome: choice });
 }
 
 /** Solve the board through the P5 machine (what the overlay drives). */
