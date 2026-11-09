@@ -6,13 +6,17 @@
 //   node tools/gen-voice.mjs models                  text-to-speech models
 //   node tools/gen-voice.mjs voices [--search word]  voices you can use (id, name, labels)
 //   node tools/gen-voice.mjs sample --voice <id|character> [--model <id>] --text "..." [--name file]
-//   node tools/gen-voice.mjs line <vo_line_id> [--voice <id>] [--model <id>]
+//   node tools/gen-voice.mjs line <vo_line_id> [--voice <id>] [--model <id>] [--format <fmt>] [--no-tags] [--publish]
+//   node tools/gen-voice.mjs all [--only <speaker|line id prefix>] [--force] [--dry-run] [--format <fmt>] [--no-tags] [--max-chars <n>]
+//        every line in ALL_LINES with its speaker's voice; skips lines whose final file exists; stops on the first API error
 //   node tools/gen-voice.mjs design --describe "..." --text "<100+ chars>" [--name prefix]   3 designed previews
 //   node tools/gen-voice.mjs keep --generated <generated_voice_id> --name "TLH Felix"         save a preview as a voice
 //
 // Characters map to ELEVENLABS_VOICE_ID_<NAME> (ANGEL, ELENA, FELIX, GARTNER, BRIGGS, WATCHER, ROSALIND, SMOKE).
-// Output: <RAW_ASSET_DIR>/vo/ (git-ignored). Approved takes are copied to apps/client/public/assets/audio/vo/ later.
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+// Output: raw takes in <RAW_ASSET_DIR>/vo/ (git-ignored); the all command and line --publish also copy them to apps/client/public/assets/audio/vo/<line_id>.mp3.
+// Default format mp3_44100_64 (speech is mono, so the repo stays small). With eleven_v3, delivery tags such as [whispers] are
+// prepended to the spoken text only; subtitles keep the clean text.
+import { copyFileSync, existsSync, mkdirSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -21,7 +25,7 @@ if (existsSync(path.join(root, '.env'))) process.loadEnvFile(path.join(root, '.e
 
 const API = 'https://api.elevenlabs.io';
 const KEY = process.env.ELEVENLABS_API_KEY ?? '';
-const DEFAULT_MODEL = process.env.ELEVENLABS_MODEL_ID || 'eleven_multilingual_v2';
+const DEFAULT_MODEL = process.env.ELEVENLABS_MODEL_ID || 'eleven_v3';
 const OUT_DIR = path.resolve(root, process.env.RAW_ASSET_DIR || './assets/raw', 'vo');
 
 const VOICE_ENV = {
@@ -65,8 +69,51 @@ function resolveVoice(value) {
   return value;
 }
 
+const DEFAULT_FORMAT = 'mp3_44100_64';
+const PUBLISH_DIR = path.join(root, 'apps/client/public/assets/audio/vo');
+const format = () => arg('format') ?? DEFAULT_FORMAT;
+const flag = (name) => process.argv.includes(`--${name}`);
+
+// Delivery tags (eleven_v3 only). They go into the TTS text, never into subtitles. Per-line overrides win over the speaker default.
+// An empty string means "no tag". Source of the intent: the Delivery column in docs/script/*.md.
+const SPEAKER_TAG = { smoke: '[whispers]', gartner: '[nervous]' };
+const LINE_TAG = {
+  vo_elena_b1_01: '[softly]',
+  vo_elena_b1_03: '[nervous]',
+  vo_elena_b1_08: '[shouting]',
+  vo_angel_b1_03: '[softly]',
+  vo_angel_b1_04: '[softly]',
+  vo_felix_b3_02: '[whispers]',
+  vo_felix_b3_03: '[whispers]',
+  vo_elena_b3_01: '[sad]',
+  vo_elena_b3_02: '[nervous]',
+  vo_angel_b4_01: '[urgently]',
+  vo_briggs_b4_02: '[whispers]',
+  vo_elena_b4_02: '[softly]',
+  vo_elena_b4_03: '[sad]',
+  vo_gartner_b4_01: '[whispers]',
+  vo_gartner_b5_04: '[sad]',
+  vo_gartner_b5_10: '[sad]',
+  vo_elena_b5_c1: '[softly]',
+  vo_watcher_b6_03: '[whispers]',
+  vo_watcher_b6_05: '[shouting]',
+  vo_elena_b6_03: '[softly]',
+  vo_elena_b7_01: '[whispers]',
+  vo_elena_b10_01: '[nervous]',
+  vo_angel_b10_dark: '[whispers]',
+  vo_elena_b11_02: '[softly]',
+  vo_angel_b12_dark: '[whispers]',
+};
+
+/** The text sent to the TTS model: delivery tag + clean text for eleven_v3, the clean text otherwise. */
+function spokenText(line, model) {
+  if (flag('no-tags') || !model.startsWith('eleven_v3')) return line.text;
+  const tag = LINE_TAG[line.id] ?? SPEAKER_TAG[line.speaker.toLowerCase()] ?? '';
+  return tag ? `${tag} ${line.text}` : line.text;
+}
+
 async function speak(voiceId, text, model, fileName) {
-  const res = await api(`/v1/text-to-speech/${encodeURIComponent(voiceId)}?output_format=mp3_44100_128`, {
+  const res = await api(`/v1/text-to-speech/${encodeURIComponent(voiceId)}?output_format=${encodeURIComponent(format())}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'audio/mpeg' },
     body: JSON.stringify({ text, model_id: model }),
@@ -75,8 +122,18 @@ async function speak(voiceId, text, model, fileName) {
   mkdirSync(OUT_DIR, { recursive: true });
   const file = path.join(OUT_DIR, fileName.endsWith('.mp3') ? fileName : `${fileName}.mp3`);
   writeFileSync(file, audio);
-  console.log(`Saved ${path.relative(root, file)} (${Math.round(audio.length / 1024)} KB, ${text.length} chars, model ${model}).`);
+  console.log(`Saved ${path.relative(root, file)} (${Math.round(audio.length / 1024)} KB, ${text.length} chars, model ${model}, ${format()}).`);
+  return file;
 }
+
+function publish(rawFile, lineId) {
+  mkdirSync(PUBLISH_DIR, { recursive: true });
+  const dest = path.join(PUBLISH_DIR, `${lineId}.mp3`);
+  copyFileSync(rawFile, dest);
+  return dest;
+}
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const safeName = (s) => s.toLowerCase().replace(/[^a-z0-9_-]+/g, '_').slice(0, 60);
 
@@ -124,7 +181,33 @@ switch (command) {
     if (!line) fail(`Unknown line id: ${lineId}`);
     const voice = resolveVoice(arg('voice') ?? line.speaker);
     const model = arg('model') ?? DEFAULT_MODEL;
-    await speak(voice, line.text, model, lineId);
+    const raw = await speak(voice, spokenText(line, model), model, lineId);
+    if (flag('publish')) console.log(`Published ${path.relative(root, publish(raw, lineId))}.`);
+    break;
+  }
+  case 'all': {
+    const { ALL_LINES } = await import('../apps/client/src/content/dialogue/index.ts');
+    const model = arg('model') ?? DEFAULT_MODEL;
+    const only = arg('only')?.toLowerCase();
+    const force = flag('force');
+    const maxChars = Number(arg('max-chars') ?? 20000);
+    const picked = ALL_LINES.filter((l) => !only || l.speaker.toLowerCase() === only || l.id.toLowerCase().startsWith(only));
+    const todo = picked.filter((l) => force || !(existsSync(path.join(PUBLISH_DIR, `${l.id}.mp3`)) && statSync(path.join(PUBLISH_DIR, `${l.id}.mp3`)).size > 0));
+    const chars = todo.reduce((n, l) => n + spokenText(l, model).length, 0);
+    const bySpeaker = new Map();
+    for (const l of todo) bySpeaker.set(l.speaker, (bySpeaker.get(l.speaker) ?? 0) + spokenText(l, model).length);
+    console.log(`${picked.length} lines selected, ${todo.length} to generate (${picked.length - todo.length} already done), ${chars} characters, model ${model}, format ${format()}.`);
+    console.log([...bySpeaker].map(([s, n]) => `${s} ${n}`).join(', '));
+    if (flag('dry-run')) break;
+    if (chars > maxChars) fail(`${chars} characters exceed the budget of ${maxChars} (--max-chars). Nothing was generated.`);
+    for (const l of todo) {
+      const voice = resolveVoice(l.speaker);
+      if (!voice) fail(`No voice for ${l.speaker}.`);
+      const raw = await speak(voice, spokenText(l, model), model, l.id);
+      publish(raw, l.id);
+      await sleep(400);
+    }
+    console.log(`Done: ${todo.length} lines, ${chars} characters.`);
     break;
   }
   case 'library': {
@@ -193,5 +276,5 @@ switch (command) {
     break;
   }
   default:
-    console.log('Commands: account, models, voices [--search word], sample, line, design, keep. See the header of tools/gen-voice.mjs.');
+    console.log('Commands: account, models, voices [--search word], sample, line, all, design, keep. See the header of tools/gen-voice.mjs.');
 }

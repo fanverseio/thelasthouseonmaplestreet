@@ -1,12 +1,12 @@
 /**
- * Voice-over playback by line ID. Plays `/assets/vo/<id>.mp3` when it exists; otherwise the line is
+ * Voice-over playback by line ID. Plays `/assets/audio/vo/<id>.mp3` when it exists; otherwise the line is
  * subtitle-only and `done` resolves after a timed duration. Never throws.
  */
 import { getLine } from '../content/dialogue/index.ts';
 import { settingsStore } from '../store/index.ts';
 import { ensureAudioContext } from './audio-engine.ts';
 
-export const VO_BASE_PATH = '/assets/vo';
+export const VO_BASE_PATH = '/assets/audio/vo';
 export const MIN_SUBTITLE_MS = 1800;
 const MS_PER_CHAR = 65;
 

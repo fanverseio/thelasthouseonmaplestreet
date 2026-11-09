@@ -5,7 +5,7 @@ afterEach(() => vi.useRealTimers());
 
 describe('voice', () => {
   it('builds the asset url', () => {
-    expect(voiceUrl('vo_angel_b1_01')).toBe('/assets/vo/vo_angel_b1_01.mp3');
+    expect(voiceUrl('vo_angel_b1_01')).toBe('/assets/audio/vo/vo_angel_b1_01.mp3');
   });
 
   it('subtitle duration has a floor and grows with text', () => {
