@@ -1,73 +1,71 @@
 import { describe, expect, it } from 'vitest';
 import { ENCOUNTER_BINDINGS } from '../content/encounters/index.ts';
+import { FOX } from '../content/enemies/index.ts';
 import { createWorldRegistry } from '../content/world/index.ts';
 import { PLACEMENTS } from '../content/world/placements.ts';
 import { createGameStore } from '../store/game-store.ts';
 import { createEncounterWorld } from './encounter-runtime.ts';
 import { SIM_DT } from './player.ts';
+import { createFightRig, type FightRig } from './test-helpers.ts';
 
-const FOX = 'enemy.street.fox';
+const FOX_ENTITY = 'enemy.street.fox';
 
-/** Elena just after Beat 3 (seq2_done), standing at the intersection, 15 m east of the fox. */
-function setup(extraFlags: string[] = []) {
-  const store = createGameStore();
-  store.getState().startNewGame('classic');
-  for (const f of ['locket_taken', 'angel_awake', 'home_done', 'seq1_done', 'seq2_done', 'spell_bolt', ...extraFlags]) {
-    expect(store.getState().setFlag(f).ok, f).toBe(true);
-  }
-  const { world, encounters } = createEncounterWorld({ store });
-  const pos = { x: 57, z: 29.5 };
-  const flags = () => store.getState().progress.flags;
-  const tick = (seconds: number) => {
-    for (let i = 0; i < Math.round(seconds / SIM_DT); i++) world.tick(SIM_DT, { x: pos.x, z: pos.z });
-  };
-  /** Teleport (movement is the view's job; the runtime only reads the pose). */
-  const goTo = (x: number, z: number) => {
-    pos.x = x;
-    pos.z = z;
-    tick(SIM_DT * 2);
-  };
-  const press = () => world.interact({ x: pos.x, z: pos.z });
-  return { store, world, encounters, flags, tick, goTo, press, morality: () => store.getState().progress.morality.value };
-}
+/** Elena at the intersection right after Beat 3 (the real `garden` dev start: Bolt only), 15 m east of the fox. */
+const setup = (keepAlive = false) => createFightRig('garden', { keepAlive });
 
-function engageAndStun(g: ReturnType<typeof setup>) {
-  g.goTo(42, 29.5); // inside trg.street.fox (r 4): engages
+/** Inside trg.street.fox (r 4): the fox wakes and comes for her. */
+function engage(g: FightRig) {
+  g.goTo(42, 29.5);
   expect(g.encounters.view('street_fox')).toMatchObject({ engaged: true, hostile: true, state: 'idle' });
-  expect(g.press()).toMatchObject({ status: 'done', id: FOX });
-  expect(g.encounters.view('street_fox').state).toBe('weakened');
-  g.tick(1.2);
-  expect(g.encounters.view('street_fox')).toMatchObject({ state: 'stunned', canChoose: true, hostile: false });
 }
 
-describe('street fox content', () => {
-  it('is a binding without sequence, startFlag or ward, on an existing, placed entity', () => {
+describe('street fox content (5.6)', () => {
+  it('is a binding on the FSM without sequence, startFlag or ward, on an existing, placed entity', () => {
     const b = ENCOUNTER_BINDINGS.find((x) => x.id === 'street_fox')!;
+    expect(b.mode).toBe('fsm');
     expect(b.sequence).toBeUndefined();
     expect(b.startFlag).toBeUndefined();
     expect(b.telegraph).toBeUndefined();
     expect(b.weakenRequires).toBeUndefined();
     expect(b.leash).toBe(15); // Q3: the garden gate (about 19.4 m away) is out of range
+    expect(FOX.leashRadius).toBe(15); // the FSM enemy gives up at the same 15 m
     expect(createWorldRegistry().has(b.entity)).toBe(true);
     expect(PLACEMENTS[b.entity]).toBeDefined();
   });
 });
 
-describe('street fox: optional stub encounter', () => {
-  it('does nothing before Beat 3 ends', () => {
-    const store = createGameStore();
-    store.getState().startNewGame('classic');
-    const { world, encounters } = createEncounterWorld({ store });
-    for (let i = 0; i < 30; i++) world.tick(SIM_DT, { x: 42, z: 29.5 });
-    expect(encounters.view('street_fox').engaged).toBe(false);
+describe('street fox: optional FSM encounter', () => {
+  it('does nothing before Beat 3 ends: no enemy is even spawned', () => {
+    const g = createFightRig('street'); // the street start stops before seq2_done
+    g.goTo(42, 29.5);
+    g.tick(2);
+    expect(g.encounters.view('street_fox').engaged).toBe(false);
+    expect(g.encounters.fsmEnemy('street_fox')).toBeUndefined();
+    expect(g.enemies.all()).toHaveLength(0);
+    expect(g.hp()).toBe(100);
   });
 
-  it('destroy: stunned without a timer, +/-10 morality, enc_street_resolved', () => {
+  it('is dormant after Beat 3 until Elena engages it (it does not chase from 15 m)', () => {
     const g = setup();
-    engageAndStun(g);
-    g.tick(60); // stun never times out
+    g.tick(3);
+    const e = g.encounters.fsmEnemy('street_fox')!;
+    expect(e).toBeDefined();
+    expect([e.x, e.z]).toEqual([42, 31]);
+    expect(e.held).toBe(true);
+    expect(g.encounters.view('street_fox').engaged).toBe(false);
+    expect(g.enemies.hostileActive()).toBe(false);
+  });
+
+  it('destroy: bolts to the stun (no timer), then a charged Bolt: -10, enc_street_resolved', () => {
+    const g = setup(true);
+    engage(g);
+    expect(g.world.spoken).toContain('vo_angel_fox_c1');
+    g.fight.stun('street_fox');
+    expect(g.encounters.view('street_fox')).toMatchObject({ state: 'stunned', canChoose: true, hostile: false });
+    g.tick(60); // the stun never times out
     expect(g.encounters.view('street_fox').state).toBe('stunned');
-    expect(g.encounters.choose('street_fox', 'destroy')).toEqual({ ok: true });
+    expect(g.morality()).toBe(0);
+    g.fight.charged('street_fox');
     expect(g.flags()).toContain('enc_street_resolved');
     expect(g.morality()).toBe(-10);
     expect(g.encounters.view('street_fox')).toMatchObject({ state: 'resolved', outcome: 'destroy' });
@@ -76,110 +74,148 @@ describe('street fox: optional stub encounter', () => {
     expect(g.world.prompt).toBeNull(); // the fox prompt is gone
   });
 
-  it('purify is refused until spell_purify; the fox stays stunned and harmless; then purify works', () => {
-    const g = setup();
-    const hp0 = g.store.getState().player.hp;
-    engageAndStun(g);
-    expect(g.encounters.choose('street_fox', 'purify')).toEqual({ ok: false, reason: 'purify_locked' });
+  it('a stunned fox without Purify taught stays stunned and harmless, can be destroyed later, or purified once taught', () => {
+    const g = setup(true);
+    engage(g);
+    g.fight.stun('street_fox');
+    g.store.setState((s) => ({ player: { ...s.player, hp: 70 } }));
+    expect(() => g.fight.purify('street_fox')).toThrow(/not unlocked/); // Purify is not taught yet
+    expect(g.encounters.choose('street_fox', 'purify')).toEqual({ ok: false, reason: 'purify_locked' }); // the keyboard fallback
     g.tick(5);
-    expect(g.encounters.view('street_fox')).toMatchObject({ state: 'stunned', hostile: false });
-    expect(g.store.getState().player.hp).toBe(hp0);
+    expect(g.encounters.view('street_fox')).toMatchObject({ state: 'stunned', hostile: false, canPurify: false });
+    expect(g.hp()).toBeGreaterThanOrEqual(70); // harmless (HP only regenerates)
     expect(g.morality()).toBe(0);
     expect(g.flags()).not.toContain('enc_street_resolved');
-    // Later: the spell arrives (Beat 4), the same stunned fox can be purified.
+    // Later: the spell arrives (Beat 4), the same stunned fox can be purified for real.
     for (const f of ['seq3_started', 'spell_ward', 'spell_purify']) expect(g.store.getState().setFlag(f).ok, f).toBe(true);
-    expect(g.encounters.choose('street_fox', 'purify')).toEqual({ ok: true });
+    expect(g.encounters.view('street_fox').canPurify).toBe(true);
+    g.fight.purify('street_fox');
     expect(g.morality()).toBe(10);
     expect(g.flags()).toContain('enc_street_resolved');
     expect(g.encounters.view('street_fox').outcome).toBe('purify');
   });
 
-  it('hides Purify for the fox until spell_purify (Q1) and plays the fox lines (Q25)', () => {
-    const g = setup();
-    g.goTo(42, 29.5);
+  it('plays the fox lines (Q25) and hides Purify until spell_purify', () => {
+    const g = setup(true);
+    engage(g);
     expect(g.world.spoken).toContain('vo_angel_fox_c1'); // engage
-    g.press();
-    g.tick(1.2);
-    expect(g.encounters.view('street_fox')).toMatchObject({ canChoose: true, canPurify: false });
+    g.fight.stun('street_fox');
+    expect(g.encounters.view('street_fox')).toMatchObject({ canChoose: true, canPurify: false, fsm: true });
     expect(g.world.spoken).toContain('vo_elena_fox_01'); // stunned, Purify not taught
     expect(g.world.spoken).not.toContain('vo_angel_fox_c2');
     expect(g.encounters.choose('street_fox', 'purify')).toEqual({ ok: false, reason: 'purify_locked' });
     expect(g.world.spoken).toContain('vo_angel_fox_c2'); // purify-refused
     g.encounters.choose('street_fox', 'purify');
     expect(g.world.spoken.filter((l) => l === 'vo_angel_fox_c2')).toHaveLength(1);
-    for (const f of ['seq3_started', 'spell_ward', 'spell_purify']) expect(g.store.getState().setFlag(f).ok, f).toBe(true);
-    expect(g.encounters.view('street_fox').canPurify).toBe(true);
   });
 
-  it('locket is combat_blocked while hostile and allowed once stunned', () => {
-    const g = setup();
+  it('locket is combat_blocked while the fox hunts and allowed once it is stunned', () => {
+    const g = setup(true);
     expect(g.world.canOpenLocket()).toBe(true);
-    g.goTo(42, 29.5);
+    engage(g);
+    g.tick(0.5);
     expect(g.encounters.hostileActive()).toBe(true);
     expect(g.world.canOpenLocket()).toBe(false);
-    g.press();
-    g.tick(1.2);
+    g.fight.stun('street_fox');
     expect(g.encounters.hostileActive()).toBe(false);
     expect(g.world.canOpenLocket()).toBe(true);
   });
 
-  it('skip by walking away: a hostile fox resets at 15 m, nothing changes, and it can be re-engaged', () => {
+  it('the fox is a real threat: it bites (8) and Elena can sprint away', () => {
     const g = setup();
-    const before = [...g.flags()];
     g.goTo(42, 29.5);
-    expect(g.encounters.view('street_fox').engaged).toBe(true);
+    g.tick(3);
+    expect(g.hp()).toBeLessThan(100);
+    expect(g.events.some((e) => e.type === 'attack' && e.ability === 'bite' && e.damage === 8)).toBe(true);
+  });
+
+  it('skip by walking away: at 15 m the fox gives up and goes home, nothing changes, and it can be re-engaged', () => {
+    const g = setup(true);
+    const before = [...g.flags()];
+    engage(g);
     g.goTo(42 + 16, 29.5);
+    g.tick(8); // it walks home and heals
     expect(g.encounters.view('street_fox')).toMatchObject({ engaged: false, state: 'idle', hostile: false });
+    const e = g.encounters.fsmEnemy('street_fox')!;
+    expect([e.x, e.z]).toEqual([42, 31]);
+    expect(e.hp).toBe(60);
+    expect(e.held).toBe(true);
     expect(g.world.canOpenLocket()).toBe(true);
-    g.goTo(42 + 14, 29.5); // still within sight, not engaged again by itself (the trigger fires once)
+    g.goTo(42 + 14, 29.5); // still within sight: not engaged again by itself (the trigger fires once)
+    g.tick(5);
     expect(g.encounters.view('street_fox').engaged).toBe(false);
-    g.tick(30);
     expect([...g.flags()]).toEqual(before);
     expect(g.morality()).toBe(0);
     // Walking back and pressing E re-engages it.
     g.goTo(42, 29.5);
-    expect(g.press()).toMatchObject({ status: 'done', id: FOX });
+    expect(g.press()).toMatchObject({ status: 'done', id: FOX_ENTITY });
     expect(g.encounters.view('street_fox').engaged).toBe(true);
   });
 
-  it('a weakened fox also resets when the player leaves', () => {
-    const g = setup();
-    g.goTo(42, 29.5);
-    g.press();
+  it('a damaged fox heals on its way home (no progress is kept from a skipped fight)', () => {
+    const g = setup(true);
+    engage(g);
+    g.fight.tap('street_fox');
+    g.fight.tap('street_fox');
+    const e = g.encounters.fsmEnemy('street_fox')!;
+    expect(e.hp).toBeLessThan(60);
     g.goTo(80, 29.5);
+    g.tick(10);
+    expect(e.hp).toBe(60);
     expect(g.encounters.view('street_fox')).toMatchObject({ engaged: false, state: 'idle' });
-    g.tick(5);
-    expect(g.encounters.view('street_fox').state).toBe('idle'); // the stun timer was dropped
   });
 
   it('a stunned fox stays stunned when left behind, is not offered at range, and can be finished later', () => {
-    const g = setup();
-    engageAndStun(g);
+    const g = setup(true);
+    engage(g);
+    g.fight.stun('street_fox');
     g.goTo(80, 29.5);
+    g.tick(5);
     expect(g.encounters.view('street_fox').state).toBe('stunned');
     expect(g.encounters.active()).toBeNull();
     g.goTo(45, 29.5);
     expect(g.encounters.active()?.id).toBe('street_fox');
-    expect(g.encounters.choose('street_fox', 'destroy').ok).toBe(true);
+    g.fight.charged('street_fox');
+    expect(g.encounters.view('street_fox').state).toBe('resolved');
   });
 
-  it('no softlock: the fox never blocks Beat 4, never damages, and death resets it', () => {
-    const g = setup();
-    const hp0 = g.store.getState().player.hp;
+  it('no softlock: the fox never blocks Beat 4, and death resets an unstunned one', () => {
+    const g = setup(true);
     g.goTo(42, 29.5);
-    g.tick(30);
-    expect(g.store.getState().player.hp).toBe(hp0);
+    g.tick(10);
     expect(g.world.sequences.active).toBeNull();
-    g.goTo(50, 25); // about 8 m away: still hostile and harmless
-    expect(g.world.canOpenLocket()).toBe(false);
-    g.goTo(57, 20); // heading for the garden: 17 m away, past the 15 m leash: it gave up (Q3)
+    g.goTo(57, 20); // heading for the garden: 17 m from the fox's spawn, past the 15 m leash: it gives up (Q3)
+    g.tick(8);
     expect(g.encounters.hostileActive()).toBe(false);
     expect(g.world.canOpenLocket()).toBe(true);
     g.goTo(58, 12); // 24 m away: still gone
     expect(g.encounters.hostileActive()).toBe(false);
     expect(g.flags()).not.toContain('enc_street_resolved');
     g.goTo(42, 29.5);
+    g.tick(1);
     g.encounters.handleDeath();
     expect(g.encounters.view('street_fox')).toMatchObject({ engaged: false, state: 'idle' });
+    expect(g.encounters.fsmEnemy('street_fox')!.hp).toBe(60);
+  });
+
+  it('death keeps a stunned fox stunned (the stun is persistent)', () => {
+    const g = setup(true);
+    engage(g);
+    g.fight.stun('street_fox');
+    g.encounters.handleDeath();
+    expect(g.encounters.view('street_fox').state).toBe('stunned');
+    g.goTo(42, 29.5);
+    expect(g.encounters.view('street_fox').state).toBe('stunned');
+    expect(g.press()).toMatchObject({ status: 'done', id: FOX_ENTITY }); // the trigger fires once; E offers it again
+    expect(g.encounters.view('street_fox')).toMatchObject({ state: 'stunned', canChoose: true });
+  });
+
+  it('the stub fallback still exists: without an enemy system the same binding runs on the stub', () => {
+    const store = createGameStore();
+    store.getState().startNewGame('classic');
+    for (const f of ['locket_taken', 'angel_awake', 'home_done', 'seq1_done', 'seq2_done', 'spell_bolt']) store.getState().setFlag(f);
+    const { world, encounters } = createEncounterWorld({ store });
+    for (let i = 0; i < 30; i++) world.tick(SIM_DT, { x: 42, z: 29.5 });
+    expect(encounters.view('street_fox')).toMatchObject({ engaged: true, fsm: false, canWeaken: true });
   });
 });

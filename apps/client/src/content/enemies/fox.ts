@@ -1,6 +1,9 @@
 import type { EnemyDef } from '../../game/enemies.ts';
 
-/** Cursed fox (street, skippable). docs/combat-tuning.md section 4. Reach, body and aggro numbers are greybox guesses. */
+/**
+ * Cursed fox (street, skippable). docs/combat-tuning.md section 4. Reach, body and aggro numbers are greybox guesses.
+ * Leash 15 m from its spawn (task 5.6, Q3): the garden gate is about 19 m away, so walking on always shakes it off.
+ */
 export const FOX: EnemyDef = {
   id: 'fox',
   kind: 'animal',
@@ -9,7 +12,7 @@ export const FOX: EnemyDef = {
   bodyRadius: 0.4,
   hit: { y: 0.8, radius: 1.0 },
   aggroRadius: 12,
-  leashRadius: 20,
+  leashRadius: 15,
   purifiable: true,
   moralityClass: 'animal',
   abilities: [{ kind: 'telegraphedAttack', name: 'bite', damage: 8, cooldownS: 1.5, telegraphS: 0.4, range: 1.6 }],

@@ -51,12 +51,13 @@ function stunHound(g: ReturnType<typeof setup>, id: string) {
 }
 
 describe('binding.mode: the adapter between the stub encounters and the FSM', () => {
-  it('no shipped binding opts in yet: every encounter still runs on the stub (5.6-5.9 switch them)', () => {
-    for (const b of ENCOUNTER_BINDINGS) expect(b.mode ?? 'stub', b.id).toBe('stub');
+  it('every shipped binding runs on the real FSM (5.6-5.9 switched them); the stub stays for tests', () => {
+    expect(ENCOUNTER_BINDINGS.map((b) => b.id).sort()).toEqual(['briggs', 'hound_1', 'hound_2', 'interior_cat', 'street_fox', 'watcher']);
+    for (const b of ENCOUNTER_BINDINGS) expect(b.mode, b.id).toBe('fsm');
   });
 
   it('stub bindings spawn no FSM enemy even when an enemy system is present', () => {
-    const g = setup({ bindings: HOUND_BINDINGS });
+    const g = setup({ bindings: HOUND_BINDINGS.map((b) => ({ ...b, mode: 'stub' as const })) });
     g.tick(1);
     expect(g.enemies!.all()).toHaveLength(0);
     expect(g.encounters.fsmEnemy('hound_1')).toBeUndefined();
