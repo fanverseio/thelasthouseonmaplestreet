@@ -12,8 +12,11 @@
  * - Attacks are telegraphed (a wind-up the view can show) and hurt Elena through `SpellSystem.absorbDamage`,
  *   so a Ward blocks them and staggers the attacker. A short invulnerability follows every hit.
  * - Every enemy registers itself as a SpellTarget and consumes the SpellSystem's `hit` events.
- * - Abilities: `telegraphedAttack` is real; the other five are typed no-op stubs for tasks 5.7 and 5.8. A
- *   handler can be swapped through the `abilities` option without touching this file's FSM.
+ * - Abilities (all real since 5.7 / 5.8): telegraphedAttack, groundSlam, smokePuff (Briggs), teleport,
+ *   spawnDecoys, voiceAtHp (the Watcher). A handler can be swapped through the `abilities` option without
+ *   touching this file's FSM.
+ * - A `held` enemy does nothing (a dormant encounter enemy, or a mini-boss waiting for its scripted first attack).
+ *   `startScripted` runs that scripted, capped wind-up (task 5.7).
  * - Outcomes are reported as `resolved` events; `morality.ts` turns them into flags and morality.
  */
 import { moveAndSlide, type Collider } from './collision.ts';
@@ -25,7 +28,9 @@ import {
   type SpellTarget,
   type Vec3,
 } from './spells.ts';
-import type { SceneId } from '@tlh/shared';
+import type { EntityId, SceneId } from '@tlh/shared';
+import { enemyDef } from '../content/enemies/index.ts';
+import { PLACEMENTS } from '../content/world/placements.ts';
 import type { GameStore } from '../store/game-store.ts';
 
 /* ---------------- Tuning (docs/combat-tuning.md sections 1, 3, 5) ---------------- */
@@ -62,7 +67,10 @@ export interface TelegraphedAttackSpec {
   /** The hit can never take Elena's HP below this (the scripted first attack, 5.7). */
   hpFloor?: number;
 }
-/** Not implemented yet (5.7): a ring on the ground, AoE damage. `activeBelowHp`: only below this HP fraction. */
+/**
+ * A ring on the ground, AoE damage through the Ward (5.7). The ring is centred on the enemy and `radius`
+ * metres wide. `activeBelowHp`: only strictly below this HP fraction (Briggs' phase 2).
+ */
 export interface GroundSlamSpec {
   kind: 'groundSlam';
   damage: number;
@@ -71,13 +79,16 @@ export interface GroundSlamSpec {
   cooldownS: number;
   activeBelowHp?: number;
 }
-/** Not implemented yet (5.7): a puff that obscures vision. */
+/** A harmless puff that obscures Elena's vision for `obscureS` seconds (5.7). The view draws it. */
 export interface SmokePuffSpec {
   kind: 'smokePuff';
   obscureS: number;
   cooldownS: number;
 }
-/** Not implemented yet (5.8): teleports only to the named nodes, never while stunned or near Elena. */
+/**
+ * Teleports only to the named nodes (5.8), never while stunned, never while Elena is closer than
+ * `minPlayerDistance` and never onto a node closer to her than that. `telegraphS` marks the destination first.
+ */
 export interface TeleportSpec {
   kind: 'teleport';
   nodes: readonly string[];
@@ -85,14 +96,14 @@ export interface TeleportSpec {
   telegraphS: number;
   minPlayerDistance: number;
 }
-/** Not implemented yet (5.8): one-hit decoys at the HP fractions. */
+/** One-hit decoys: `count` of them the first time HP falls to each fraction (5.8). */
 export interface SpawnDecoysSpec {
   kind: 'spawnDecoys';
   thresholds: readonly number[];
   count: number;
   decoy: string;
 }
-/** Not implemented yet (5.8): an authored line when HP first falls to each fraction. */
+/** An authored line (`lines[i]` for `thresholds[i]`) the first time HP falls to each fraction (5.8). */
 export interface VoiceAtHpSpec {
   kind: 'voiceAtHp';
   thresholds: readonly number[];
@@ -133,7 +144,15 @@ export type EnemyEvent =
   | { type: 'stunned'; id: string }
   | { type: 'resolved'; id: string; outcome: EnemyChoice; summoned: boolean }
   | { type: 'reset'; id: string }
-  | { type: 'player_damaged'; id: string; amount: number };
+  | { type: 'player_damaged'; id: string; amount: number }
+  /** Briggs' smoke puff: the view dims Elena's vision for `seconds`. Harmless. */
+  | { type: 'smoke_puff'; id: string; seconds: number; x: number; z: number }
+  /** The Watcher marks where he will appear; `seconds` before he does. */
+  | { type: 'teleport_telegraph'; id: string; node: string; x: number; z: number; seconds: number }
+  | { type: 'teleported'; id: string; node: string; x: number; z: number }
+  | { type: 'decoys'; id: string; threshold: number; count: number }
+  /** An authored line to speak (the encounter runtime says it). `delayS` spaces several lines of one hit. */
+  | { type: 'voice'; id: string; line: string; threshold: number; delayS: number };
 
 /* ---------------- Instances ---------------- */
 
@@ -152,6 +171,10 @@ export interface SpawnOptions {
   respawnAfterS?: number;
   /** The scene it lives in; it only acts (and counts as hostile) while that scene is loaded. Default: any. */
   scene?: SceneId;
+  /** Start held: does nothing until `release()` (a dormant encounter enemy). */
+  held?: boolean;
+  /** Spawned by another enemy (decoys). Dismissed when that enemy is stunned, resolved or reset. */
+  parentId?: string;
 }
 
 export interface EnemyView {
@@ -165,6 +188,10 @@ export interface EnemyView {
   /** 0..1 progress of the wind-up, or null when not winding up. */
   telegraph: number | null;
   staggered: boolean;
+  /** Radius (m) of the ground ring to draw during a slam wind-up, else null. */
+  ring: number | null;
+  /** The Watcher's destination mark, with 0..1 progress, else null. */
+  mark: { x: number; z: number; t: number } | null;
 }
 
 interface ActiveAttack {
@@ -173,6 +200,34 @@ interface ActiveAttack {
   left: number;
   total: number;
 }
+
+/** The scripted first attack (5.7): a wind-up that always ends in a strike capped at `hpFloor`. */
+export interface ScriptedAttack {
+  name: string;
+  damage: number;
+  seconds: number;
+  /** The strike can never take Elena's HP below this. */
+  hpFloor?: number;
+}
+interface ActiveScripted extends ScriptedAttack {
+  left: number;
+  total: number;
+}
+
+/** A scripted strike lands when Elena is within this many metres of the enemy (invented). */
+export const SCRIPTED_REACH_M = 6;
+/** A ground slam starts when Elena is within its radius plus this (invented). */
+export const SLAM_TRIGGER_MARGIN_M = 1;
+/** The first smoke puff comes this long after Briggs starts chasing (invented). */
+export const PUFF_FIRST_DELAY_S = 4;
+/** An enemy puff is only released while Elena is within this many metres (invented). */
+export const PUFF_RANGE_M = 8;
+/** Decoys appear on a ring of this radius around the Watcher (invented). */
+export const DECOY_RING_M = 1.8;
+/** Seconds between two voice lines crossed by the same hit (invented). */
+export const VOICE_GAP_S = 3.5;
+/** A teleport retries after this long when it was blocked (Elena too close, no free node) (invented). */
+export const TELEPORT_RETRY_S = 0.75;
 
 export class Enemy {
   readonly id: string;
@@ -183,6 +238,11 @@ export class Enemy {
   readonly transient: boolean;
   readonly respawnAfterS: number | undefined;
   readonly scene: SceneId | undefined;
+  readonly parentId: string | undefined;
+  /** Does nothing while true (dormant, or waiting for the scripted first attack). */
+  held: boolean;
+  /** The scripted first attack in progress (5.7), if any. */
+  scripted: ActiveScripted | null = null;
   /** The live centre spells aim at; mutated in place. */
   readonly position: Vec3;
   x: number;
@@ -216,6 +276,8 @@ export class Enemy {
     this.transient = options.transient === true;
     this.respawnAfterS = options.respawnAfterS;
     this.scene = options.scene;
+    this.parentId = options.parentId;
+    this.held = options.held === true;
     this.position = { x: at.x, y: def.hit.y, z: at.z };
   }
 
@@ -228,9 +290,9 @@ export class Enemy {
   get alive(): boolean {
     return !this.resolved;
   }
-  /** Dangerous right now: chasing or attacking. */
+  /** Dangerous right now: chasing, attacking or winding up the scripted first attack. */
   get hostile(): boolean {
-    return this.state === 'chase' || this.state === 'attack';
+    return this.state === 'chase' || this.state === 'attack' || this.scripted !== null;
   }
   get hpFraction(): number {
     return this.hp / this.def.maxHp;
@@ -239,8 +301,16 @@ export class Enemy {
   wake(): void {
     if (this.alive && this.state !== 'stunned') this.engaged = true;
   }
+  /** Let a held enemy act (an encounter engaged it). */
+  release(): void {
+    this.held = false;
+  }
   view(): EnemyView {
     const a = this.attack;
+    const sc = this.scripted;
+    const windup = a && a.phase === 'windup';
+    const tp = this.def.abilities.find((x) => x.kind === 'teleport');
+    const pend = tp ? (this.scratch.get(tp)?.['pending'] as { x: number; z: number; left: number; total: number } | undefined) : undefined;
     return {
       id: this.id,
       defId: this.def.id,
@@ -249,8 +319,10 @@ export class Enemy {
       z: this.z,
       hp: this.hp,
       maxHp: this.def.maxHp,
-      telegraph: a && a.phase === 'windup' ? (a.total > 0 ? 1 - a.left / a.total : 1) : null,
+      telegraph: sc ? (sc.total > 0 ? 1 - sc.left / sc.total : 1) : windup ? (a.total > 0 ? 1 - a.left / a.total : 1) : null,
       staggered: this.staggerLeft > 0,
+      ring: windup && a.spec.kind === 'groundSlam' ? a.spec.radius : null,
+      mark: pend ? { x: pend.x, z: pend.z, t: pend.total > 0 ? 1 - pend.left / pend.total : 1 } : null,
     };
   }
   sync(): void {
@@ -279,6 +351,10 @@ export interface AbilityHost {
   emit(e: EnemyEvent): void;
   /** Seeded random in [0, 1). */
   random(): number;
+  /** Spawn another enemy by definition id (decoys). Undefined when the id is unknown. */
+  spawn(defId: string, at: { x: number; z: number }, options: SpawnOptions): Enemy | undefined;
+  /** Where an authored node (`node.house66.tp_1`) stands, or undefined when it is not placed. */
+  node(id: string): { x: number; z: number } | undefined;
 }
 
 export interface AbilityContext {
@@ -295,6 +371,8 @@ export interface AbilityHandler<S extends AbilitySpec = AbilitySpec> {
   run?(e: Enemy, spec: S, ctx: AbilityContext, dt: number): 'running' | 'done';
   /** Each step while the enemy is alive and not stunned, whatever it is doing (clocks, thresholds). */
   passive?(e: Enemy, spec: S, ctx: AbilityContext, dt: number): void;
+  /** Elena's spell just changed the enemy's HP (after the stun floor, before a stun): HP thresholds fire here. */
+  onHit?(e: Enemy, spec: S, host: AbilityHost): void;
   /** Stunned, staggered, reset: drop any in-flight state. */
   cancel?(e: Enemy, spec: S): void;
 }
@@ -331,16 +409,175 @@ export const telegraphedAttack: AbilityHandler<TelegraphedAttackSpec> = {
   },
 };
 
-/** A no-op handler for abilities that arrive in later tasks. */
+/** A no-op handler (kept for tests that swap one in). */
 export const NOOP_ABILITY: AbilityHandler<never> = {};
+
+/**
+ * Briggs' phase 2 (5.7): a visible ring of `radius` metres around him. The wind-up is telegraphed (the view reads
+ * `ring`); at its end Elena takes `damage` through the Ward if she is inside the ring. Only below `activeBelowHp`.
+ */
+export const groundSlam: AbilityHandler<GroundSlamSpec> = {
+  tryStart(e, spec, ctx) {
+    if (spec.activeBelowHp !== undefined && e.hpFraction >= spec.activeBelowHp) return false;
+    if (e.cooldownOf(spec) > 0 || ctx.dist > spec.radius + SLAM_TRIGGER_MARGIN_M) return false;
+    e.attack = { spec, phase: 'windup', left: spec.telegraphS, total: spec.telegraphS };
+    e.state = 'attack';
+    ctx.host.emit({ type: 'telegraph', id: e.id, ability: spec.kind, seconds: spec.telegraphS });
+    return true;
+  },
+  run(e, spec, ctx, dt) {
+    const a = e.attack;
+    if (!a) return 'done';
+    a.left -= dt;
+    if (a.phase === 'windup' && a.left <= 0) {
+      const inside = ctx.dist <= spec.radius;
+      let dealt = 0;
+      let blocked = false;
+      if (inside) ({ dealt, blocked } = ctx.host.hitPlayer(spec.damage, e.id));
+      ctx.host.emit({ type: 'attack', id: e.id, ability: spec.kind, damage: dealt, blocked, hit: inside });
+      e.cooldowns.set(spec, spec.cooldownS);
+      a.phase = 'recover';
+      a.left = RECOVER_S;
+    }
+    return a.phase === 'recover' && a.left <= 0 ? 'done' : 'running';
+  },
+};
+
+/**
+ * Briggs' smoke puff (5.7): harmless. Released when Elena is near, on a cooldown, the first time a few seconds
+ * after he starts chasing. The view dims her vision for `obscureS` (the enemy system deals no damage with it).
+ */
+export const smokePuff: AbilityHandler<SmokePuffSpec> = {
+  tryStart(e, spec, ctx) {
+    const s = e.scratchOf(spec);
+    if (s['armed'] !== true) {
+      s['armed'] = true;
+      e.cooldowns.set(spec, PUFF_FIRST_DELAY_S);
+      return false;
+    }
+    if (e.cooldownOf(spec) > 0 || ctx.dist > PUFF_RANGE_M) return false;
+    e.cooldowns.set(spec, spec.cooldownS);
+    ctx.host.emit({ type: 'smoke_puff', id: e.id, seconds: spec.obscureS, x: e.x, z: e.z });
+    return true;
+  },
+};
+
+interface TeleportPending {
+  node: string;
+  x: number;
+  z: number;
+  left: number;
+  total: number;
+}
+
+function nextTeleportIn(spec: TeleportSpec, host: AbilityHost): number {
+  const [lo, hi] = spec.intervalS;
+  return lo + host.random() * (hi - lo);
+}
+
+/**
+ * The Watcher's teleport (5.8). Every `intervalS` seconds while engaged he picks one of the authored `nodes`
+ * that is at least `minPlayerDistance` from Elena (and not where he already stands), marks it for `telegraphS`
+ * seconds, then appears there. He never teleports while Elena is closer than `minPlayerDistance`, and a stun
+ * (the handler is not stepped while stunned, and `cancel` drops the mark) ends it.
+ */
+export const teleport: AbilityHandler<TeleportSpec> = {
+  passive(e, spec, ctx, dt) {
+    const s = e.scratchOf(spec);
+    const pending = s['pending'] as TeleportPending | undefined;
+    if (pending) {
+      pending.left -= dt;
+      if (pending.left > 0 || e.state === 'attack') return; // finish a swing first
+      s['pending'] = undefined;
+      s['clock'] = nextTeleportIn(spec, ctx.host);
+      if (Math.hypot(ctx.player.x - pending.x, ctx.player.z - pending.z) < spec.minPlayerDistance) return; // Elena stepped onto the mark
+      e.x = pending.x;
+      e.z = pending.z;
+      e.sync();
+      ctx.host.emit({ type: 'teleported', id: e.id, node: pending.node, x: pending.x, z: pending.z });
+      return;
+    }
+    if (!e.engaged) return;
+    const clock = ((s['clock'] as number | undefined) ?? nextTeleportIn(spec, ctx.host)) - dt;
+    s['clock'] = clock;
+    if (clock > 0 || e.state === 'attack') return;
+    if (ctx.dist < spec.minPlayerDistance) {
+      s['clock'] = TELEPORT_RETRY_S;
+      return;
+    }
+    const options: { node: string; x: number; z: number }[] = [];
+    for (const id of spec.nodes) {
+      const p = ctx.host.node(id);
+      if (!p) continue;
+      if (Math.hypot(p.x - ctx.player.x, p.z - ctx.player.z) < spec.minPlayerDistance) continue;
+      if (Math.hypot(p.x - e.x, p.z - e.z) < 1) continue; // already there
+      options.push({ node: id, x: p.x, z: p.z });
+    }
+    if (options.length === 0) {
+      s['clock'] = TELEPORT_RETRY_S;
+      return;
+    }
+    const pick = options[Math.min(options.length - 1, Math.floor(ctx.host.random() * options.length))]!;
+    s['pending'] = { ...pick, left: spec.telegraphS, total: spec.telegraphS } satisfies TeleportPending;
+    ctx.host.emit({ type: 'teleport_telegraph', id: e.id, node: pick.node, x: pick.x, z: pick.z, seconds: spec.telegraphS });
+  },
+  cancel(e, spec) {
+    const s = e.scratch.get(spec);
+    if (s) s['pending'] = undefined;
+  },
+};
+
+/** True when `e` has fallen to `t` of its HP (a little slack for the float maths of the stun floor). */
+function atOrBelow(e: Enemy, t: number): boolean {
+  return e.hpFraction <= t + 1e-9;
+}
+
+/** The Watcher's decoys (5.8): `count` one-hit decoys the first time HP falls to each threshold. Each fires once. */
+export const spawnDecoys: AbilityHandler<SpawnDecoysSpec> = {
+  onHit(e, spec, host) {
+    const s = e.scratchOf(spec);
+    const fired = (s['fired'] ??= []) as number[];
+    for (const t of spec.thresholds) {
+      if (fired.includes(t) || !atOrBelow(e, t)) continue;
+      fired.push(t);
+      const base = host.random() * Math.PI * 2;
+      for (let i = 0; i < spec.count; i++) {
+        const n = ((s['n'] as number | undefined) ?? 0) + 1;
+        s['n'] = n;
+        const angle = base + (i * Math.PI * 2) / Math.max(1, spec.count);
+        host.spawn(
+          spec.decoy,
+          { x: e.x + Math.cos(angle) * DECOY_RING_M, z: e.z + Math.sin(angle) * DECOY_RING_M },
+          { id: `${e.id}.decoy_${n}`, summoned: true, transient: true, parentId: e.id, ...(e.scene && { scene: e.scene }) },
+        );
+      }
+      host.emit({ type: 'decoys', id: e.id, threshold: t, count: spec.count });
+    }
+  },
+};
+
+/** The Watcher's voice (5.8): `lines[i]` the first time HP falls to `thresholds[i]`. Each fires once. */
+export const voiceAtHp: AbilityHandler<VoiceAtHpSpec> = {
+  onHit(e, spec, host) {
+    const s = e.scratchOf(spec);
+    const fired = (s['fired'] ??= []) as number[];
+    let k = 0;
+    spec.thresholds.forEach((t, i) => {
+      const line = spec.lines[i];
+      if (line === undefined || fired.includes(t) || !atOrBelow(e, t)) return;
+      fired.push(t);
+      host.emit({ type: 'voice', id: e.id, line, threshold: t, delayS: k++ * VOICE_GAP_S });
+    });
+  },
+};
 
 export const DEFAULT_ABILITIES: AbilityRegistry = {
   telegraphedAttack,
-  groundSlam: NOOP_ABILITY, // 5.7
-  smokePuff: NOOP_ABILITY, // 5.7
-  teleport: NOOP_ABILITY, // 5.8
-  spawnDecoys: NOOP_ABILITY, // 5.8
-  voiceAtHp: NOOP_ABILITY, // 5.8
+  groundSlam,
+  smokePuff,
+  teleport,
+  spawnDecoys,
+  voiceAtHp,
 };
 
 /* ---------------- The system ---------------- */
@@ -352,8 +589,12 @@ export interface EnemySystemOptions {
   colliders?: () => readonly Collider[];
   /** Seed for patrol choices and abilities. */
   seed?: number;
-  /** Replace some ability handlers (5.7, 5.8). */
+  /** Replace some ability handlers. */
   abilities?: Partial<AbilityRegistry>;
+  /** Where an authored node stands (teleport targets). Default: the world placements. */
+  nodes?: (id: string) => { x: number; z: number } | undefined;
+  /** Enemy definitions by id (decoys). Default: content/enemies. */
+  defs?: (id: string) => EnemyDef | undefined;
 }
 
 function mulberry32(seed: number): () => number {
@@ -373,6 +614,8 @@ export class EnemySystem {
   private readonly colliders: () => readonly Collider[];
   private readonly rng: () => number;
   private readonly abilities: AbilityRegistry;
+  private readonly nodeAt: (id: string) => { x: number; z: number } | undefined;
+  private readonly defOf: (id: string) => EnemyDef | undefined;
   private readonly enemies = new Map<string, Enemy>();
   private readonly unregister = new Map<string, () => void>();
   private readonly listeners = new Set<(e: EnemyEvent) => void>();
@@ -387,6 +630,8 @@ export class EnemySystem {
     this.colliders = options.colliders ?? (() => []);
     this.rng = mulberry32(options.seed ?? 1);
     this.abilities = { ...DEFAULT_ABILITIES, ...options.abilities };
+    this.nodeAt = options.nodes ?? ((id) => PLACEMENTS[id as EntityId]);
+    this.defOf = options.defs ?? enemyDef;
     this.offSpells = this.spells.on((e) => this.onSpell(e));
   }
 
@@ -510,12 +755,19 @@ export class EnemySystem {
       const floor = e.stunFloor;
       e.hp = Math.max(floor, e.hp - damage); // the stun floor: one hit never goes below the threshold
       this.emit({ type: 'hit', id: e.id, damage, hp: e.hp });
+      this.hitHooks(e);
       if (e.hp <= floor) this.stun(e);
       return;
     }
     e.hp = Math.max(0, e.hp - damage);
     this.emit({ type: 'hit', id: e.id, damage, hp: e.hp });
+    this.hitHooks(e);
     if (e.hp <= 0) this.resolve(e, 'destroy');
+  }
+
+  /** HP-threshold abilities (decoys, voice) look at the new HP. */
+  private hitHooks(e: Enemy): void {
+    for (const spec of e.def.abilities) this.handlerOf(spec).onHit?.(e, spec, this.host);
   }
 
   private cancelAttack(e: Enemy): void {
@@ -524,8 +776,20 @@ export class EnemySystem {
     if (e.state === 'attack') e.state = 'chase';
   }
 
+  /** Drop every in-flight ability state (teleport marks, the scripted wind-up) and the minions it spawned. */
+  private cancelAbilities(e: Enemy): void {
+    for (const spec of e.def.abilities) this.handlerOf(spec).cancel?.(e, spec);
+    e.scripted = null;
+    this.dismissMinions(e.id);
+  }
+
+  private dismissMinions(parentId: string): void {
+    for (const m of [...this.enemies.values()]) if (m.parentId === parentId) this.remove(m.id);
+  }
+
   private stun(e: Enemy): void {
     this.cancelAttack(e);
+    this.cancelAbilities(e);
     e.state = 'stunned';
     e.staggerLeft = 0;
     e.returning = false;
@@ -536,12 +800,43 @@ export class EnemySystem {
 
   private resolve(e: Enemy, outcome: EnemyChoice): void {
     this.cancelAttack(e);
+    this.cancelAbilities(e);
     e.state = outcome === 'purify' ? 'purified' : 'destroyed';
     e.engaged = false;
     e.respawnLeft = e.respawnAfterS ?? 0;
     this.unregister.get(e.id)?.();
     this.unregister.delete(e.id);
     this.emit({ type: 'resolved', id: e.id, outcome, summoned: e.summoned });
+    if (e.transient && e.parentId !== undefined) this.remove(e.id); // a killed decoy is gone, not a corpse
+  }
+
+  /**
+   * Start the scripted first attack (5.7): the enemy freezes, a telegraph runs for `seconds`, then it strikes once,
+   * through the Ward, never taking Elena below `hpFloor`. Afterwards it is released and fights normally.
+   * Refused for an enemy that is stunned, resolved or already winding up.
+   */
+  startScripted(id: string, attack: ScriptedAttack): boolean {
+    const e = this.enemies.get(id);
+    if (!e || !e.alive || e.state === 'stunned' || e.scripted) return false;
+    e.scripted = { ...attack, left: attack.seconds, total: attack.seconds };
+    e.held = true;
+    e.engaged = true;
+    this.emit({ type: 'telegraph', id: e.id, ability: attack.name, seconds: attack.seconds });
+    return true;
+  }
+
+  private stepScripted(e: Enemy, dt: number, player: { x: number; z: number }): void {
+    const a = e.scripted;
+    if (!a) return;
+    a.left -= dt;
+    if (a.left > 0) return;
+    e.scripted = null;
+    e.held = false;
+    const reach = Math.hypot(player.x - e.x, player.z - e.z) <= SCRIPTED_REACH_M;
+    let dealt = 0;
+    let blocked = false;
+    if (reach) ({ dealt, blocked } = this.hitPlayer(a.damage, e.id, a.hpFloor));
+    this.emit({ type: 'attack', id: e.id, ability: a.name, damage: dealt, blocked, hit: reach });
   }
 
   /** Force a stunned enemy's outcome (used when the choice was made some other way, e.g. a panel). */
@@ -559,6 +854,11 @@ export class EnemySystem {
     hitPlayer: (amount, sourceId, hpFloor) => this.hitPlayer(amount, sourceId, hpFloor),
     emit: (e) => this.emit(e),
     random: () => this.rng(),
+    spawn: (defId, at, options) => {
+      const def = this.defOf(defId);
+      return def ? this.spawn(def, at, options) : undefined;
+    },
+    node: (id) => this.nodeAt(id),
   };
 
   private hitPlayer(amount: number, sourceId: string, hpFloor?: number): { dealt: number; blocked: boolean } {
@@ -580,9 +880,10 @@ export class EnemySystem {
   /* ---- death ---- */
 
   /**
-   * Elena died (task 5.5). Resolved enemies stay resolved. An unresolved mini-boss resets to full HP, idle at its
-   * spawn. Any other enemy goes back to its spawn: a stunned one stays stunned (the stun is persistent), the rest
-   * return to idle at full HP. Transient enemies (decoys, wraiths) are removed. Flags are never touched.
+   * Elena died (tasks 5.5, 5.7). Resolved enemies stay resolved. A STUNNED enemy, mini-boss or not, keeps its
+   * persistent stun (and its HP at the floor). An unresolved, unstunned mini-boss resets to full HP, idle at its
+   * spawn, and so does any other enemy. Everything goes back to its spawn; scripted wind-ups, teleport marks and
+   * cooldowns are dropped. Transient enemies (decoys, wraiths) are removed. Flags are never touched.
    */
   handlePlayerDeath(): void {
     this.invulnLeft = 0;
@@ -593,6 +894,8 @@ export class EnemySystem {
         continue;
       }
       this.cancelAttack(e);
+      this.cancelAbilities(e);
+      e.held = false;
       e.x = e.spawnPoint.x;
       e.z = e.spawnPoint.z;
       e.sync();
@@ -601,7 +904,7 @@ export class EnemySystem {
       e.patrolTarget = null;
       e.cooldowns.clear();
       e.scratch.clear();
-      if (e.state === 'stunned' && e.def.kind !== 'mini_boss') {
+      if (e.state === 'stunned') {
         e.engaged = true;
       } else {
         e.hp = e.def.maxHp;
@@ -645,6 +948,11 @@ export class EnemySystem {
       }
       if (e.state === 'stunned') continue; // harmless and timeless
       if (dead) continue; // the runtime handles the death on its tick
+      if (e.scripted) {
+        this.stepScripted(e, dt, player);
+        continue;
+      }
+      if (e.held) continue; // dormant, or waiting for its scripted first attack
       this.stepEnemy(e, dt, player);
       e.sync();
     }

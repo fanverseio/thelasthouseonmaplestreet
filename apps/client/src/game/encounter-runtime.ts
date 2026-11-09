@@ -20,6 +20,7 @@ import type { SaveStorage } from '../services/save-storage.ts';
 import { createChoiceRuntime } from './dialogue-choice.ts';
 import { STUN_MIN_MAGIC, type Enemy, type EnemyEvent, type EnemySystem } from './enemies.ts';
 import { createEndingRuntime } from './ending.ts';
+import { HpRegen } from './health.ts';
 import { createRitualRuntime } from './ritual.ts';
 import {
   applyMoralityDelta,
@@ -104,6 +105,8 @@ export interface EncounterView {
   hostile: boolean;
   /** The scripted wind-up is running: Ward can be cast. */
   telegraphing: boolean;
+  /** Fought by the real enemy FSM (spells decide), not the panel stub: the panel shows hints, not buttons. */
+  fsm: boolean;
   canWeaken: boolean;
   canChoose: boolean;
   /** Purify is taught (or needs no spell); the panel hides Purify while this is false. */
@@ -171,6 +174,8 @@ export function createEncounterRuntime(options: EncounterRuntimeOptions): Encoun
   const stunTimers = new Map<StubEncounterId, number>();
   /** Encounters whose "Purify is not taught" line was already spoken this engagement. */
   const refusedSaid = new Set<StubEncounterId>();
+  /** Elena's HP regeneration (combat-tuning section 1): 5/s after 6 s without damage. */
+  const hpRegen = new HpRegen(store);
 
   const bump = () => {
     version++;
@@ -216,15 +221,30 @@ export function createEncounterRuntime(options: EncounterRuntimeOptions): Encoun
   const isFsm = (b: EncounterBinding): boolean => b.mode === 'fsm' && enemies !== undefined;
   const fsmEnemy = (id: StubEncounterId): Enemy | undefined => enemies?.get(STUB_ENCOUNTERS[id].enemyId);
 
-  /** Spawn the FSM enemy of a binding the first time its scene is up (a saved stun is restored). */
+  /**
+   * Spawn the FSM enemy of a binding the first time its scene is up and its requirements are met (a saved stun is
+   * restored). It spawns HELD (dormant): the encounter's `engage` releases it, so an enemy never fights before the
+   * story reaches it. A Briggs-style binding with a scripted `telegraph` stays held until that first attack ends.
+   */
   function ensureFsm(b: EncounterBinding): void {
     if (!enemies || fsmEnemy(b.id)) return;
+    if (!(b.requires ?? []).every((f) => flags().includes(f))) return;
     const def = enemyDef(b.fsmDef ?? FSM_DEF_OF_ENCOUNTER[b.id]);
     const place = placements[b.entity];
     if (!def || !place) return;
     const cur = read(b.id);
     if (cur.state === 'resolved') return;
-    enemies.spawn(def, { x: place.x, z: place.z }, { id: STUB_ENCOUNTERS[b.id].enemyId, stubId: b.id, scene: sceneOfEntity(b.entity), stunned: cur.state === 'stunned' });
+    enemies.spawn(def, { x: place.x, z: place.z }, { id: STUB_ENCOUNTERS[b.id].enemyId, stubId: b.id, scene: sceneOfEntity(b.entity), stunned: cur.state === 'stunned', held: true });
+  }
+
+  /** The FSM enemy gave up (left its leash and walked home): the encounter goes back to idle and the enemy to dormant. */
+  function syncFsm(b: EncounterBinding): void {
+    const fe = fsmEnemy(b.id);
+    if (!fe || !fe.alive || fe.state === 'stunned' || fe.scripted) return;
+    if (!fe.engaged && !fe.returning && fe.state === 'idle' && read(b.id).engaged) {
+      fe.held = true;
+      write(b.id, { state: 'idle', engaged: false });
+    }
   }
 
   /** The FSM stunned the enemy: mirror it into the encounter state, then the stun flags and lines. */
@@ -239,8 +259,23 @@ export function createEncounterRuntime(options: EncounterRuntimeOptions): Encoun
   const offEnemies = enemies?.on((e: EnemyEvent) => {
     const b = bindings.find((x) => isFsm(x) && STUB_ENCOUNTERS[x.id].enemyId === e.id);
     if (!b) return;
-    if (e.type === 'stunned') fsmStunned(b);
-    else if (e.type === 'resolved' && read(b.id).state !== 'resolved') choose(b.id, e.outcome);
+    switch (e.type) {
+      case 'stunned':
+        fsmStunned(b);
+        break;
+      case 'resolved':
+        if (read(b.id).state !== 'resolved') choose(b.id, e.outcome);
+        break;
+      case 'voice': // the Watcher says Felix's name at his HP thresholds
+        needWorld().say(e.line, e.delayS > 0 ? e.delayS : undefined);
+        break;
+      case 'hit': // a bolt from afar engages a dormant enemy too
+        if (!read(b.id).engaged && read(b.id).state !== 'resolved') engage(b);
+        bump();
+        break;
+      default:
+        bump(); // telegraphs, strikes, teleports: the panel and the view refresh
+    }
   });
   void offEnemies;
 
@@ -253,13 +288,16 @@ export function createEncounterRuntime(options: EncounterRuntimeOptions): Encoun
     const b = bindingOf(id);
     const { state, engaged } = read(id);
     const weakenOk = !b?.weakenRequires || flags().includes(b.weakenRequires);
+    const fsm = b && isFsm(b) ? fsmEnemy(id) : undefined;
     return {
       id,
       entity: b?.entity ?? STUB_ENCOUNTERS[id].enemyId,
       state,
       engaged,
-      hostile: engaged && (state === 'idle' || state === 'weakened'),
-      telegraphing: telegraphs.has(id),
+      // An FSM enemy is only dangerous while it is aware of Elena: chasing, winding up, or waiting for its scripted first attack.
+      hostile: engaged && (state === 'idle' || state === 'weakened') && (fsm ? fsm.hostile || fsm.held || fsm.engaged : true),
+      telegraphing: telegraphs.has(id) || fsm?.scripted != null,
+      fsm: fsm !== undefined,
       canWeaken: engaged && state === 'idle' && weakenOk && !telegraphs.has(id) && !(b && isFsm(b)),
       canChoose: engaged && state === 'stunned',
       canPurify: purifyTaught(id),
@@ -276,7 +314,12 @@ export function createEncounterRuntime(options: EncounterRuntimeOptions): Encoun
     write(b.id, { engaged: true });
     if (isFsm(b)) {
       ensureFsm(b);
-      fsmEnemy(b.id)?.wake();
+      const fe = fsmEnemy(b.id);
+      if (fe) {
+        // A scripted first attack (Briggs) keeps him frozen through the transformation until it has played.
+        if (!b.telegraph || flags().includes(b.telegraph.wardFlag)) fe.release();
+        fe.wake();
+      }
     }
     for (const line of b.startLines ?? []) w.say(line);
     if (b.sequence) {
@@ -286,10 +329,23 @@ export function createEncounterRuntime(options: EncounterRuntimeOptions): Encoun
     return true;
   }
 
+  /**
+   * The scripted first attack starts (requirement 5.2): Ward is taught NOW, the moment the wind-up begins, so
+   * Elena can select it (3) and cast it (LMB) before the strike lands. On the FSM the strike is the enemy
+   * system's `startScripted` (through the real Ward); on the stub it is the timer below.
+   */
   function startTelegraph(b: EncounterBinding): void {
     const t = b.telegraph;
     if (!t || telegraphs.has(b.id) || flags().includes(t.wardFlag) || !read(b.id).engaged) return;
-    telegraphs.set(b.id, { left: t.seconds, warded: false });
+    store.getState().setFlag(t.wardFlag);
+    if (isFsm(b)) {
+      // A stunned enemy has no wind-up (the call is refused), but the Ward is taught all the same.
+      enemies?.startScripted(STUB_ENCOUNTERS[b.id].enemyId, { name: 'scripted_strike', damage: t.damage, seconds: t.seconds, hpFloor: t.hpFloor });
+      const fe = fsmEnemy(b.id);
+      if (fe && !fe.scripted) fe.release();
+    } else {
+      telegraphs.set(b.id, { left: t.seconds, warded: false });
+    }
     bump();
   }
 
@@ -304,7 +360,6 @@ export function createEncounterRuntime(options: EncounterRuntimeOptions): Encoun
         return { player: { ...s.player, hp: Math.max(hp - t.damage, Math.min(hp, t.hpFloor)) } };
       });
     }
-    store.getState().setFlag(t.wardFlag);
     bump();
   }
 
@@ -325,6 +380,7 @@ export function createEncounterRuntime(options: EncounterRuntimeOptions): Encoun
     const cur = read(id);
     if (cur.state === 'resolved') return 'already_resolved';
     if (!cur.engaged) return engage(b) ? null : 'cannot_engage';
+    if (isFsm(b)) return null; // the spells settle an FSM fight: pressing E on an engaged enemy does nothing
     if (!view(id).canWeaken) return 'not_ready';
     const r = stepEncounter(cur.state, 'weaken');
     if (!r.ok) return r.reason;
@@ -387,10 +443,13 @@ export function createEncounterRuntime(options: EncounterRuntimeOptions): Encoun
     for (const b of bindings) {
       if (read(b.id).state === 'resolved') continue;
       // A stunned ordinary FSM enemy keeps its (persistent) stun across a death.
-      const keepStun = isFsm(b) && fsmEnemy(b.id)?.state === 'stunned';
+      const fe = isFsm(b) ? fsmEnemy(b.id) : undefined;
+      const keepStun = fe?.state === 'stunned';
+      if (fe && !keepStun) fe.held = true; // dormant again until the story engages it
       write(b.id, { state: keepStun ? 'stunned' : 'idle', engaged: false });
     }
     store.getState().respawn();
+    hpRegen.reset();
     bump();
   }
 
@@ -401,6 +460,7 @@ export function createEncounterRuntime(options: EncounterRuntimeOptions): Encoun
       return;
     }
     enemies?.step(dt, p);
+    hpRegen.step(dt);
     for (const b of bindings) {
       if (sceneOfEntity(b.entity) !== store.getState().game.scene) continue; // enemies only act in their own scene
       if (isFsm(b)) ensureFsm(b);
@@ -412,6 +472,7 @@ export function createEncounterRuntime(options: EncounterRuntimeOptions): Encoun
         if (near && needWorld().sequences.active === null) engage(b);
         continue;
       }
+      if (isFsm(b)) syncFsm(b);
       if (!isFsm(b) && b.leash !== undefined && cur.state !== 'stunned' && !withinLeash(b)) {
         telegraphs.delete(b.id);
         stunTimers.delete(b.id);

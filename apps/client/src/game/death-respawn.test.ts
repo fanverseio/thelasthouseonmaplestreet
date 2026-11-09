@@ -54,11 +54,28 @@ describe('death resets the enemies (5.5)', () => {
     expect(b.cooldownOf(BRIGGS.abilities[0]!)).toBe(0);
   });
 
-  it('a stunned mini-boss also resets to full HP (an open question for the author)', () => {
+  it('a STUNNED mini-boss stays stunned across a death (5.7): same HP, back at its spawn, still choosable', () => {
     const { spells, enemies } = fsmRig();
     const b = enemies.spawn(BRIGGS, { x: 0, z: 0 });
     for (let i = 0; i < 6; i++) inject(spells, { targetId: 'briggs', damage: 45, charged: true });
     expect(b.state).toBe('stunned');
+    b.x = 3;
+    enemies.handlePlayerDeath();
+    expect(b.state).toBe('stunned');
+    expect(b.hp).toBe(90);
+    expect(b.engaged).toBe(true);
+    expect([b.x, b.z]).toEqual([0, 0]);
+    expect(spells.targetPosition('briggs')).not.toBeNull();
+    inject(spells, { targetId: 'briggs', spell: 'purify', damage: 0, stunned: true });
+    expect(b.state).toBe('purified');
+  });
+
+  it('an unstunned mini-boss at 40% HP resets to full HP (the engaged-boss rule)', () => {
+    const { spells, enemies } = fsmRig();
+    const b = enemies.spawn(BRIGGS, { x: 0, z: 0 });
+    for (let i = 0; i < 4; i++) inject(spells, { targetId: 'briggs', damage: 45, charged: true });
+    expect(b.state).not.toBe('stunned');
+    expect(b.hpFraction).toBeLessThan(0.7);
     enemies.handlePlayerDeath();
     expect(b.state).toBe('idle');
     expect(b.hp).toBe(300);

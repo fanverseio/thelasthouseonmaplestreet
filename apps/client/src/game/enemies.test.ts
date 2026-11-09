@@ -126,9 +126,9 @@ describe('enemy data (docs/combat-tuning.md section 4)', () => {
     expect(def.moralityClass).toBe(want.cls);
   });
 
-  it('animals are leashed at 20 m with a 12 m aggro; every def validates', () => {
+  it('animals are leashed (20 m, the street fox 15 m) with a 12 m aggro; every def validates', () => {
     for (const d of [FOX, HOUND, CAT]) {
-      expect(d.leashRadius).toBe(20);
+      expect(d.leashRadius).toBe(d === FOX ? 15 : 20);
       expect(d.aggroRadius).toBe(12);
     }
     for (const d of Object.values(ENEMY_DEFS)) expect(validateEnemyDef(d), d.id).toEqual([]);
@@ -495,13 +495,18 @@ describe('steering, wall sliding, patrol and leash', () => {
 describe('abilities layer', () => {
   const kinds: AbilityKind[] = ['telegraphedAttack', 'groundSlam', 'smokePuff', 'teleport', 'spawnDecoys', 'voiceAtHp'];
 
-  it('has a handler for every ability kind; only telegraphedAttack does anything yet', () => {
+  it('has a real handler for every ability kind (none is a no-op any more)', () => {
     expect(Object.keys(DEFAULT_ABILITIES).sort()).toEqual([...kinds].sort());
     expect(DEFAULT_ABILITIES.telegraphedAttack.run).toBeTypeOf('function');
-    for (const k of kinds.filter((x) => x !== 'telegraphedAttack')) expect(DEFAULT_ABILITIES[k], k).toBe(NOOP_ABILITY);
+    expect(DEFAULT_ABILITIES.groundSlam.run).toBeTypeOf('function');
+    expect(DEFAULT_ABILITIES.smokePuff.tryStart).toBeTypeOf('function');
+    expect(DEFAULT_ABILITIES.teleport.passive).toBeTypeOf('function');
+    expect(DEFAULT_ABILITIES.spawnDecoys.onHit).toBeTypeOf('function');
+    expect(DEFAULT_ABILITIES.voiceAtHp.onHit).toBeTypeOf('function');
+    for (const k of kinds) expect(DEFAULT_ABILITIES[k], k).not.toBe(NOOP_ABILITY);
   });
 
-  it('Briggs and the Watcher run their stub abilities without error and still attack', () => {
+  it('Briggs and the Watcher run all their abilities without error and still attack', () => {
     for (const def of [BRIGGS, WATCHER]) {
       const r = rig();
       r.enemies.spawn(def, { x: 0, z: -2 });

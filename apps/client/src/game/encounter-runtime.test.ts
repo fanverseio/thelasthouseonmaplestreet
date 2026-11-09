@@ -65,8 +65,10 @@ function approach(g: Game) {
 }
 
 /** Through the transformation and the scripted first attack; Ward is cast (or not) during the wind-up. */
-function throughAttack(g: Game, ward: boolean) {
+function throughAttack(g: Game, ward: boolean, hpAtAttack?: number) {
   g.tick(6.2);
+  // HP regenerates after 6 s without damage, so a test that needs low HP sets it just before the wind-up.
+  if (hpAtAttack !== undefined) g.store.setState((s) => ({ player: { ...s.player, hp: hpAtAttack } }));
   const v = g.encounters.view('briggs');
   expect(v.telegraphing).toBe(true);
   if (ward) expect(g.encounters.castWard()).toBe(true);
@@ -76,7 +78,7 @@ function throughAttack(g: Game, ward: boolean) {
 
 /** Weaken with E, wait for the stub's stun. */
 function weakenAndStun(g: Game) {
-  expect(g.world.prompt).toBe('E  Weaken Mr Briggs');
+  expect(g.world.prompt).toBe('E  Face Mr Briggs');
   expect(g.press()).toMatchObject({ status: 'done', id: BRIGGS });
   expect(g.encounters.view('briggs').state).toBe('weakened');
   g.tick(1.7);
@@ -119,14 +121,13 @@ describe.each([
     expect(g.world.sequences.active).toBe('seq3_cursed_neighbour');
     expect(g.world.canOpenLocket()).toBe(false); // combat-blocked while hostile
     g.walkTo(57, 7.4);
-    g.store.setState((s) => ({ player: { ...s.player, hp: 35 } }));
 
     // Too early: not weakened yet, no Ward.
     expect(g.world.prompt).toBe('E  Speak to Mr Briggs');
     expect(g.press()).toMatchObject({ status: 'refused', id: BRIGGS });
     expect(g.encounters.view('briggs').state).toBe('idle');
 
-    throughAttack(g, ward);
+    throughAttack(g, ward, 35);
     // The scripted hit cannot take HP below 30; a Ward blocks it entirely.
     expect(g.store.getState().player.hp).toBe(ward ? 35 : 30);
 
@@ -234,7 +235,7 @@ describe('Beat 4 rules', () => {
     g.walkTo(57, 8);
     expect(g.encounters.view('briggs').engaged).toBe(true);
     expect(g.world.sequences.active).toBe('seq3_cursed_neighbour');
-    expect(g.world.prompt).toBe('E  Weaken Mr Briggs'); // the Ward is already hers
+    expect(g.world.prompt).toBe('E  Face Mr Briggs'); // the Ward is already hers
     expect(g.press()).toMatchObject({ status: 'done' });
     g.tick(1.7);
     expect(g.encounters.choose('briggs', 'destroy')).toEqual({ ok: true });

@@ -19,7 +19,8 @@ const walkie = (outcome: 'briggs_purified' | 'briggs_destroyed'): InteractionDef
 /** Beat 4: the cursed neighbour (beat-sheet.md). The fight itself is game/encounter-runtime.ts. */
 export const BEAT4: InteractionContent = {
   interactions: [
-    // Before the Ward: speak to Briggs (engages). After it: weaken him. Both go to the encounter runtime.
+    // Before the Ward: speak to Briggs (engages). After it: face him. Both go to the encounter runtime; on the enemy FSM the
+    // fight itself is spells (Bolt, Ward, Purify), so a press on an engaged Briggs does nothing.
     {
       id: 'enemy.garden.briggs',
       prompt: 'Speak to Mr Briggs',
@@ -28,7 +29,7 @@ export const BEAT4: InteractionContent = {
     },
     {
       id: 'enemy.garden.briggs',
-      prompt: 'Weaken Mr Briggs',
+      prompt: 'Face Mr Briggs',
       show: { flags: ['spell_ward'], notFlags: UNRESOLVED },
       actions: [{ do: 'encounter', op: 'interact', id: 'briggs' }],
     },
