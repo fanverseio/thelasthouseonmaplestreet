@@ -10,6 +10,7 @@
  * - Resolved status is also derived from flags, so a loaded save agrees with its flags.
  */
 import type { EntityId, ProgressFlag, SequenceId } from '@tlh/shared';
+import { enemyDef, FSM_DEF_OF_ENCOUNTER } from '../content/enemies/index.ts';
 import { ALL_SEQUENCES } from '../content/sequences/index.ts';
 import { PLACEMENTS, type Placement } from '../content/world/placements.ts';
 import { sceneOfEntity } from '../content/world/scene-of.ts';
@@ -17,6 +18,7 @@ import { ENCOUNTER_BINDINGS } from '../content/encounters/index.ts';
 import type { GameStore } from '../store/game-store.ts';
 import type { SaveStorage } from '../services/save-storage.ts';
 import { createChoiceRuntime } from './dialogue-choice.ts';
+import { STUN_MIN_MAGIC, type Enemy, type EnemyEvent, type EnemySystem } from './enemies.ts';
 import { createEndingRuntime } from './ending.ts';
 import { createRitualRuntime } from './ritual.ts';
 import {
@@ -79,9 +81,18 @@ export interface EncounterBinding {
   /** Leave the stub's drop flags (e.g. walkie_found) to a player interaction instead of setting them. */
   deferDrops?: boolean;
   outcomeLines?: Partial<Record<EncounterChoice, readonly { line: string; after?: number }[]>>;
+  /**
+   * 'stub' (default): the panel flow of encounter-stub.ts (interact weakens, a timer stuns, buttons choose).
+   * `fsm`: the real enemy FSM of game/enemies.ts fights Elena; spells weaken, stun and resolve it. Needs the
+   * 'enemies' option of the runtime; without it the binding falls back to 'stub'. Flags, drops and morality
+   * come from the same stub tables either way.
+   */
+  mode?: 'stub' | 'fsm';
+  /** `fsm` mode: the EnemyDef id (content/enemies). Defaults to `FSM_DEF_OF_ENCOUNTER[id]`. */
+  fsmDef?: string;
 }
 
-export const STUN_MIN_MAGIC = 60;
+export { STUN_MIN_MAGIC };
 
 /** Plain data for the UI and the scene. Never carries the hidden score. */
 export interface EncounterView {
@@ -110,6 +121,8 @@ export interface EncounterRuntimeOptions {
   bindings?: readonly EncounterBinding[];
   sequences?: readonly SequenceDef[];
   placements?: Readonly<Record<EntityId, Placement>>;
+  /** The enemy FSM system; bindings with mode: 'fsm' run on it. */
+  enemies?: EnemySystem;
 }
 
 export interface EncounterRuntime {
@@ -135,12 +148,16 @@ export interface EncounterRuntime {
   /** The engaged, unresolved encounter, if any. */
   active(): EncounterView | null;
   readonly bindings: readonly EncounterBinding[];
+  /** The enemy FSM system, when one was given. */
+  readonly enemies: EnemySystem | undefined;
+  /** The live FSM enemy of an `fsm` binding, once spawned. */
+  fsmEnemy(id: StubEncounterId): Enemy | undefined;
   readonly version: number;
   subscribe(listener: () => void): () => void;
 }
 
 export function createEncounterRuntime(options: EncounterRuntimeOptions): EncounterRuntime {
-  const { store } = options;
+  const { store, enemies } = options;
   const bindings = options.bindings ?? ENCOUNTER_BINDINGS;
   const sequences = options.sequences ?? ALL_SEQUENCES;
   const placements = options.placements ?? PLACEMENTS;
@@ -194,6 +211,39 @@ export function createEncounterRuntime(options: EncounterRuntimeOptions): Encoun
     bump();
   }
 
+  /* ---- FSM mode (task 5.3 adapter): a binding with `mode: 'fsm'` is fought by the real enemy FSM ---- */
+
+  const isFsm = (b: EncounterBinding): boolean => b.mode === 'fsm' && enemies !== undefined;
+  const fsmEnemy = (id: StubEncounterId): Enemy | undefined => enemies?.get(STUB_ENCOUNTERS[id].enemyId);
+
+  /** Spawn the FSM enemy of a binding the first time its scene is up (a saved stun is restored). */
+  function ensureFsm(b: EncounterBinding): void {
+    if (!enemies || fsmEnemy(b.id)) return;
+    const def = enemyDef(b.fsmDef ?? FSM_DEF_OF_ENCOUNTER[b.id]);
+    const place = placements[b.entity];
+    if (!def || !place) return;
+    const cur = read(b.id);
+    if (cur.state === 'resolved') return;
+    enemies.spawn(def, { x: place.x, z: place.z }, { id: STUB_ENCOUNTERS[b.id].enemyId, stubId: b.id, scene: sceneOfEntity(b.entity), stunned: cur.state === 'stunned' });
+  }
+
+  /** The FSM stunned the enemy: mirror it into the encounter state, then the stun flags and lines. */
+  function fsmStunned(b: EncounterBinding): void {
+    if (read(b.id).state === 'resolved') return;
+    write(b.id, { state: 'stunned', engaged: true });
+    for (const f of b.stunFlags) store.getState().setFlag(f);
+    const lines = !purifyTaught(b.id) && b.stunLinesNoPurify ? b.stunLinesNoPurify : b.stunLines;
+    for (const l of lines ?? []) needWorld().say(l.line, l.after);
+  }
+
+  const offEnemies = enemies?.on((e: EnemyEvent) => {
+    const b = bindings.find((x) => isFsm(x) && STUB_ENCOUNTERS[x.id].enemyId === e.id);
+    if (!b) return;
+    if (e.type === 'stunned') fsmStunned(b);
+    else if (e.type === 'resolved' && read(b.id).state !== 'resolved') choose(b.id, e.outcome);
+  });
+  void offEnemies;
+
   function purifyTaught(id: StubEncounterId): boolean {
     const need = STUB_ENCOUNTERS[id].purifyRequires;
     return need === undefined || flags().includes(need);
@@ -210,7 +260,7 @@ export function createEncounterRuntime(options: EncounterRuntimeOptions): Encoun
       engaged,
       hostile: engaged && (state === 'idle' || state === 'weakened'),
       telegraphing: telegraphs.has(id),
-      canWeaken: engaged && state === 'idle' && weakenOk && !telegraphs.has(id),
+      canWeaken: engaged && state === 'idle' && weakenOk && !telegraphs.has(id) && !(b && isFsm(b)),
       canChoose: engaged && state === 'stunned',
       canPurify: purifyTaught(id),
       outcome: state === 'resolved' ? outcomeOf(id) : null,
@@ -224,6 +274,10 @@ export function createEncounterRuntime(options: EncounterRuntimeOptions): Encoun
     if (w.sequences.active !== null) return false;
     if (b.startFlag && !store.getState().setFlag(b.startFlag).ok) return false;
     write(b.id, { engaged: true });
+    if (isFsm(b)) {
+      ensureFsm(b);
+      fsmEnemy(b.id)?.wake();
+    }
     for (const line of b.startLines ?? []) w.say(line);
     if (b.sequence) {
       const def = sequences.find((s) => s.id === b.sequence);
@@ -306,6 +360,7 @@ export function createEncounterRuntime(options: EncounterRuntimeOptions): Encoun
     write(id, { state: r.next, outcome: choice });
     stunTimers.delete(id);
     for (const l of b.outcomeLines?.[choice] ?? []) w.say(l.line, l.after);
+    if (isFsm(b)) enemies?.forceResolve(def.enemyId, choice); // a panel choice also settles the FSM enemy
     return { ok: true };
   }
 
@@ -327,8 +382,13 @@ export function createEncounterRuntime(options: EncounterRuntimeOptions): Encoun
     telegraphs.clear();
     stunTimers.clear();
     refusedSaid.clear();
+    // FSM enemies first (5.5): resolved stay resolved, a mini-boss resets to full HP, the rest go back to their spawn.
+    enemies?.handlePlayerDeath();
     for (const b of bindings) {
-      if (read(b.id).state !== 'resolved') write(b.id, { state: 'idle', engaged: false });
+      if (read(b.id).state === 'resolved') continue;
+      // A stunned ordinary FSM enemy keeps its (persistent) stun across a death.
+      const keepStun = isFsm(b) && fsmEnemy(b.id)?.state === 'stunned';
+      write(b.id, { state: keepStun ? 'stunned' : 'idle', engaged: false });
     }
     store.getState().respawn();
     bump();
@@ -340,8 +400,10 @@ export function createEncounterRuntime(options: EncounterRuntimeOptions): Encoun
       handleDeath();
       return;
     }
+    enemies?.step(dt, p);
     for (const b of bindings) {
       if (sceneOfEntity(b.entity) !== store.getState().game.scene) continue; // enemies only act in their own scene
+      if (isFsm(b)) ensureFsm(b);
       const cur = read(b.id);
       if (cur.state === 'resolved') continue;
       if (!cur.engaged) {
@@ -350,7 +412,7 @@ export function createEncounterRuntime(options: EncounterRuntimeOptions): Encoun
         if (near && needWorld().sequences.active === null) engage(b);
         continue;
       }
-      if (b.leash !== undefined && cur.state !== 'stunned' && !withinLeash(b)) {
+      if (!isFsm(b) && b.leash !== undefined && cur.state !== 'stunned' && !withinLeash(b)) {
         telegraphs.delete(b.id);
         stunTimers.delete(b.id);
         refusedSaid.delete(b.id);
@@ -407,6 +469,8 @@ export function createEncounterRuntime(options: EncounterRuntimeOptions): Encoun
       return first;
     },
     bindings,
+    enemies,
+    fsmEnemy,
     get version() {
       return version;
     },
@@ -425,15 +489,16 @@ export function createEncounterRuntime(options: EncounterRuntimeOptions): Encoun
   }
 
   function hostileActive(): boolean {
-    return bindings.some((b) => view(b.id).hostile);
+    return bindings.some((b) => view(b.id).hostile) || enemies?.hostileActive() === true;
   }
 }
 
 /** Convenience: a world runtime and an encounter runtime wired together. */
-export function createEncounterWorld(options: WorldRuntimeOptions & { bindings?: readonly EncounterBinding[]; storage?: SaveStorage }) {
-  const { bindings, storage, ...worldOptions } = options;
+export function createEncounterWorld(options: WorldRuntimeOptions & { bindings?: readonly EncounterBinding[]; storage?: SaveStorage; enemies?: EnemySystem }) {
+  const { bindings, storage, enemies, ...worldOptions } = options;
   const encounters = createEncounterRuntime({
     store: options.store,
+    ...(enemies && { enemies }),
     ...(bindings && { bindings }),
     ...(options.content?.sequences && { sequences: options.content.sequences }),
     ...(options.content?.placements && { placements: options.content.placements }),

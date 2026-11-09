@@ -6,9 +6,15 @@ import { attachRuntime } from '../game/save.ts';
 import { TUTORIAL_TEXT } from '../content/interactions/beat2.ts';
 import { ALL_SEQUENCES } from '../content/sequences/index.ts';
 import { createEncounterWorld } from '../game/encounter-runtime.ts';
+import { shouldSpawnTraining, spawnTrainingEnemy } from '../game/dev-training.ts';
+import { EnemySystem } from '../game/enemies.ts';
+import type { Collider } from '../game/collision.ts';
+import { exteriorColliders } from '../content/world/exterior-layout.ts';
+import { interiorColliders } from '../content/world/interior-layout.ts';
 import { createSkipHold } from '../game/skip-hold.ts';
 import { SpellSystem, type SpellContext } from '../game/spells.ts';
 import { EncounterEnemies } from '../scene/encounter-enemies.tsx';
+import { FsmEnemies } from '../scene/fsm-enemies.tsx';
 import { Interactables } from '../scene/interactables.tsx';
 import { PointGlow } from '../scene/glow.tsx';
 import { Hands } from '../scene/hands.tsx';
@@ -41,12 +47,32 @@ import { VideoPlaceholder } from './video-placeholder.tsx';
 export function GameView() {
   const container = useRef<HTMLDivElement>(null);
   const input = useMemo(() => new InputController(), []);
+  // Spells: one headless system per game view. Enemies (5.3) register with it as targets and read its hit events.
+  const spells = useMemo(() => new SpellSystem({ store: gameStore }), []);
+  // Enemy FSM system (5.3): bindings with mode: 'fsm' and the dev training hound run on it. Colliders are cached per scene and flags.
+  const enemies = useMemo(() => {
+    let key: unknown = null;
+    let sceneKey = '';
+    let cached: readonly Collider[] = [];
+    return new EnemySystem({
+      store: gameStore,
+      spells,
+      colliders: () => {
+        const { scene } = gameStore.getState().game;
+        const flags = gameStore.getState().progress.flags;
+        if (flags !== key || scene !== sceneKey) {
+          key = flags;
+          sceneKey = scene;
+          cached = scene === 'last_house' ? interiorColliders(flags) : exteriorColliders(flags);
+        }
+        return cached;
+      },
+    });
+  }, [spells]);
   // One world runtime per game view: New Game mounts a fresh view, so timers and fired triggers start clean.
-  const { world: runtime, encounters, choices, ritual, ending } = useMemo(() => createEncounterWorld({ store: gameStore, storage: saveStorage, loadScene: loadSceneHook, onEffect: (e) => sfx.handleEffect(e) }), []);
+  const { world: runtime, encounters, choices, ritual, ending } = useMemo(() => createEncounterWorld({ store: gameStore, storage: saveStorage, enemies, loadScene: loadSceneHook, onEffect: (e) => sfx.handleEffect(e) }), [enemies]);
   useSyncExternalStore(runtime.subscribe, () => runtime.version);
   const skipHold = useMemo(() => createSkipHold(runtime.sequences, ALL_SEQUENCES), [runtime]);
-  // Spells: one headless system per game view. Targets (5.3+) register with it; for now only the Ward reaches the stub encounter.
-  const spells = useMemo(() => new SpellSystem({ store: gameStore }), []);
   const spellContext = useCallback((): SpellContext => {
     const f = gameStore.getState().progress.flags;
     return { hostileActive: encounters.hostileActive(), ritualActive: f.includes('ritual_active') && !f.includes('anchors_all') };
@@ -60,6 +86,10 @@ export function GameView() {
       encounters.castWard({ free: true }); // the telegraphed first attack counts a real Ward (magic already paid)
     }
   }), [spells, encounters]);
+  // Dev only: a practice hound off the route near the garden start (?start=garden). It changes no progress.
+  useEffect(() => {
+    if (shouldSpawnTraining(import.meta.env.DEV, window.location.search)) spawnTrainingEnemy(enemies);
+  }, [enemies]);
   useEffect(() => attachRuntime(runtime), [runtime]); // autosave reads / Continue restores the runtime state
   const phase = useGame((s) => s.game.phase);
   const flags = useGame((s) => s.progress.flags);
@@ -154,6 +184,7 @@ export function GameView() {
         {scene === 'last_house' && Interior ? <Interior flags={flags} /> : <ExteriorScene flags={flags} runtime={runtime} />}
         <Interactables runtime={runtime} flags={flags} />
         <EncounterEnemies encounters={encounters} />
+        <FsmEnemies enemies={enemies} />
         <PointGlow runtime={runtime} />
         <PlayerRig input={input} runtime={runtime} onOpenLocket={openLocket} skipHold={skipHold} spells={spells} spellContext={spellContext} />
         <SpellFx spells={spells} input={input} />

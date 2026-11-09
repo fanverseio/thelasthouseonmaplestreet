@@ -27,6 +27,7 @@ export function EncounterEnemies({ encounters }: { encounters: EncounterRuntime 
       {encounters.bindings.map((b) => {
         const p = PLACEMENTS[b.entity];
         if (!p || sceneOfEntity(b.entity) !== scene) return null; // only the enemies of the scene on screen
+        if (encounters.fsmEnemy(b.id)) return null; // an FSM-driven enemy is drawn by FsmEnemies
         // Optional (leashed) encounters such as the street fox only exist once their requirements are met.
         if (b.leash !== undefined && !(b.requires ?? []).every((f) => flags.includes(f))) return null;
         const l = look(encounters.view(b.id), b.leash !== undefined ? 0.4 : 1);

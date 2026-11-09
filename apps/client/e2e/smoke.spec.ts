@@ -37,3 +37,16 @@ test('the Last House scene loads lazily in dev via ?scene=last_house', async ({ 
   await expect(page.locator('canvas')).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+test('the dev garden start (with the practice hound) loads without errors', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.goto('/?start=garden');
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await page.getByRole('button', { name: 'New Game' }).click();
+  await page.getByRole('button', { name: 'Classic Story Mode' }).click();
+  await expect(page.getByTestId('game-view')).toBeVisible();
+  await expect(page.locator('canvas')).toBeVisible();
+  await page.waitForTimeout(500);
+  expect(errors).toEqual([]);
+});
