@@ -19,6 +19,8 @@ Short, durable notes that a future session needs and cannot easily re-derive. Ke
 
 - Add a beat = entities in registry + placements.ts + content/interactions/beatN.ts + content/sequences/beatN.ts + dialogue lines (world-runtime is generic).
 
+- Voice: node tools/gen-voice.mjs (ElevenLabs, key from .env, output assets/raw/vo). Child voices cannot be designed (safety block); pick young/cartoon library voices.
+
 ## Gotchas
 - TypeScript is pinned to 6.0.x (typescript-eslint 8 rejects TS 7). TS 6 defaults `types` to [], so set them per tsconfig.
 - Server runs `.ts` directly (Node >=22.18 type stripping): use `.ts` import extensions, `import type`, no enums or parameter properties.

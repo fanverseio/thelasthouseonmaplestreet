@@ -98,3 +98,6 @@ game/enemies.ts FSM + content/enemies; game/morality.ts; death/respawn rules. Op
 
 ## 2026-11-09 | milestone | Section 5 done (4e18903, 87fc917)
 898 tests. Ritual = smoke pattern director (rings, pools, wraiths) + real anchors (north: bolt the 100 HP shell then hold E 3 s; east: hold E 6 s, Ward blocks strikes; west: Purify channel 4 s); magic floors near anchors. Feedback: hit flash, hurt vignette (reduce flashing softer), 1.5 s death fade, hand poses, VFX, SFX. Open: anchor progress not saved across save/load; east suspends rings. Playtest sections 10-13 appended (uncommitted, author commits). Next: art track or video API.
+
+## 2026-11-09 | milestone | ElevenLabs hooked up (tools/gen-voice.mjs)
+Starter tier, 64,440 chars/month (reset 2026-11-30); all 176 lines are ~11k chars. Models: eleven_v4, v4_turbo, v3, multilingual_v2 (default), flash/turbo v2.5. Auditions in assets/raw/vo (ignored). Gotcha: Voice Design blocks child voices (Felix, Gartner) by safety policy; use young adult/cartoon voices instead. Added library voice 'TLH test Teddy' to the account. Author .env uses ELEVENLABS_VOICE_ID_NEIGHBOUR; the tool reads ELEVENLABS_VOICE_ID_BRIGGS.
