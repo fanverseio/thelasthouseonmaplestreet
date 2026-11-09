@@ -1,6 +1,7 @@
 import { Canvas } from '@react-three/fiber';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { InputController } from '../game/input.ts';
+import { devKillPlayer } from '../game/dev-start.ts';
 import { attachRuntime } from '../game/save.ts';
 import { TUTORIAL_TEXT } from '../content/interactions/beat2.ts';
 import { ALL_SEQUENCES } from '../content/sequences/index.ts';
@@ -61,6 +62,19 @@ export function GameView() {
     if (import.meta.env.DEV && new URLSearchParams(window.location.search).get('scene') === 'last_house') {
       gameStore.getState().setScene('last_house');
     }
+  }, []);
+
+  // Developer shortcut (dev builds only): F9 sets health to 0 to test death and respawn.
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.code === 'F9' && gameStore.getState().game.phase === 'playing') {
+        e.preventDefault();
+        devKillPlayer(gameStore);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
   }, []);
 
   useEffect(() => {

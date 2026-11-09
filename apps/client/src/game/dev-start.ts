@@ -80,3 +80,11 @@ export function applyDevStart(store: GameStore, start: DevStart): string[] {
   store.getState().respawn();
   return failed;
 }
+
+/**
+ * Dev-only F9 (the caller checks `import.meta.env.DEV`): drop health to 0 so death and respawn can be tested by
+ * hand. The encounter runtime sees hp <= 0 on its next tick and does the real death handling.
+ */
+export function devKillPlayer(store: GameStore): void {
+  store.setState((s) => ({ player: { ...s.player, hp: 0 } }));
+}

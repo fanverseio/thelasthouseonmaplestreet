@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { createGameStore } from '../store/game-store.ts';
-import { applyDevStart, DEV_STARTS, isDevStart } from './dev-start.ts';
+import { createEncounterWorld } from './encounter-runtime.ts';
+import { SIM_DT } from './player.ts';
+import { applyDevStart, DEV_STARTS, devKillPlayer, isDevStart } from './dev-start.ts';
 
 describe('dev start', () => {
   it('replays real flags with no rejection and lands on the right checkpoint', () => {
@@ -79,5 +81,23 @@ describe('dev start: lane and grounds', () => {
     expect(DEV_STARTS.grounds).not.toContain('seq5_done');
     expect(isDevStart('lane')).toBe(true);
     expect(isDevStart('grounds')).toBe(true);
+  });
+});
+
+describe('dev-only F9 (Q22)', () => {
+  it('sets health to 0 and the real death handling respawns at the checkpoint with full health', () => {
+    const store = createGameStore();
+    store.getState().startNewGame('classic');
+    applyDevStart(store, 'street');
+    store.getState().setPhase('playing');
+    const { world, encounters } = createEncounterWorld({ store });
+    const before = store.getState().player.respawns;
+    devKillPlayer(store);
+    expect(store.getState().player.hp).toBe(0);
+    world.tick(SIM_DT, { x: 0, z: 0 });
+    expect(store.getState().player.hp).toBe(100);
+    expect(store.getState().player.respawns).toBe(before + 1);
+    expect(store.getState().game.checkpointId).toBe('cp_street');
+    expect(encounters.hostileActive()).toBe(false);
   });
 });
