@@ -75,9 +75,11 @@ export function PlayerRig({ input, runtime, onOpenLocket, skipHold, spells, spel
         runtime.setHeld(input.state.interactDown);
         skipHold?.feed(input.state.interactHeldMs); // hold E 1 s skips a skippable cinematic
         // A playing cinematic clip holds the player in place; the world still ticks.
-        if (!runtime.video && runtime.sequences.policy.control !== 'limited') stepPlayer(body.current, input.state, dt, { colliders, sensitivity });
+        // Elena lies still while the death fade runs (HP 0 until the respawn).
+        const dead = gameStore.getState().player.hp <= 0;
+        if (!dead && !runtime.video && runtime.sequences.policy.control !== 'limited') stepPlayer(body.current, input.state, dt, { colliders, sensitivity });
         runtime.tick(dt, pose());
-        if (spells && spellContext) {
+        if (spells && spellContext && !dead) {
           spells.step(dt, input.state, { x: body.current.x, y: EYE_HEIGHT, z: body.current.z, yaw: body.current.yaw, pitch: body.current.pitch }, spellContext());
           // The one-frame LMB edges must reach only one step, even when a frame runs several.
           input.state.lmbTap = false;

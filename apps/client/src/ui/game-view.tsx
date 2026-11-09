@@ -13,6 +13,8 @@ import { exteriorColliders } from '../content/world/exterior-layout.ts';
 import { interiorColliders } from '../content/world/interior-layout.ts';
 import { createSkipHold } from '../game/skip-hold.ts';
 import { SpellSystem, type SpellContext } from '../game/spells.ts';
+import { CombatFeedback, FEEDBACK_TUNING } from '../game/combat-feedback.ts';
+import { CombatFx } from '../scene/combat-fx.tsx';
 import { EncounterEnemies } from '../scene/encounter-enemies.tsx';
 import { FsmEnemies } from '../scene/fsm-enemies.tsx';
 import { Interactables } from '../scene/interactables.tsx';
@@ -24,12 +26,13 @@ import { ExteriorScene } from '../scene/exterior-scene.tsx';
 import { PlayerRig } from '../scene/player-rig.tsx';
 import { loadedLastHouse, loadSceneHook, preloadLastHouse } from '../services/scene-loader.ts';
 import { bindInput } from '../services/input-bindings.ts';
-import { doorCueForFlags, sfx } from '../services/sfx.ts';
+import { cueForEnemyEvent, doorCueForFlags, sfx } from '../services/sfx.ts';
 import { GATES } from '../content/world/gates.ts';
-import { gameStore, saveStorage, useGame } from '../store/index.ts';
+import { gameStore, saveStorage, settingsStore, useGame } from '../store/index.ts';
 import { DialogueChoicePanel } from './dialogue-choice.tsx';
 import { EndingChoicePanel } from './ending-choice.tsx';
 import { EncounterPanel } from './encounter-stub.tsx';
+import { CombatOverlays } from './combat-overlays.tsx';
 import { Hud } from './hud.tsx';
 import { PositionReadout } from './position-readout.tsx';
 import { Locket } from './locket.tsx';
@@ -71,8 +74,32 @@ export function GameView() {
       },
     });
   }, [spells]);
+  // Combat feedback (5.11): hit flashes and knockback, the hurt vignette, sparks / motes / dissolve. Headless state, stepped in sim time.
+  const feedback = useMemo(
+    () => new CombatFeedback({ enemies, spells, player: () => ({ x: gameStore.getState().player.pos[0], z: gameStore.getState().player.pos[2] }), reduceFlashing: () => settingsStore.getState().reduceFlashing }),
+    [enemies, spells],
+  );
   // One world runtime per game view: New Game mounts a fresh view, so timers and fired triggers start clean.
-  const { world: runtime, encounters, choices, ritual, ending } = useMemo(() => createEncounterWorld({ store: gameStore, storage: saveStorage, enemies, spells, loadScene: loadSceneHook, onEffect: (e) => sfx.handleEffect(e) }), [enemies, spells]);
+  const { world: runtime, encounters, choices, ritual, ending } = useMemo(
+    () =>
+      createEncounterWorld({
+        store: gameStore,
+        storage: saveStorage,
+        enemies,
+        spells,
+        deathFadeS: FEEDBACK_TUNING.deathFadeS, // 1.5 s fade to black, then the respawn
+        onRespawn: () => feedback.noteRespawn(),
+        onTick: (dt) => feedback.step(dt),
+        loadScene: loadSceneHook,
+        onEffect: (e) => sfx.handleEffect(e),
+      }),
+    [enemies, spells, feedback],
+  );
+  // Placeholder combat sounds (hit, hurt, stun, purify done, destroy, slam, teleport).
+  useEffect(() => enemies.on((e) => {
+    const cue = cueForEnemyEvent(e);
+    if (cue) sfx.play(cue);
+  }), [enemies]);
   useSyncExternalStore(runtime.subscribe, () => runtime.version);
   const skipHold = useMemo(() => createSkipHold(runtime.sequences, ALL_SEQUENCES), [runtime]);
   const spellContext = useCallback((): SpellContext => {
@@ -186,13 +213,15 @@ export function GameView() {
         {scene === 'last_house' && Interior ? <Interior flags={flags} /> : <ExteriorScene flags={flags} runtime={runtime} />}
         <Interactables runtime={runtime} flags={flags} />
         <EncounterEnemies encounters={encounters} />
-        <FsmEnemies enemies={enemies} />
+        <FsmEnemies enemies={enemies} feedback={feedback} />
+        <CombatFx feedback={feedback} />
         <RitualFx ritual={ritual} />
         <PointGlow runtime={runtime} />
         <PlayerRig input={input} runtime={runtime} onOpenLocket={openLocket} skipHold={skipHold} spells={spells} spellContext={spellContext} />
         <SpellFx spells={spells} input={input} />
-        <Hands />
+        <Hands spells={spells} input={input} />
       </Canvas>
+      {phase === 'playing' && <CombatOverlays feedback={feedback} encounters={encounters} />}
       {phase === 'playing' && <Hud actions={runtime.actions} tutorial={runtime.tutorial ? (TUTORIAL_TEXT[runtime.tutorial] ?? null) : null} />}
       {phase === 'playing' && <div className="crosshair" aria-hidden="true" />}
       {phase === 'playing' && <SpellHud spells={spells} input={input} />}

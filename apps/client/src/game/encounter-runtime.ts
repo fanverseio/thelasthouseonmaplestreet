@@ -127,9 +127,18 @@ export interface EncounterRuntimeOptions {
   placements?: Readonly<Record<EntityId, Placement>>;
   /** The enemy FSM system; bindings with mode: 'fsm' run on it. */
   enemies?: EnemySystem;
+  /**
+   * Seconds Elena lies dead (the view fades to black) before the respawn (combat-tuning section 7: 1.5 s). Default 0:
+   * respawn on the same step, which the headless tests rely on. The game view passes 1.5.
+   */
+  deathFadeS?: number;
+  /** Called right after a respawn (the view starts fading back in). */
+  onRespawn?: () => void;
 }
 
 export interface EncounterRuntime {
+  /** 0 while alive; 0..1 while the death fade runs (1 = black, the respawn follows). */
+  deathProgress(): number;
   /** Must be called once before use (createEncounterWorld does it). */
   attach(world: WorldRuntime): void;
   /** Options to pass to createWorldRuntime so the two layers are connected. */
@@ -177,6 +186,8 @@ export function createEncounterRuntime(options: EncounterRuntimeOptions): Encoun
   const refusedSaid = new Set<StubEncounterId>();
   /** Elena's HP regeneration (combat-tuning section 1): 5/s after 6 s without damage. */
   const hpRegen = new HpRegen(store);
+  /** The death fade in progress (Elena is at 0 HP), or null. */
+  let dying: { left: number; total: number } | null = null;
 
   const bump = () => {
     version++;
@@ -454,12 +465,24 @@ export function createEncounterRuntime(options: EncounterRuntimeOptions): Encoun
     }
     store.getState().respawn();
     hpRegen.reset();
+    dying = null;
+    options.onRespawn?.();
     bump();
   }
 
   function tick(dt: number, p: PlayerPose): void {
     pose = p;
     if (store.getState().player.hp <= 0) {
+      // Death fade (1.5 s in the game view), then the respawn. Everything stays as it was meanwhile.
+      const total = options.deathFadeS ?? 0;
+      if (total > 0) {
+        dying ??= { left: total, total };
+        dying.left -= dt;
+        if (dying.left > 0) {
+          bump();
+          return;
+        }
+      }
       handleDeath();
       return;
     }
@@ -536,6 +559,7 @@ export function createEncounterRuntime(options: EncounterRuntimeOptions): Encoun
     bindings,
     enemies,
     fsmEnemy,
+    deathProgress: () => (dying ? Math.min(1, Math.max(0, 1 - dying.left / dying.total)) : 0),
     get version() {
       return version;
     },
@@ -560,11 +584,13 @@ export function createEncounterRuntime(options: EncounterRuntimeOptions): Encoun
 
 /** Convenience: a world runtime and an encounter runtime wired together. */
 export function createEncounterWorld(
-  options: WorldRuntimeOptions & { bindings?: readonly EncounterBinding[]; storage?: SaveStorage; enemies?: EnemySystem; spells?: SpellSystem },
+  options: WorldRuntimeOptions & { bindings?: readonly EncounterBinding[]; storage?: SaveStorage; enemies?: EnemySystem; spells?: SpellSystem; deathFadeS?: number; onRespawn?: () => void },
 ) {
-  const { bindings, storage, enemies, spells, ...worldOptions } = options;
+  const { bindings, storage, enemies, spells, deathFadeS, onRespawn, ...worldOptions } = options;
   const encounters = createEncounterRuntime({
     store: options.store,
+    ...(deathFadeS !== undefined && { deathFadeS }),
+    ...(onRespawn && { onRespawn }),
     ...(enemies && { enemies }),
     ...(bindings && { bindings }),
     ...(options.content?.sequences && { sequences: options.content.sequences }),

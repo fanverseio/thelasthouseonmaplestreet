@@ -5,6 +5,7 @@
  * and rate-limits each cue.
  */
 import { settingsStore } from '../store/index.ts';
+import type { EnemyEvent } from '../game/enemies.ts';
 import type { SequenceEffect } from '../game/sequences.ts';
 import { ensureAudioContext } from './audio-engine.ts';
 
@@ -39,7 +40,53 @@ export const CUE_TABLE: Readonly<Record<string, readonly CueLayer[]>> = {
   ],
   // door open creak: a slow, wavering saw
   sfx_door_open: [{ type: 'tone', wave: 'sawtooth', f0: 140, f1: 210, start: 0, seconds: 0.7, gain: 0.3 }],
+  // combat feedback (task 5.11): all synthesised placeholders
+  sfx_hit: [
+    { type: 'noise', f0: 900, f1: 300, start: 0, seconds: 0.12, gain: 0.7 },
+    { type: 'tone', wave: 'sine', f0: 170, f1: 80, start: 0, seconds: 0.12, gain: 0.5 },
+  ],
+  sfx_hurt: [
+    { type: 'tone', wave: 'sawtooth', f0: 210, f1: 90, start: 0, seconds: 0.3, gain: 0.35 },
+    { type: 'noise', f0: 500, f1: 200, start: 0, seconds: 0.2, gain: 0.5 },
+  ],
+  sfx_stun: [{ type: 'tone', wave: 'sine', f0: 520, f1: 240, start: 0, seconds: 0.5, gain: 0.35 }],
+  sfx_purify_done: [
+    { type: 'tone', wave: 'sine', f0: 523, f1: 784, start: 0, seconds: 0.6, gain: 0.4 },
+    { type: 'tone', wave: 'sine', f0: 784, f1: 1046, start: 0.15, seconds: 0.7, gain: 0.3 },
+  ],
+  sfx_destroy: [
+    { type: 'noise', f0: 1200, f1: 200, start: 0, seconds: 0.7, gain: 0.6 },
+    { type: 'tone', wave: 'sine', f0: 120, f1: 50, start: 0, seconds: 0.5, gain: 0.5 },
+  ],
+  sfx_slam: [
+    { type: 'tone', wave: 'sine', f0: 70, f1: 30, start: 0, seconds: 0.4, gain: 1 },
+    { type: 'noise', f0: 400, f1: 100, start: 0, seconds: 0.3, gain: 0.6 },
+  ],
+  sfx_teleport: [
+    { type: 'tone', wave: 'sine', f0: 900, f1: 200, start: 0, seconds: 0.35, gain: 0.3 },
+    { type: 'noise', f0: 2000, f1: 400, start: 0, seconds: 0.3, gain: 0.35 },
+  ],
 };
+
+/** Which cue (if any) an enemy-system event should sound (task 5.11). Quiet events return null. */
+export function cueForEnemyEvent(e: EnemyEvent): string | null {
+  switch (e.type) {
+    case 'hit':
+      return 'sfx_hit';
+    case 'player_damaged':
+      return e.amount > 0 ? 'sfx_hurt' : null;
+    case 'stunned':
+      return 'sfx_stun';
+    case 'resolved':
+      return e.outcome === 'purify' ? 'sfx_purify_done' : 'sfx_destroy';
+    case 'attack':
+      return e.ability === 'groundSlam' && e.hit ? 'sfx_slam' : null;
+    case 'teleported':
+      return 'sfx_teleport';
+    default:
+      return null;
+  }
+}
 
 /** Minimum seconds between two plays of the same cue. */
 export const CUE_MIN_INTERVAL_S = 0.15;
