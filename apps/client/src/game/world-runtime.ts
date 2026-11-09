@@ -692,7 +692,10 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
     if (!line) return null;
     played = markPlayed(played, pick.id);
     const speaker = { lineId: line.id, speaker: line.speaker, text: line.text };
+    // Classic: the line is shown in the Angel panel like any other Angel line; play never pauses for it.
+    subtitle = { ...speaker, until: simTime + subtitleSeconds(line.text) };
     options.onLine?.(speaker);
+    changed();
     const next = selectClassicLine({ ...ctx, played });
     return { line: speaker, hasNext: next !== null && (played[next.id] ?? 0) === 0 };
   }
