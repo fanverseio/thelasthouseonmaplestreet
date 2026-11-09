@@ -12,7 +12,7 @@ export const BRIGGS_BINDING: EncounterBinding = {
   weakenRequires: 'spell_ward',
   stunAfter: 1.5,
   stunFlags: ['spell_purify'],
-  telegraph: { promptId: 'briggs_ward', seconds: 1.5, damage: 12, hpFloor: 30, wardFlag: 'spell_ward', magicCost: 25 },
+  telegraph: { promptId: 'briggs_ward', seconds: 2.5, damage: 12, hpFloor: 30, wardFlag: 'spell_ward', magicCost: 25 },
   // The walkie drops when the smoke lets go; the player picks it up (clue.garden.walkie sets walkie_found).
   deferDrops: true,
   outcomeLines: {
@@ -45,15 +45,19 @@ export const WATCHER_BINDING: EncounterBinding = {
 
 /**
  * Beat 2-3 (beat-sheet.md): the optional street fox. No sequence, no Ward, no start flag: stub rules only.
- * Leashed to 20 m (walking away resets it and changes nothing). Purify stays refused until spell_purify.
+ * Leashed to 15 m (walking away resets it and changes nothing). Purify stays refused until spell_purify.
  */
 export const STREET_FOX_BINDING: EncounterBinding = {
   id: 'street_fox',
   entity: 'enemy.street.fox',
   requires: ['seq2_done'],
-  leash: 20,
+  leash: 15,
+  startLines: ['vo_angel_fox_c1'],
   stunAfter: 1,
   stunFlags: [],
+  // Q25: before Purify is taught Elena pities it; pressing 2 anyway gets the Angel's refusal line.
+  stunLinesNoPurify: [{ line: 'vo_elena_fox_01' }],
+  purifyRefusedLine: 'vo_angel_fox_c2',
 }
 
 /**

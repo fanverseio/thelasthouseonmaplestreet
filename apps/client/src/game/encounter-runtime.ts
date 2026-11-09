@@ -72,6 +72,10 @@ export interface EncounterBinding {
   telegraph?: TelegraphDef;
   /** Spoken when the enemy is stunned (after the stun flags are set). */
   stunLines?: readonly { line: string; after?: number }[];
+  /** Spoken instead of `stunLines` while the stub's Purify spell is not taught yet. */
+  stunLinesNoPurify?: readonly { line: string; after?: number }[];
+  /** Spoken (once per engagement) when the player tries Purify before it is taught. */
+  purifyRefusedLine?: string;
   /** Leave the stub's drop flags (e.g. walkie_found) to a player interaction instead of setting them. */
   deferDrops?: boolean;
   outcomeLines?: Partial<Record<EncounterChoice, readonly { line: string; after?: number }[]>>;
@@ -91,6 +95,8 @@ export interface EncounterView {
   telegraphing: boolean;
   canWeaken: boolean;
   canChoose: boolean;
+  /** Purify is taught (or needs no spell); the panel hides Purify while this is false. */
+  canPurify: boolean;
   /** Which way a resolved encounter went. */
   outcome: EncounterChoice | null;
 }
@@ -146,6 +152,8 @@ export function createEncounterRuntime(options: EncounterRuntimeOptions): Encoun
   const telegraphs = new Map<StubEncounterId, { left: number; warded: boolean }>();
   /** Seconds left until the weakened enemy is stunned. */
   const stunTimers = new Map<StubEncounterId, number>();
+  /** Encounters whose "Purify is not taught" line was already spoken this engagement. */
+  const refusedSaid = new Set<StubEncounterId>();
 
   const bump = () => {
     version++;
@@ -186,6 +194,11 @@ export function createEncounterRuntime(options: EncounterRuntimeOptions): Encoun
     bump();
   }
 
+  function purifyTaught(id: StubEncounterId): boolean {
+    const need = STUB_ENCOUNTERS[id].purifyRequires;
+    return need === undefined || flags().includes(need);
+  }
+
   function view(id: StubEncounterId): EncounterView {
     const b = bindingOf(id);
     const { state, engaged } = read(id);
@@ -199,6 +212,7 @@ export function createEncounterRuntime(options: EncounterRuntimeOptions): Encoun
       telegraphing: telegraphs.has(id),
       canWeaken: engaged && state === 'idle' && weakenOk && !telegraphs.has(id),
       canChoose: engaged && state === 'stunned',
+      canPurify: purifyTaught(id),
       outcome: state === 'resolved' ? outcomeOf(id) : null,
     };
   }
@@ -247,7 +261,8 @@ export function createEncounterRuntime(options: EncounterRuntimeOptions): Encoun
     write(b.id, { state: r.state });
     for (const f of b.stunFlags) store.getState().setFlag(f);
     store.setState((s) => (s.player.magic >= STUN_MIN_MAGIC ? s : { player: { ...s.player, magic: STUN_MIN_MAGIC } }));
-    for (const l of b.stunLines ?? []) needWorld().say(l.line, l.after);
+    const lines = !purifyTaught(b.id) && b.stunLinesNoPurify ? b.stunLinesNoPurify : b.stunLines;
+    for (const l of lines ?? []) needWorld().say(l.line, l.after);
   }
 
   function interact(id: StubEncounterId): string | null {
@@ -271,7 +286,13 @@ export function createEncounterRuntime(options: EncounterRuntimeOptions): Encoun
     const def = STUB_ENCOUNTERS[id];
     const siblingStates = Object.fromEntries((def.group ?? []).map((g) => [g, read(g).state]));
     const r = resolveEncounter({ id, state: read(id).state, choice, flags: flags(), siblingStates });
-    if (!r.ok) return { ok: false, reason: r.reason };
+    if (!r.ok) {
+      if (r.reason === 'purify_locked' && b.purifyRefusedLine && !refusedSaid.has(id)) {
+        refusedSaid.add(id);
+        w.say(b.purifyRefusedLine);
+      }
+      return { ok: false, reason: r.reason };
+    }
     const drops: readonly ProgressFlag[] = b.deferDrops ? def.dropFlags : [];
     for (const flag of r.flagsToSet) {
       if (drops.includes(flag)) continue;
@@ -305,6 +326,7 @@ export function createEncounterRuntime(options: EncounterRuntimeOptions): Encoun
     needWorld().sequences.interrupt('death');
     telegraphs.clear();
     stunTimers.clear();
+    refusedSaid.clear();
     for (const b of bindings) {
       if (read(b.id).state !== 'resolved') write(b.id, { state: 'idle', engaged: false });
     }
@@ -331,6 +353,7 @@ export function createEncounterRuntime(options: EncounterRuntimeOptions): Encoun
       if (b.leash !== undefined && cur.state !== 'stunned' && !withinLeash(b)) {
         telegraphs.delete(b.id);
         stunTimers.delete(b.id);
+        refusedSaid.delete(b.id);
         write(b.id, { state: 'idle', engaged: false });
         continue;
       }

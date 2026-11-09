@@ -47,7 +47,7 @@ describe('street fox content', () => {
     expect(b.startFlag).toBeUndefined();
     expect(b.telegraph).toBeUndefined();
     expect(b.weakenRequires).toBeUndefined();
-    expect(b.leash).toBe(20);
+    expect(b.leash).toBe(15); // Q3: the garden gate (about 19.4 m away) is out of range
     expect(createWorldRegistry().has(b.entity)).toBe(true);
     expect(PLACEMENTS[b.entity]).toBeDefined();
   });
@@ -94,6 +94,23 @@ describe('street fox: optional stub encounter', () => {
     expect(g.encounters.view('street_fox').outcome).toBe('purify');
   });
 
+  it('hides Purify for the fox until spell_purify (Q1) and plays the fox lines (Q25)', () => {
+    const g = setup();
+    g.goTo(42, 29.5);
+    expect(g.world.spoken).toContain('vo_angel_fox_c1'); // engage
+    g.press();
+    g.tick(1.2);
+    expect(g.encounters.view('street_fox')).toMatchObject({ canChoose: true, canPurify: false });
+    expect(g.world.spoken).toContain('vo_elena_fox_01'); // stunned, Purify not taught
+    expect(g.world.spoken).not.toContain('vo_angel_fox_c2');
+    expect(g.encounters.choose('street_fox', 'purify')).toEqual({ ok: false, reason: 'purify_locked' });
+    expect(g.world.spoken).toContain('vo_angel_fox_c2'); // purify-refused
+    g.encounters.choose('street_fox', 'purify');
+    expect(g.world.spoken.filter((l) => l === 'vo_angel_fox_c2')).toHaveLength(1);
+    for (const f of ['seq3_started', 'spell_ward', 'spell_purify']) expect(g.store.getState().setFlag(f).ok, f).toBe(true);
+    expect(g.encounters.view('street_fox').canPurify).toBe(true);
+  });
+
   it('locket is combat_blocked while hostile and allowed once stunned', () => {
     const g = setup();
     expect(g.world.canOpenLocket()).toBe(true);
@@ -106,15 +123,15 @@ describe('street fox: optional stub encounter', () => {
     expect(g.world.canOpenLocket()).toBe(true);
   });
 
-  it('skip by walking away: a hostile fox resets at 20 m, nothing changes, and it can be re-engaged', () => {
+  it('skip by walking away: a hostile fox resets at 15 m, nothing changes, and it can be re-engaged', () => {
     const g = setup();
     const before = [...g.flags()];
     g.goTo(42, 29.5);
     expect(g.encounters.view('street_fox').engaged).toBe(true);
-    g.goTo(42 + 21, 29.5);
+    g.goTo(42 + 16, 29.5);
     expect(g.encounters.view('street_fox')).toMatchObject({ engaged: false, state: 'idle', hostile: false });
     expect(g.world.canOpenLocket()).toBe(true);
-    g.goTo(42 + 19, 29.5); // still within sight, not engaged again by itself (the trigger fires once)
+    g.goTo(42 + 14, 29.5); // still within sight, not engaged again by itself (the trigger fires once)
     expect(g.encounters.view('street_fox').engaged).toBe(false);
     g.tick(30);
     expect([...g.flags()]).toEqual(before);
@@ -153,9 +170,12 @@ describe('street fox: optional stub encounter', () => {
     g.tick(30);
     expect(g.store.getState().player.hp).toBe(hp0);
     expect(g.world.sequences.active).toBeNull();
-    g.goTo(57, 20); // heading for the garden: 17 m away, still hostile and harmless
+    g.goTo(50, 25); // about 8 m away: still hostile and harmless
     expect(g.world.canOpenLocket()).toBe(false);
-    g.goTo(58, 12); // 24 m away: gave up
+    g.goTo(57, 20); // heading for the garden: 17 m away, past the 15 m leash: it gave up (Q3)
+    expect(g.encounters.hostileActive()).toBe(false);
+    expect(g.world.canOpenLocket()).toBe(true);
+    g.goTo(58, 12); // 24 m away: still gone
     expect(g.encounters.hostileActive()).toBe(false);
     expect(g.flags()).not.toContain('enc_street_resolved');
     g.goTo(42, 29.5);

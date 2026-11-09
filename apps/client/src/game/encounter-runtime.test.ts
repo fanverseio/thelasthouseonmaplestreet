@@ -70,7 +70,7 @@ function throughAttack(g: Game, ward: boolean) {
   const v = g.encounters.view('briggs');
   expect(v.telegraphing).toBe(true);
   if (ward) expect(g.encounters.castWard()).toBe(true);
-  g.tick(1.6);
+  g.tick(2.6); // the wind-up is 2.5 s (Q31)
   expect(g.flags()).toContain('spell_ward');
 }
 

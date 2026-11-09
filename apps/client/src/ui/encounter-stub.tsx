@@ -74,14 +74,18 @@ export function EncounterPanel({ encounters }: { encounters: EncounterRuntime })
       {active.canChoose && (
         <>
           <div>
-            <button type="button" onClick={() => encounters.choose(active.id, 'purify')}>
-              Purify (2)
-            </button>{' '}
+            {active.canPurify && (
+              <>
+                <button type="button" onClick={() => encounters.choose(active.id, 'purify')}>
+                  Purify (2)
+                </button>{' '}
+              </>
+            )}
             <button type="button" onClick={() => encounters.choose(active.id, 'destroy')}>
               Destroy (hold Enter)
             </button>
           </div>
-          <small>2 + hold LMB: Purify | Arcane Bolt, hold LMB: Destroy</small>
+          <small>{active.canPurify ? '2: Purify · hold Enter: Destroy' : 'hold Enter: Destroy'}</small>
         </>
       )}
     </div>
