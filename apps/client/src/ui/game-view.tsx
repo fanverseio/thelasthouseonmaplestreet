@@ -17,6 +17,7 @@ import { CombatFeedback, FEEDBACK_TUNING } from '../game/combat-feedback.ts';
 import { CombatFx } from '../scene/combat-fx.tsx';
 import { EncounterEnemies } from '../scene/encounter-enemies.tsx';
 import { FsmEnemies } from '../scene/fsm-enemies.tsx';
+import { Npcs } from '../scene/characters.tsx';
 import { Interactables } from '../scene/interactables.tsx';
 import { PointGlow } from '../scene/glow.tsx';
 import { Hands } from '../scene/hands.tsx';
@@ -279,6 +280,7 @@ export function GameView() {
         <Interactables runtime={runtime} flags={flags} />
         <EncounterEnemies encounters={encounters} />
         <FsmEnemies enemies={enemies} feedback={feedback} />
+        <Npcs runtime={runtime} />
         <CombatFx feedback={feedback} />
         <RitualFx ritual={ritual} />
         <PointGlow runtime={runtime} />

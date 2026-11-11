@@ -1581,3 +1581,43 @@ For every step write what you heard in the Note column. Mark fail if a sound is 
 | SD.24 | | |
 | SD.25 | | |
 | SD.26 | | |
+## 16. First art: home and front street (added 2026-11-09)
+Models: home_elena.glb (house shell, rooms, entity props) and street_front.glb (road, kerb, sidewalk, lawn, streetlight, mailbox). Open [localhost:5173](http://localhost:5173) and choose New Game for the home, or [localhost:5173/?start=street](http://localhost:5173/?start=street) for the porch. Keep the default Bright test lighting for the look checks, then repeat AR.14 with Normal.
+
+| Step | Do this | Pass when |
+|---|---|---|
+| AR.1 | New Game, look around from the hall start | Bedroom, hall and kitchen walls are three colours, ceiling has glow stars in Felix's room |
+| AR.2 | Walk into every wall of every room | You stop at a visible wall every time; no invisible walls in the open, no walking through walls |
+| AR.3 | Walk through both 3 m doorways | Both pass freely, nothing blocks the opening |
+| AR.4 | Look at the bedroom desk | Felix's drawing sits on the desk at the interact spot; E inspects it |
+| AR.5 | Look at the SW corner of the bedroom | Ghost-sheet costume on a stand; E inspects it |
+| AR.6 | Go to the kitchen east counter | Orange pumpkin jar on the counter; the key shows beside it; E takes it |
+| AR.7 | Take the key, go to the hall table | Drawer table at the east divider with a lamp; the journal lies on it; unlock the drawer |
+| AR.8 | Check the greybox boxes | No grey box shows behind a model prop; the beacon glow still pulses on every usable item |
+| AR.9 | Ask for a hint near a clue | The prop pulses warm yellow (hint highlight) |
+| AR.10 | Finish beat 1 and open the front door | The red double door vanishes when it opens; the doorway is walkable |
+| AR.11 | From the porch ([localhost:5173/?start=street](http://localhost:5173/?start=street)) look at the house front | Porch roof, posts, two jack-o'-lanterns, lit windows, number 12 on the door |
+| AR.12 | Walk to the sidewalk and along it | Lawn, path, kerb, sidewalk and road line up; the streetlight in front of No. 12 glows orange and lights the sidewalk |
+| AR.13 | Turn glow off in Settings, then on | Beacons go and return; models stay |
+| AR.14 | Switch test brightness Bright/Normal | Both work; Normal is dark with orange and blue pools, no pure black walls |
+| AR.15 | Watch frame rate in the house and on the porch | Steady 60 fps on the dev machine |
+| AR.16 | Rename a GLB (for example home_elena.glb) and reload | The old greybox house returns and the game still plays; restore the file afterwards |
+
+| Step | Result | Notes |
+|---|---|---|
+| AR.1 | | |
+| AR.2 | | |
+| AR.3 | | |
+| AR.4 | | |
+| AR.5 | | |
+| AR.6 | | |
+| AR.7 | | |
+| AR.8 | | |
+| AR.9 | | |
+| AR.10 | | |
+| AR.11 | | |
+| AR.12 | | |
+| AR.13 | | |
+| AR.14 | | |
+| AR.15 | | |
+| AR.16 | | |

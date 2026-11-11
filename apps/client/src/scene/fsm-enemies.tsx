@@ -4,6 +4,9 @@ import { Color, type Group, type Mesh, type MeshStandardMaterial } from 'three';
 import type { CombatFeedback } from '../game/combat-feedback.ts';
 import type { Enemy, EnemyState, EnemySystem } from '../game/enemies.ts';
 import { useGame } from '../store/index.ts';
+import { ENEMY_LOOKS } from './character-config.ts';
+import { EnemyModel, WithCharacter } from './characters.tsx';
+import { SmokeWraith } from './smoke-wraith.tsx';
 
 /**
  * Greybox colours: hostile red, winding up bright orange, stunned blue-grey. A purified being stands up calm in a soft
@@ -93,13 +96,26 @@ function EnemyBox({ enemy, feedback }: { enemy: Enemy; feedback?: CombatFeedback
   );
 }
 
-/** One box per live FSM enemy of the scene on screen. View only: all state comes from the EnemySystem. */
+/** One animated model (or greybox box) per live FSM enemy of the scene on screen. View only: all state comes from the EnemySystem. */
 export function FsmEnemies({ enemies, feedback }: { enemies: EnemySystem; feedback?: CombatFeedback }) {
   useSyncExternalStore(enemies.subscribe, () => enemies.version);
   const scene = useGame((s) => s.game.scene);
   return (
     <>
-      {enemies.all().map((e) => (e.scene && e.scene !== scene ? null : <EnemyBox key={`${e.id}:${e.state}`} enemy={e} feedback={feedback} />))}
+      {enemies.all().map((e) => {
+        if (e.scene && e.scene !== scene) return null;
+        // The smoke wraith is built from smoke sprites in three.js (no model).
+        if (e.def.kind === 'wraith') return <SmokeWraith key={e.id} enemy={e} feedback={feedback} />;
+        const look = ENEMY_LOOKS[e.def.id];
+        // Animated model when the enemy has one (the box stays as loading / failure fallback).
+        if (look)
+          return (
+            <WithCharacter key={e.id} url={look.url} fallback={<EnemyBox enemy={e} feedback={feedback} />}>
+              <EnemyModel enemy={e} look={look} feedback={feedback} />
+            </WithCharacter>
+          );
+        return <EnemyBox key={`${e.id}:${e.state}`} enemy={e} feedback={feedback} />;
+      })}
     </>
   );
 }

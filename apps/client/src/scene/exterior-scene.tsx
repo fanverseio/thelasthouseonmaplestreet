@@ -1,10 +1,13 @@
 import { useFrame } from '@react-three/fiber';
 import { useRef, useState, useSyncExternalStore } from 'react';
-import type { MeshStandardMaterial, Mesh, PointLight } from 'three';
+import type { MeshStandardMaterial, PointLight, SpriteMaterial } from 'three';
 import type { EntityId, ProgressFlag } from '@tlh/shared';
 import { useSettings } from '../store/index.ts';
 import { EXTERIOR_LIGHTING } from './lighting.ts';
 import { Model } from './models.tsx';
+import { GroundMist, Halo } from './atmosphere.tsx';
+import { HouseKit, KIT_BOX_IDS, Streetlight } from './kit.tsx';
+import { Backdrop } from './backdrop.tsx';
 import { GroundsScene } from './grounds-scene.tsx';
 import { veilOpacity } from '../game/gates.ts';
 import type { WorldRuntime } from '../game/world-runtime.ts';
@@ -38,10 +41,32 @@ function HomeGreybox({ flags }: { flags: readonly ProgressFlag[] }) {
     </>
   );
 }
+function BoxFallback({ id }: { id: string }) {
+  const b = BOXES.find((x) => x.id === id);
+  if (!b) return null;
+  return (
+    <mesh position={[b.x, b.h / 2, b.z]} castShadow receiveShadow>
+      <boxGeometry args={[b.w, b.h, b.d]} />
+      <meshStandardMaterial color={b.color} roughness={0.9} />
+    </mesh>
+  );
+}
+
 /** Greybox exterior: debug-coloured boxes, smoke veils, ground, streetlights. View only. */
 const STREETLIGHTS: readonly [number, number][] = [
-  [-35, 28], [60, 5], [60, -18], [48, -28], [10, -28], [-35, -28], [-56, -10], [-56, 15],
+  [-35, 30.2], [57.2, 5], [57.2, -18], [48, -32], [10, -32], [-35, -32], [-59.8, -10], [-59.8, 15],
 ];
+
+/** The poles of the sequence lights stand on the pavement (the lights' placements are in the road). Light and halo follow the pole. */
+const SEQ_POLE: Partial<Record<string, readonly [number, number]>> = {
+  'light.street.01': [-4, 30.05],
+  'light.street.02': [6, 30.2],
+  'light.street.03': [16, 30.2],
+  'light.street.04': [24, 30.2],
+  'light.street.05': [30, 30.2],
+  'light.street.06': [46, 30.2],
+  'light.street.intersection': [57.2, 27],
+};
 
 const SEQUENCE_LIGHTS = [
   ...['01', '02', '03', '04', '05', '06'].map((n) => `light.street.${n}`),
@@ -51,10 +76,11 @@ const WINDOW = 'prop.street.window_14' as EntityId;
 const LIGHT_BASE = 6;
 
 /** Greybox street light whose glow follows the sequence's light effects (flicker, on, off, burst). */
-function SeqLight({ id, runtime }: { id: EntityId; runtime?: WorldRuntime }) {
+function SeqLight({ id, runtime, halo }: { id: EntityId; runtime?: WorldRuntime; halo: number }) {
   const p = PLACEMENTS[id];
   const light = useRef<PointLight>(null);
-  const bulb = useRef<Mesh>(null);
+  const bulb = useRef<MeshStandardMaterial | null>(null);
+  const glow = useRef<SpriteMaterial>(null);
   useFrame(() => {
     const fx = runtime?.lights[id];
     const t = runtime?.simTime ?? 0;
@@ -62,21 +88,16 @@ function SeqLight({ id, runtime }: { id: EntityId; runtime?: WorldRuntime }) {
     if (fx?.effect === 'off' || fx?.effect === 'burst') k = 0;
     else if (fx?.effect === 'flicker' && t - fx.at < fx.seconds) k = Math.abs(Math.sin(t * 37) * Math.sin(t * 11)) > 0.35 ? 1 : 0.05;
     if (light.current) light.current.intensity = LIGHT_BASE * k;
-    const mat = bulb.current?.material as MeshStandardMaterial | undefined;
-    if (mat) mat.emissiveIntensity = 2 * k;
+    const mat = bulb.current;
+    if (mat) mat.emissiveIntensity = ((mat.userData.baseEmissive as number | undefined) ?? 2) * k;
+    if (glow.current) glow.current.opacity = halo * k;
   });
   if (!p) return null;
   return (
-    <group position={[p.x, 0, p.z]}>
-      <mesh position={[0, 2, 0]}>
-        <cylinderGeometry args={[0.08, 0.08, 4]} />
-        <meshStandardMaterial color="#222" />
-      </mesh>
-      <mesh ref={bulb} position={[0, 4.1, 0]}>
-        <sphereGeometry args={[0.2]} />
-        <meshStandardMaterial color="#ffb35c" emissive="#ffb35c" emissiveIntensity={2} />
-      </mesh>
+    <group position={[SEQ_POLE[id]?.[0] ?? p.x, 0, SEQ_POLE[id]?.[1] ?? p.z]}>
+      <Streetlight bulbRef={bulb} />
       <pointLight ref={light} position={[0, 4, 0]} intensity={LIGHT_BASE} distance={14} color="#ffb35c" />
+      <Halo ref={glow} position={[0, 4.1, 0]} opacity={halo} />
     </group>
   );
 }
@@ -87,7 +108,7 @@ function WindowShadow({ runtime }: { runtime?: WorldRuntime }) {
   const p = PLACEMENTS[WINDOW];
   if (!p) return null;
   return (
-    <group position={[p.x, 4, p.z - 0.85]} rotation={[0, Math.PI, 0]}>
+    <group position={[p.x, 4, p.z + 1.06]} rotation={[0, Math.PI, 0]}>
       <mesh>
         <planeGeometry args={[1.2, 1.6]} />
         <meshStandardMaterial color="#ffcf8a" emissive="#ffcf8a" emissiveIntensity={0.6} />
@@ -149,7 +170,7 @@ export function ExteriorScene({ flags, runtime }: { flags: readonly ProgressFlag
         <meshStandardMaterial color="#14161c" roughness={1} />
       </mesh>
 
-      {BOXES.map((b) => (
+      {BOXES.filter((b) => !KIT_BOX_IDS.has(b.id) && b.id !== 'house.last' && b.id !== 'garage.no31').map((b) => (
         <mesh key={b.id} position={[b.x, b.h / 2, b.z]} castShadow receiveShadow>
           <boxGeometry args={[b.w, b.h, b.d]} />
           <meshStandardMaterial color={b.color} roughness={0.9} />
@@ -160,32 +181,45 @@ export function ExteriorScene({ flags, runtime }: { flags: readonly ProgressFlag
       <Model
         url="/assets/models/home_elena.glb"
         runtime={runtime}
+        lightmapGain={light.lightmap}
         hidden={homeDoorOpen(flags) ? ['door_home_front'] : []}
         fallback={<HomeGreybox flags={flags} />}
       />
+      <HouseKit />
+      {/* Story items on the ground: nodes are named after their entities, so they replace the greybox markers and follow the runtime. */}
+      <Model url="/assets/models/items.glb" runtime={runtime} fallback={null} />
+      {/* No. 31: the house is a kit variant; the garage and the yard are house_31.glb (the garage box stays as collider and fallback). */}
+      <Model url="/assets/models/house_31.glb" runtime={runtime} fallback={<BoxFallback id="garage.no31" />} />
+      {/* The Last House from outside: hero GLB (silhouette, tower, iron fence and gate at x -46); the greybox box is its collider and fallback. */}
+      <Model url="/assets/models/last_house_ext.glb" runtime={runtime} fallback={<BoxFallback id="house.last" />} />
+      <pointLight position={[-62, 7.4, 34.6]} intensity={3} distance={9} color="#ffb866" />
+      <Halo position={[-62, 7.4, 35.5]} size={1.6} opacity={light.halo * 0.7} />
+      <Model url="/assets/models/terrain.glb" runtime={runtime} fallback={null} />
       <Model url="/assets/models/street_front.glb" runtime={runtime} fallback={null} />
       <pointLight position={[-20, 2.8, 38]} intensity={4} distance={14} color="#ffcf8a" />
       {/* Porch lantern and the streetlight in front of No. 12 (lights stay in code, not in the GLBs). */}
       <pointLight position={[-17.6, 2.0, 33.2]} intensity={3} distance={8} color="#ffb35c" />
       <pointLight position={[-14.5, 4.1, 29.15]} intensity={6} distance={14} color="#ffb35c" />
+      <Halo position={[-17.6, 2.0, 33.85]} size={1.1} opacity={light.halo * 0.8} />
+      <Halo position={[-14.5, 4.05, 29.15]} opacity={light.halo} />
+      <GroundMist opacity={light.mist} color={light.mistColor} />
+      <Backdrop fogColor={light.fogColor} windowGlow={light.halo} />
 
       {VEILS.map((v) => (
         <VeilWall key={v.gate} v={v} open={veilIsOpen(v, flags)} />
       ))}
 
       {SEQUENCE_LIGHTS.map((id) => (
-        <SeqLight key={id} id={id} runtime={runtime} />
+        <SeqLight key={id} id={id} runtime={runtime} halo={light.halo} />
       ))}
       <WindowShadow runtime={runtime} />
       <GroundsScene flags={flags} runtime={runtime} />
 
       {STREETLIGHTS.map(([x, z]) => (
         <group key={`${x},${z}`} position={[x, 0, z]}>
-          <mesh position={[0, 2, 0]}>
-            <cylinderGeometry args={[0.08, 0.08, 4]} />
-            <meshStandardMaterial color="#222" />
-          </mesh>
+          <Streetlight />
           <pointLight position={[0, 4, 0]} intensity={6} distance={14} color="#ffb35c" />
+          <Halo position={[0, 4.05, 0]} opacity={light.halo} />
         </group>
       ))}
     </>

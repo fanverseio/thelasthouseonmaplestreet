@@ -1,6 +1,6 @@
 import { useFrame } from '@react-three/fiber';
 import { useRef, useSyncExternalStore } from 'react';
-import { AdditiveBlending, type Group, type MeshBasicMaterial } from 'three';
+import { AdditiveBlending, type MeshBasicMaterial } from 'three';
 import type { EntityId } from '@tlh/shared';
 import { PLACEMENTS } from '../content/world/placements.ts';
 import { sceneOfEntity } from '../content/world/scene-of.ts';
@@ -18,10 +18,12 @@ const LEADS: readonly EntityId[] = ['light.home.felix_window', 'prop.street.wind
 const USABLE = '#ffd27a';
 const LEAD = '#9fc4ff';
 
-const STRENGTH: Record<Exclude<InteractGlow, 'off'>, { base: number; swing: number }> = {
-  subtle: { base: 0.05, swing: 0.04 },
-  bright: { base: 0.2, swing: 0.12 },
+/** Ring on the floor, plus (bright only) a faint low column. Kept quiet so it guides without shouting. */
+const STRENGTH: Record<Exclude<InteractGlow, 'off'>, { ring: number; swing: number; column: number }> = {
+  subtle: { ring: 0.06, swing: 0.04, column: 0 },
+  bright: { ring: 0.14, swing: 0.08, column: 0.035 },
 };
+const COLUMN_HEIGHT = 0.5;
 
 interface Beacon {
   id: EntityId;
@@ -33,27 +35,28 @@ interface Beacon {
 }
 
 function Beacon({ b, mode }: { b: Beacon; mode: Exclude<InteractGlow, 'off'> }) {
-  const group = useRef<Group>(null);
-  const height = b.tall ? 2.4 : 1.3;
-  const radius = Math.max(0.35, b.r + 0.25);
+  const ring = useRef<MeshBasicMaterial>(null);
+  const column = useRef<MeshBasicMaterial>(null);
+  const radius = Math.max(0.3, b.r + 0.15);
+  const { column: columnBase } = STRENGTH[mode];
   useFrame(({ clock }) => {
-    const { base, swing } = STRENGTH[mode];
-    const pulse = base + (Math.sin(clock.elapsedTime * 2.2 + b.x) * 0.5 + 0.5) * swing;
-    group.current?.children.forEach((child, i) => {
-      const mat = (child as unknown as { material: MeshBasicMaterial }).material;
-      mat.opacity = i === 0 ? pulse : pulse * 1.6;
-    });
+    const s = STRENGTH[mode];
+    const wave = Math.sin(clock.elapsedTime * 1.6 + b.x) * 0.5 + 0.5;
+    if (ring.current) ring.current.opacity = s.ring + wave * s.swing;
+    if (column.current) column.current.opacity = s.column * (0.6 + 0.4 * wave);
   });
   return (
-    <group ref={group} position={[b.x, 0, b.z]}>
-      <mesh position={[0, height / 2, 0]}>
-        <cylinderGeometry args={[radius, radius, height, 16, 1, true]} />
-        <meshBasicMaterial color={b.color} transparent opacity={0.2} blending={AdditiveBlending} depthWrite={false} />
-      </mesh>
+    <group position={[b.x, 0, b.z]}>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 0]}>
-        <ringGeometry args={[radius * 0.8, radius * 1.15, 24]} />
-        <meshBasicMaterial color={b.color} transparent opacity={0.3} blending={AdditiveBlending} depthWrite={false} />
+        <ringGeometry args={[radius * 0.85, radius * 1.05, 32]} />
+        <meshBasicMaterial ref={ring} color={b.color} transparent opacity={0.1} blending={AdditiveBlending} depthWrite={false} />
       </mesh>
+      {columnBase > 0 && (
+        <mesh position={[0, COLUMN_HEIGHT / 2, 0]}>
+          <cylinderGeometry args={[radius, radius * 0.9, COLUMN_HEIGHT, 24, 1, true]} />
+          <meshBasicMaterial ref={column} color={b.color} transparent opacity={0.03} blending={AdditiveBlending} depthWrite={false} />
+        </mesh>
+      )}
     </group>
   );
 }

@@ -1,6 +1,7 @@
 import { useGLTF } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import { Component, Suspense, useEffect, useMemo, useRef, useSyncExternalStore, type ReactNode } from 'react';
+import { MeshBasicMaterial, SRGBColorSpace } from 'three';
 import type { Material, Mesh, MeshStandardMaterial, Object3D } from 'three';
 import { PLACEMENTS } from '../content/world/placements.ts';
 import type { WorldRuntime } from '../game/world-runtime.ts';
@@ -35,15 +36,61 @@ interface ModelProps {
   hidden?: readonly string[];
   /** Only receive shadows (for flat ground pieces). */
   receiveOnly?: boolean;
+  /** Multiplier for baked lightmaps (1 = as baked; the bright test setting raises it). */
+  lightmapGain?: number;
 }
 
-function Loaded({ url, runtime, hidden, receiveOnly }: Omit<ModelProps, 'fallback'>) {
+interface BakedMaterial {
+  mat: MeshBasicMaterial;
+  base: number;
+}
+
+/**
+ * Baked lighting (docs/art-style.md): meshes whose node carries extras.lightmapIntensity have their lighting baked
+ * into the occlusion texture on UV1. Those materials become unlit MeshBasicMaterial with that texture as a lightMap,
+ * so lamps, moonlight and soft shadows show as baked and realtime lights do not light them twice. Materials without
+ * an occlusion texture (lamps, glass, metal) stay standard and keep realtime lighting.
+ */
+function applyBakedLighting(root: Object3D): BakedMaterial[] {
+  const baked: BakedMaterial[] = [];
+  root.traverse((o) => {
+    const m = o as Mesh;
+    if (!m.isMesh) return;
+    const k = (m.userData['lightmapIntensity'] ?? m.parent?.userData['lightmapIntensity']) as number | undefined;
+    if (!k) return;
+    const swap = (src: Material): Material => {
+      const s = src as MeshStandardMaterial;
+      if (!s.aoMap) return src;
+      const lightMap = s.aoMap.clone();
+      lightMap.colorSpace = SRGBColorSpace;
+      lightMap.needsUpdate = true;
+      const mat = new MeshBasicMaterial({
+        name: s.name,
+        map: s.map,
+        color: s.color,
+        lightMap,
+        lightMapIntensity: k,
+        side: s.side,
+        transparent: s.transparent,
+        opacity: s.opacity,
+      });
+      baked.push({ mat, base: k });
+      return mat;
+    };
+    m.material = Array.isArray(m.material) ? m.material.map(swap) : swap(m.material);
+    m.castShadow = false;
+    m.receiveShadow = false;
+  });
+  return baked;
+}
+
+function Loaded({ url, runtime, hidden, receiveOnly, lightmapGain = 1 }: Omit<ModelProps, 'fallback'>) {
   const { scene } = useGLTF(url, false, true);
   // Re-render when the runtime changes (flags, hint highlight) so props follow their entities.
   useSyncExternalStore(runtime?.subscribe ?? (() => () => {}), () => runtime?.version ?? 0);
   const entityNodes = useRef(new Map<string, { node: Object3D; id: string; mats: MeshStandardMaterial[] }>());
 
-  const root = useMemo(() => {
+  const { root, baked } = useMemo(() => {
     const clone = scene.clone(true);
     clone.traverse((o) => {
       const m = o as Mesh;
@@ -52,8 +99,12 @@ function Loaded({ url, runtime, hidden, receiveOnly }: Omit<ModelProps, 'fallbac
         m.receiveShadow = true;
       }
     });
-    return clone;
+    return { root: clone, baked: applyBakedLighting(clone) };
   }, [scene, receiveOnly]);
+
+  useEffect(() => {
+    for (const b of baked) b.mat.lightMapIntensity = b.base * lightmapGain;
+  }, [baked, lightmapGain]);
 
   // Find the entity nodes that carry geometry; give them their own materials so the hint highlight stays local.
   const names = useMemo(() => {

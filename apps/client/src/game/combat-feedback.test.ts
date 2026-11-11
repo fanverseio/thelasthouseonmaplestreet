@@ -4,7 +4,7 @@ import { cueForEnemyEvent, CUE_TABLE } from '../services/sfx.ts';
 import { createGameStore } from '../store/game-store.ts';
 import { CombatFeedback, deathFadeOpacity, FEEDBACK_TUNING, hurtVignetteOpacity } from './combat-feedback.ts';
 import { createEncounterWorld } from './encounter-runtime.ts';
-import { FLICK_SECONDS, handPose } from './hand-pose.ts';
+import { FLICK_SECONDS, handFingers, handPose } from './hand-pose.ts';
 import { SIM_DT } from './player.ts';
 import { createCombat, injectSpellHit } from './test-helpers.ts';
 import type { EnemyEvent } from './enemies.ts';
@@ -205,6 +205,20 @@ describe('hand animation per spell (placeholder hands)', () => {
   it('a held charge draws the right hand back', () => {
     const rest = handPose(idle).right;
     expect(handPose({ ...idle, charge: 1 }).right.pos[2]).toBeGreaterThan(rest.pos[2]);
+  });
+
+  it('finger poses and vein glow follow the spell state (model hands)', () => {
+    expect(handFingers(idle)).toEqual({ left: 'idle', right: 'idle', glowLeft: 0, glowRight: 0, tintLeft: 'none', tintRight: 'none' });
+    const charge = handFingers({ ...idle, charge: 0.5 });
+    expect([charge.right, charge.tintRight, charge.left]).toEqual(['claw', 'bolt', 'idle']);
+    expect(handFingers({ ...idle, charge: 1 }).glowRight).toBeGreaterThan(charge.glowRight);
+    const flick = handFingers({ ...idle, charge: 1, flick: 0.1 });
+    expect(flick.right).toBe('flick');
+    expect(handFingers({ ...idle, flick: 0.9 }).glowRight).toBeLessThan(flick.glowRight);
+    const purify = handFingers({ ...idle, channeling: true });
+    expect([purify.left, purify.right, purify.tintLeft, purify.tintRight]).toEqual(['spread', 'spread', 'purify', 'purify']);
+    const ward = handFingers({ ...idle, channeling: true, wardUp: true });
+    expect([ward.left, ward.tintLeft, ward.right]).toEqual(['open', 'ward', 'spread']);
   });
 });
 

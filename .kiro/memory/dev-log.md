@@ -119,3 +119,15 @@ Author keeps creation files in /asset_creation/ (git-ignored, e.g. asset_creatio
 
 ## 2026-11-09 | milestone | First art: home_elena.glb + street_front.glb (598d758..9741577)
 Built in the author's Blender via the socket (collections ASSET-home_elena, ASSET-street_front; copy asset_creation/blender/home_elena.blend, build scripts there, ignored). Flat PBR, ~4.3k + 0.8k tris, 250 KB + 52 KB. scene/models.tsx loads GLBs with greybox fallback; nodes named after entity ids (dots -> underscores) replace greybox props. Rules in docs/art-style.md. Open: furniture has no colliders; street layout guessed (road z 25-29) so greybox pole and light.street.01 sit in the road; strip ends hard at x -36 and -4; no textures yet.
+
+### 2026-11-09 decision: T in Classic
+The author chose option A. T plays one Angel line, and it fades by itself. Pressing T again cuts the voice (0.25 s fade) and plays the next line at once. `VoicePlayer.interrupt` (commit ac795f8).
+
+### 2026-11-09 decision: journals are an in-game page
+The author chose a page, not a video. A `readPage` action shows the page (phase overlay) while Rosalind reads it. The page text comes from the voice line. E, Esc or Close puts it away. No `cin_journal_*` clips. Commit 42dbca6.
+
+## 2026-11-08 | decision | Gartner is mixed race
+Author decision: Gartner is a mixed-race boy (about 9). Added to canon.md, the asset manifest (chr_gartner) and his character style-sheet prompt. Skin tone in prompts set to warm light-brown pending author confirmation of his heritage.
+
+## 2026-11-11 | decision | Character models are temporary but passable
+Rigged character GLBs (briggs, watcher, felix, gartner, fox, hound, cat) are in the game through `scene/characters.tsx`; the smoke wraith is three.js sprites (`scene/smoke-wraith.tsx`), with no model. The author accepts the models, clips and eye glow as temp: fine-tune them if time allows, otherwise they ship as they are. There is no separate corrupted Briggs model; the engine adds that look. Eyes can be re-placed in the dev viewer `char-preview.html` ("Copy eyes" gives `eyes` lines for `character-config.ts`).

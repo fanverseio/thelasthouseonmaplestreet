@@ -76,3 +76,47 @@ export function handPose(i: HandPoseInput): HandPose {
   }
   return { left, right };
 }
+
+/** Finger pose clips in hands.glb (R_<pose> / L_<pose>), see asset_creation/blender/build_hands.py. */
+export type FingerPose = 'idle' | 'open' | 'spread' | 'claw' | 'flick' | 'grab' | 'cup';
+/** Colour family of the glowing veins. */
+export type MagicTint = 'none' | 'bolt' | 'purify' | 'ward';
+
+export interface HandFingers {
+  left: FingerPose;
+  right: FingerPose;
+  /** Target emissive intensity of the vein mask, 0 at rest. */
+  glowLeft: number;
+  glowRight: number;
+  tintLeft: MagicTint;
+  tintRight: MagicTint;
+}
+
+/**
+ * Finger pose and vein glow per hand, from the same spell state as handPose (same priorities: Ward wins for the left
+ * hand, Purify for both, the bolt flick over a held charge for the right).
+ */
+export function handFingers(i: HandPoseInput): HandFingers {
+  const f: HandFingers = { left: 'idle', right: 'idle', glowLeft: 0, glowRight: 0, tintLeft: 'none', tintRight: 'none' };
+  if (i.charge > 0) {
+    f.right = 'claw';
+    f.glowRight = 0.4 + 0.8 * Math.min(1, i.charge);
+    f.tintRight = 'bolt';
+  }
+  if (i.flick !== null) {
+    f.right = 'flick';
+    f.glowRight = 0.4 + 1.6 * (1 - Math.min(1, Math.max(0, i.flick)));
+    f.tintRight = 'bolt';
+  }
+  if (i.channeling) {
+    f.left = f.right = 'spread';
+    f.glowLeft = f.glowRight = 1.2;
+    f.tintLeft = f.tintRight = 'purify';
+  }
+  if (i.wardUp) {
+    f.left = 'open';
+    f.glowLeft = 1;
+    f.tintLeft = 'ward';
+  }
+  return f;
+}
