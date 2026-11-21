@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { getLine } from '../content/dialogue/index.ts';
 import { ALL_INTERACTIONS } from '../content/interactions/index.ts';
 import { BOXES } from '../content/world/exterior-layout.ts';
-import { OUTBUILDING_BOUNDS } from '../content/world/grounds-layout.ts';
+import { OUTBUILDING_BOUNDS, PAINTING } from '../content/world/grounds-layout.ts';
 import { ALL_ENTITIES, createWorldRegistry, GATES } from '../content/world/index.ts';
 import { PLACEMENTS } from '../content/world/placements.ts';
 import { NPC_LOOKS } from '../scene/character-config.ts';
@@ -11,9 +11,9 @@ import {
   HOUSE66_DOOR,
   LAST_HOUSE_DOOR,
   PADLOCK,
-  PORTRAIT,
   SHED,
   lastHouseDoorAjar,
+  lastHouseDoorOutline,
   shedDoorOpen,
 } from '../content/world/story-props-layout.ts';
 import { isGateOpen } from './gates.ts';
@@ -87,40 +87,44 @@ describe('note 15: the padlock', () => {
   });
 });
 
-describe('note 18: the portrait and the rune hint', () => {
+describe('note 18: the family painting replaces the mirror and the portrait', () => {
   const registry = createWorldRegistry();
-  it('is a non-critical inspectable clue inside the outbuilding, with a hint line', () => {
-    expect(registry.has('clue.grounds.portrait')).toBe(true);
-    const e = ALL_ENTITIES.find((x) => x.id === 'clue.grounds.portrait')!;
-    expect(e.critical).toBe(false);
-    expect(e.capabilities).toEqual(['inspectable']);
-    const p = PLACEMENTS['clue.grounds.portrait']!;
-    expect(p.x).toBeGreaterThan(OUTBUILDING_BOUNDS.minX);
-    expect(p.x).toBeLessThan(OUTBUILDING_BOUNDS.maxX);
+  it('one painting entity, critical, owned by seq5; no mirror and no portrait remain', () => {
+    expect(registry.has('clue.grounds.painting')).toBe(true);
+    expect(registry.has('mirror.grounds.antique')).toBe(false);
+    expect(registry.has('clue.grounds.portrait')).toBe(false);
+    expect(ALL_ENTITIES.some((e) => e.kind === ('mirror' as never))).toBe(false);
+    const e = ALL_ENTITIES.find((x) => x.id === 'clue.grounds.painting')!;
+    expect(e.critical).toBe(true);
+    expect(e.owner).toBe('seq5_felix_mirror');
+    const p = PLACEMENTS['clue.grounds.painting']!;
+    expect(Math.abs(p.x - PAINTING.x)).toBeLessThan(0.01);
     expect(p.z).toBeGreaterThan(OUTBUILDING_BOUNDS.minZ);
     expect(p.z).toBeLessThan(OUTBUILDING_BOUNDS.maxZ);
-    expect(PORTRAIT.x).toBeCloseTo(OUTBUILDING_BOUNDS.minX + 0.48, 1); // on the west wall's inner face
-    const i = ALL_INTERACTIONS.interactions.find((x) => x.id === 'clue.grounds.portrait')!;
-    expect(i.show?.flags).toEqual(['padlock_open']);
-    expect(i.actions).toEqual([{ do: 'say', line: 'vo_elena_b8_portrait' }]);
-    expect(getLine('vo_elena_b8_portrait')?.text).toMatch(/mirror/i);
-    expect(ALL_INTERACTIONS.hints.find((h) => h.id === 'p4_runes')!.steps.some((s) => s.highlight === 'clue.grounds.portrait')).toBe(true);
+    const i = ALL_INTERACTIONS.interactions.find((x) => x.id === 'clue.grounds.painting')!;
+    expect(i.requires?.flags).toEqual(['padlock_open']);
+    expect(i.actions).toEqual([{ do: 'startSequence', sequence: 'seq5_felix_mirror' }]);
+    expect(ALL_INTERACTIONS.interactions.some((x) => x.id === 'clue.grounds.portrait')).toBe(false);
+    expect(getLine('vo_elena_b8_portrait')).toBeUndefined();
   });
 
-  it('the Angel T ladder explains the runes on the second press, from seq5_done until runes_done', () => {
+  it('the Angel T ladder explains the hidden runes on the second press, from seq5_done until runes_done', () => {
     const flags = ['seq5_done'] as ProgressFlag[];
     const puzzle = activeTPuzzle(flags)!;
     expect(puzzle.id).toBe('p4_runes');
     expect(tHintLine(puzzle, 1)).toBe('vo_angel_p4_h2');
     expect(tHintLine(puzzle, 2)).toBe('vo_angel_p4_t2');
     expect(tHintLine(puzzle, 5)).toBe('vo_angel_p4_t2');
-    expect(getLine('vo_angel_p4_t2')?.text).toMatch(/mirror/i);
+    for (const id of ['vo_angel_p4_h2', 'vo_angel_p4_t2']) {
+      expect(getLine(id)?.text, id).toMatch(/Purify/);
+      expect(getLine(id)?.text, id).not.toMatch(/mirror|glass/i);
+    }
     expect(activeTPuzzle([...flags, 'runes_done'])).toBeNull();
-    expect(activeTPuzzle(['padlock_open'])).toBeNull(); // before the mirror scene the ladder is off
+    expect(activeTPuzzle(['padlock_open'])).toBeNull(); // before the painting scene the ladder is off
   });
 });
 
-describe('note 19: the Last House door ajar', () => {
+describe('note 19: the Last House door', () => {
   it('is driven only by the runes_done gate and the door stays an ordinary entry interaction', () => {
     const gate = GATES.find((g) => g.id === 'door.grounds.last_house_front')!;
     expect(gate.opensOn).toBe('runes_done');
@@ -138,7 +142,24 @@ describe('note 19: the Last House door ajar', () => {
     expect(LAST_HOUSE_DOOR.z).toBe(b.z - b.d / 2);
     expect(LAST_HOUSE_DOOR.hingeX).toBeGreaterThan(b.x - b.w / 2);
     expect(LAST_HOUSE_DOOR.hingeX + LAST_HOUSE_DOOR.width).toBeLessThan(b.x + b.w / 2);
+    expect(LAST_HOUSE_DOOR.hingeX + LAST_HOUSE_DOOR.width / 2).toBeCloseTo(LAST_HOUSE_DOOR.x, 5); // centred in the opening
     expect(LAST_HOUSE_DOOR.ajarRad).toBeGreaterThan(0);
     expect(LAST_HOUSE_DOOR.ajarRad).toBeLessThan(Math.PI / 2);
+  });
+
+  it('the pointed outline fits the opening: square foot, straight jambs to the spring line, apex in the middle', () => {
+    const pts = lastHouseDoorOutline(8);
+    const { width, height, spring, sill } = LAST_HOUSE_DOOR;
+    expect(pts[0]).toEqual([0, 0]);
+    expect(pts[1]).toEqual([width, 0]);
+    expect(pts[2]).toEqual([width, spring - sill]);
+    const top = pts.reduce((a, p) => (p[1] > a[1] ? p : a));
+    expect(top[0]).toBeCloseTo(width / 2, 5);
+    expect(top[1]).toBeCloseTo(height, 2);
+    for (const [x, y] of pts) {
+      expect(x).toBeGreaterThanOrEqual(-1e-9);
+      expect(x).toBeLessThanOrEqual(width + 1e-9);
+      expect(y).toBeLessThanOrEqual(height + 1e-6);
+    }
   });
 });

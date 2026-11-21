@@ -43,7 +43,7 @@ export const DEV_STARTS = {
     'walkie_found', 'seq3_done', 'seq4_done', 'fuse_taken', 'fuse_placed', 'watcher_started', 'watcher_purified',
     'fence_key_taken', 'lane_open',
   ],
-  /** At the outbuilding door with the padlock open (after Beat 7): the antique mirror (Beat 8) is next. */
+  /** At the outbuilding door with the padlock open (after Beat 7): Rosalind's painting (Beat 8) is next. */
   grounds: [
     'bed_seen', 'drawing_seen', 'drawer_key_taken', 'locket_taken', 'angel_awake', 'journal_1', 'home_done',
     'seq1_done', 'seq2_done', 'spell_bolt', 'seq3_started', 'spell_ward', 'spell_purify', 'briggs_purified',

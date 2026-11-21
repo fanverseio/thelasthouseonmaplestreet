@@ -118,11 +118,11 @@ Authoritative for triggers, flags, unlocks and per-beat policies. Entity IDs: `l
 
 ## Beat 8. Sequence 5: Felix in the Mirror (2 min)
 
-- **Trigger**: interact `mirror.grounds.antique`. Pre `padlock_open`.
-- **Cinematic** `seq5_felix_mirror` (20-30 s, control locked): Elena's reflection lags; Felix appears behind her reflection only; he warns that the seal is cracked, that it is great-grandma's, and that it wants her too; whispers rise; the mirror cracks.
-- **Then**: runes puzzle `puzzle.grounds.runes`. Three runes `rune.grounds.r1`..`r3` are visible only in the mirror. Elena finds each spot using the reflection and casts Purify on it -> `runes_done`. Locks turn across the grounds.
+- **Trigger**: interact `clue.grounds.painting` (Rosalind's family painting, which replaced the antique mirror by author decision 2026-11-21). Pre `padlock_open`.
+- **Cinematic** `seq5_felix_mirror` (20-30 s, control locked): Elena's reflection lags; Felix appears behind her reflection only; he warns that the seal is cracked, that it is great-grandma's, and that it wants her too; whispers rise; the mirror cracks. (To be rewritten for the painting when the clip is made; the id stays.)
+- **Then**: runes puzzle `puzzle.grounds.runes`. Three runes `rune.grounds.r1`..`r3` are hidden paint on the walls. A Purify cast near one wakes it; finishing the channel (or E on a woken rune) purifies it -> `runes_done`. Locks turn across the grounds.
 - **Sets**: `seq5_done`, `runes_done`. **Opens**: `door.grounds.last_house_front`.
-- **Puzzle**: mirror runes (`puzzles.md` P4).
+- **Puzzle**: hidden runes (`puzzles.md` P4).
 - **Policy**: cinematic: locket blocked, angelActions blocked, control locked. Runes: locket allowed, angelActions blocked (sequence-owned entities). control full.
 - **K**: K4.
 

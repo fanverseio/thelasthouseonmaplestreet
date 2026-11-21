@@ -35,12 +35,12 @@ Hint sources: Classic = the Angel's authored hint lines (locket glows when a hin
 - **No softlock**: unlimited tries, no penalty beyond a rattle sound.
 - **Target**: 30-60 s.
 
-## P4. The mirror runes (outbuilding, beat 8)
+## P4. The hidden runes (outbuilding, beat 8)
 - **Goal**: break the ward on the Last House front door.
-- **Mechanic**: after `seq5_felix_mirror`, three runes appear in the mirror's reflection on the walls behind Elena. They are invisible when looking at the walls directly. Elena locates each by looking into the mirror, then casts Purify on the spot (`rune.grounds.r1`..`r3`). A purified rune flares and stays visible.
-- **Hints**: 30 s with none found: Felix's whisper "Look where I was." 60 s: the mirror brightens around the first rune's reflection. 90 s: the next unfound rune pulses faintly in the real room.
+- **Mechanic** (changed 2026-11-21, the mirror was removed): after `seq5_felix_mirror`, three runes are hidden paint on the outbuilding walls (`rune.grounds.r1`..`r3`). With Purify selected, a hidden rune shimmers faintly within about 3.5 m. A Purify cast on the spot wakes it (the paint flows in along its strokes); finishing the channel purifies it, and a woken rune can also be finished with E. A purified rune turns gold and stays visible.
+- **Hints**: 30 s with none found: Felix's whisper "Look where I was." and the painting pulses. 60 s: the Angel says to cast Purify near the walls. 90 s: the unfound runes shimmer. T twice gives the exact places.
 - **Magic**: Purify on a rune costs no magic, so magic can never block it.
-- **No softlock**: rune progress is saved; the mirror cannot break further.
+- **No softlock**: rune progress (`revealed`, `purified`) is saved per rune.
 - **Target**: 45-75 s.
 
 ## P5. The talking board (interior, beat 9)

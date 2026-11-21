@@ -66,7 +66,6 @@ export const KIND_ID_PREFIX: Readonly<Record<EntityKind, string>> = {
   node: 'node',
   puzzle: 'puzzle',
   rune: 'rune',
-  mirror: 'mirror',
   anchor: 'anchor',
   seal: 'seal',
 };

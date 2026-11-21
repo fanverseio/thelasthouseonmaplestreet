@@ -1,6 +1,6 @@
 /**
  * Layout data for the small story props drawn by scene/story-props.tsx (view only): Gartner's shed, the "66" door of
- * House 66, the outbuilding padlock, Rosalind's portrait and the ajar front door of the Last House. Metres, same frame
+ * House 66, the outbuilding padlock and the front door of the Last House. Metres, same frame
  * as exterior-layout.ts. Colliders are unchanged (the shed stays a solid box; Elena sees inside through the open door).
  * The state helpers are pure functions of flags, so tests can check them headless.
  */
@@ -38,11 +38,31 @@ export const HOUSE66_DOOR = { x: -60, z: -36, width: 1.2, height: 2.2, plaqueY: 
 /** The padlock hangs on the outbuilding door (north wall z 27..27.4), on the outside face. */
 export const PADLOCK = { x: -52, y: 1.15, z: 26.9 } as const;
 
-/** Rosalind's portrait on the inside of the outbuilding's west wall (x -55.6), facing east into the room. */
-export const PORTRAIT = { x: -55.52, y: 1.65, z: 31.5, width: 1.1, height: 1.4 } as const;
+/**
+ * The Last House front door: house.last box x -68..-56, z 36..44; the door faces -z (the grounds). It fills the pointed
+ * opening of the stone surround in last_house_ext.glb (build_last_house_v2.py: width 1.2, porch top 0.34, spring line
+ * 2.3, a lancet head of radius 1.25 x width, so the apex is 1.2 m above the spring line); the leaf is drawn by the game
+ * so it can swing. `height` is sill to apex.
+ */
+export const LAST_HOUSE_DOOR = { x: -62, z: 36, width: 1.2, sill: 0.34, spring: 2.3, archK: 1.25, height: 3.16, hingeX: -62.6, ajarRad: 0.6 } as const;
 
-/** The Last House front door: house.last box x -68..-56, z 36..44; the door faces -z (the grounds). */
-export const LAST_HOUSE_DOOR = { x: -62, z: 36, width: 1.1, height: 2.1, hingeX: -62.55, ajarRad: 0.6 } as const;
+/** The outline of the pointed door, in leaf space (x from the hinge, 0..width; y from the sill), bottom-left first. */
+export function lastHouseDoorOutline(steps = 8): [number, number][] {
+  const { width: w, spring, sill, archK } = LAST_HOUSE_DOOR;
+  const r = archK * w;
+  const s = spring - sill;
+  const aEnd = Math.asin(Math.sqrt(r * r - (r - w / 2) ** 2) / r);
+  const pts: [number, number][] = [[0, 0], [w, 0], [w, s]];
+  for (let i = 1; i <= steps; i++) {
+    const a = (aEnd * i) / steps;
+    pts.push([w - r + r * Math.cos(a), s + r * Math.sin(a)]);
+  }
+  for (let i = steps - 1; i >= 0; i--) {
+    const a = (aEnd * i) / steps;
+    pts.push([r - r * Math.cos(a), s + r * Math.sin(a)]);
+  }
+  return pts;
+}
 
 /** Once runes_done opens the front door gate, the door stands ajar with a glow in the crack. Gate-driven, never set by view code. */
 export function lastHouseDoorAjar(flags: readonly ProgressFlag[]): boolean {

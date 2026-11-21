@@ -23,6 +23,7 @@ import { SPELL_CONFIG, type SpellSystem } from './spells.ts';
 import { createEndingRuntime } from './ending.ts';
 import { HpRegen } from './health.ts';
 import { createRitualRuntime } from './ritual.ts';
+import { createRuneRuntime } from './runes.ts';
 import {
   applyMoralityDelta,
   resolveEncounter,
@@ -599,6 +600,8 @@ export function createEncounterWorld(
   const choices = createChoiceRuntime({ store: options.store });
   // Beats 11-12: the smoke pressure of the final ritual and the final choice / ending.
   const ritual = createRitualRuntime({ store: options.store, ...(spells && { spells }), ...(enemies && { enemies }) });
+  // Beat 8: the hidden runes answer a Purify channel (game/runes.ts).
+  const runes = createRuneRuntime({ store: options.store, ...(spells && { spells }) });
   const ending = createEndingRuntime({
     store: options.store,
     ...(storage && { storage }),
@@ -611,6 +614,7 @@ export function createEncounterWorld(
     onTick: (dt, pose) => {
       hooks.onTick(dt, pose);
       ritual.tick(dt, pose);
+      runes.tick(pose);
       ending.tick(dt);
       worldOptions.onTick?.(dt, pose);
     },

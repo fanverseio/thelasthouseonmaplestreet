@@ -131,3 +131,7 @@ Author decision: Gartner is a mixed-race boy (about 9). Added to canon.md, the a
 
 ## 2026-11-11 | decision | Character models are temporary but passable
 Rigged character GLBs (briggs, watcher, felix, gartner, fox, hound, cat) are in the game through `scene/characters.tsx`; the smoke wraith is three.js sprites (`scene/smoke-wraith.tsx`), with no model. The author accepts the models, clips and eye glow as temp: fine-tune them if time allows, otherwise they ship as they are. There is no separate corrupted Briggs model; the engine adds that look. Eyes can be re-placed in the dev viewer `char-preview.html` ("Copy eyes" gives `eyes` lines for `character-config.ts`).
+
+## 2026-11-21 19:05 | spec-change | Painting replaces the mirror; runes woken by Purify
+`mirror.grounds.antique`, the `mirror` kind and `clue.grounds.portrait` are gone; `clue.grounds.painting` (critical, owned by seq5) starts `seq5_felix_mirror` (id kept). Runes are hidden paint: a Purify channel wakes (`revealed`) and purifies them (game/runes.ts); E finishes a woken rune. Flags unchanged. Canon still says Felix's 2nd appearance is "in the antique mirror": author must reword canon when the clip is made.
+Last House porch rebuilt by headless Blender (`asset_creation/blender/build_last_house_v2.py`, libs and textures from the TheLastHouse_Assetbuild checkout); the door leaf is code-built (story-props.tsx). Gilt with metalness 1 renders near black (no env map): use 0.

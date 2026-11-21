@@ -3,7 +3,7 @@ import { useRef, useSyncExternalStore } from 'react';
 import type { Mesh, MeshStandardMaterial } from 'three';
 import type { ProgressFlag } from '@tlh/shared';
 import type { VisibleEntity, WorldRuntime } from '../game/world-runtime.ts';
-import { hasModelNode, modelNodesVersion, subscribeModelNodes } from './model-nodes.ts';
+import { hasModelNode, modelNodesVersion, needsMarker, subscribeModelNodes } from './model-nodes.ts';
 
 const COLORS: Record<string, string> = {
   clue: '#8a7a3a',
@@ -43,7 +43,7 @@ export function Interactables({ runtime }: { runtime: WorldRuntime; flags: reado
     <>
       {runtime
         .visibleEntities()
-        .filter((e) => !e.id.startsWith('door.') && !e.id.startsWith('enemy.') && !e.id.startsWith('seal.') && !e.id.startsWith('rune.') && !e.id.startsWith('mirror.') && !hasModelNode(e.id))
+        .filter((e) => needsMarker(e.id, hasModelNode(e.id)))
         .map((e) => (
           <GreyProp key={e.id} e={e} />
         ))}

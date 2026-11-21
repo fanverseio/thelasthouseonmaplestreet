@@ -34,7 +34,6 @@ export const ENTITY_KINDS = [
   'node',
   'puzzle',
   'rune',
-  'mirror',
   'anchor',
   'seal',
 ] as const;

@@ -33,6 +33,7 @@ import {
   type PuzzleController,
 } from './puzzles.ts';
 import { canContinue, saveNow } from './save.ts';
+import { RUNE_IDS, runeAimPoint } from './runes.ts';
 import type { SequenceDef, SequenceStep } from './sequences.ts';
 import {
   buildStateFromFlags,
@@ -332,12 +333,12 @@ function buildSteps(plan: Plan): Step[] {
       },
     },
     {
-      id: 'mirror',
+      id: 'painting',
       flags: ['seq5_done'],
       clips: ['seq5_felix_mirror'],
       run(g) {
-        g.goTo('mirror.grounds.antique');
-        expect(g.press()).toMatchObject({ status: 'done', id: 'mirror.grounds.antique' });
+        g.goTo('clue.grounds.painting');
+        expect(g.press()).toMatchObject({ status: 'done', id: 'clue.grounds.painting' });
         playClip(g, plan, 'seq5_felix_mirror');
       },
     },
@@ -345,11 +346,12 @@ function buildSteps(plan: Plan): Step[] {
       id: 'runes',
       flags: ['runes_done'],
       run(g) {
-        for (const rune of ['rune.grounds.r1', 'rune.grounds.r2', 'rune.grounds.r3']) {
+        for (const rune of RUNE_IDS) {
           expect(g.flags()).not.toContain('runes_done');
           g.goTo(rune);
-          expect(g.press()).toMatchObject({ status: 'done', id: rune });
-          g.tick(0.1);
+          expect(g.press().status).toBe('none'); // hidden paint: no prompt until Purify wakes it
+          g.fight.purifyAt(runeAimPoint(rune));
+          expect(g.store.getState().world.entities[rune]?.['purified']).toBe(true);
         }
       },
     },
@@ -611,7 +613,7 @@ describe('gates and actions stay shut until their flag', () => {
     ['socket.house66.fusebox', 'fuse_taken', undefined, 'fuse_placed'],
     ['gate.house66.lane', 'fence_key_taken', undefined, 'lane_open'],
     ['puzzle.grounds.padlock', 'enc_approach_resolved', undefined, 'padlock_open'],
-    ['mirror.grounds.antique', 'padlock_open', undefined, 'seq5_done'],
+    ['clue.grounds.painting', 'padlock_open', undefined, 'seq5_done'],
     ['door.grounds.last_house_front', 'runes_done', undefined, 'enc_interior_resolved'],
     ['puzzle.interior.board', 'enc_interior_resolved', 'interior', 'board_solved'],
     ['door.interior.ritual', 'board_solved', 'interior', 'seq6_done'],

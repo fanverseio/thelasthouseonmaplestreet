@@ -18,6 +18,7 @@ import { isGateOpen } from './gates.ts';
 import { objectiveFor } from './objectives.ts';
 import { PLAYER_RADIUS, SIM_DT } from './player.ts';
 import { createNumberLock, createPuzzleController, lockGlow } from './puzzles.ts';
+import { runeAimPoint, runeState, type RuneId } from './runes.ts';
 import { validateSequenceDef } from './sequences.ts';
 
 /** A headless Elena at the lane gate right after Beat 6 (the real `lane` dev start), with real collision. */
@@ -26,7 +27,7 @@ function setup(start: 'lane' | 'grounds' = 'lane') {
   store.getState().startNewGame('classic');
   expect(applyDevStart(store, start)).toEqual([]);
   const combat = createCombat(store);
-  const { world, encounters } = createEncounterWorld({ store, enemies: combat.enemies });
+  const { world, encounters } = createEncounterWorld({ store, enemies: combat.enemies, spells: combat.spells });
   const [px, , pz] = store.getState().player.pos;
   const pos = { x: px, z: pz };
   const flags = () => store.getState().progress.flags;
@@ -74,7 +75,7 @@ const GROUNDS_GATE: [number, number] = [-57, 21];
 const HOUND_1_SPOT: [number, number] = [-58, 22.6];
 const HOUND_2_SPOT: [number, number] = [-54, 22.1];
 const PADLOCK_SPOT: [number, number] = [-52, 25.5];
-const MIRROR_SPOT: [number, number] = [-52, 30.5];
+const PAINTING_SPOT: [number, number] = [-52, 30.5];
 const RUNE_SPOTS: Record<string, [number, number]> = {
   'rune.grounds.r1': [-54.5, 28.9],
   'rune.grounds.r2': [-49.5, 28.9],
@@ -102,7 +103,7 @@ describe('Beat 7/8 content', () => {
     const ids = [...ALL_INTERACTIONS.interactions.map((i) => i.id), ...ALL_INTERACTIONS.triggers.map((t) => t.id)];
     for (const id of [
       'clue.lane.journal_3', 'trg.lane.home_window', 'trg.grounds.enter', 'enemy.grounds.hound_1', 'enemy.grounds.hound_2',
-      'puzzle.grounds.padlock', 'mirror.grounds.antique', 'rune.grounds.r1', 'rune.grounds.r2', 'rune.grounds.r3',
+      'puzzle.grounds.padlock', 'clue.grounds.painting', 'rune.grounds.r1', 'rune.grounds.r2', 'rune.grounds.r3',
     ]) {
       expect(ids, id).toContain(id);
       expect(registry.has(id), id).toBe(true);
@@ -145,7 +146,7 @@ describe('Beat 7/8 content', () => {
     for (const flags of [['lane_open'], ['lane_open', 'padlock_open', 'seq5_done']] as const) {
       const colliders = exteriorColliders(flags);
       for (const [id, p] of Object.entries(PLACEMENTS)) {
-        if (!/^(clue\.lane|trg\.lane|trg\.grounds|enemy\.grounds|puzzle\.grounds|mirror\.grounds|rune\.grounds)/.test(id)) continue;
+        if (!/^(clue\.lane|trg\.lane|trg\.grounds|enemy\.grounds|puzzle\.grounds|clue\.grounds|rune\.grounds)/.test(id)) continue;
         const q = moveAndSlide({ x: p.x, z: p.z }, { x: 0, z: 0 }, PLAYER_RADIUS, colliders);
         expect(Math.hypot(q.x - p.x, q.z - p.z), id).toBeLessThan(1e-9);
       }
@@ -244,7 +245,7 @@ describe.each([
     g.world.closeOverlay();
     expect(g.flags()).toContain('padlock_open');
     expect(g.store.getState().game.checkpointId).toBe('cp_outbuilding');
-    expect(objectiveFor(g.flags())).toBe('Look into the mirror.');
+    expect(objectiveFor(g.flags())).toBe('Look at the painting in the outbuilding.');
     expect(outbuildingDoorOpen(g.flags())).toBe(true);
     expect(g.walkTo(-52, 30)).toBeLessThan(0.1); // through the open door, into the room
 
@@ -316,22 +317,22 @@ describe('Beat 7 rules', () => {
 });
 
 describe('Beat 8 headless playthrough', () => {
-  /** In the room, facing the mirror, with the padlock open. */
-  function atMirror() {
+  /** In the room, facing the painting, with the padlock open. */
+  function atPainting() {
     const g = setup('grounds');
-    g.route([-58, -10], [-58, 14], PADLOCK_SPOT, [-52, 26.2], MIRROR_SPOT);
+    g.route([-58, -10], [-58, 14], PADLOCK_SPOT, [-52, 26.2], PAINTING_SPOT);
     return g;
   }
+  const runeIds = Object.keys(RUNE_SPOTS) as RuneId[];
 
-  it('the mirror plays seq5 as a locked video clip, then the runes appear', () => {
-    const g = atMirror();
-    expect(g.world.prompt).toBe('E  Look into the antique mirror');
-    expect(g.press()).toMatchObject({ status: 'done', id: 'mirror.grounds.antique' });
+  it('the painting plays seq5 as a locked video clip, then the hidden runes can be woken', () => {
+    const g = atPainting();
+    expect(g.world.prompt).toBe('E  Look at the painting');
+    expect(g.press()).toMatchObject({ status: 'done', id: 'clue.grounds.painting' });
     expect(g.world.sequences.active).toBe('seq5_felix_mirror');
     expect(g.world.sequences.policy).toEqual({ locket: 'blocked', angelActions: 'blocked', control: 'locked' });
     expect(g.world.canOpenLocket()).toBe(false);
     expect(g.world.video).toEqual({ clipId: 'seq5_felix_mirror', fallbackSeconds: 25 });
-    // The runes cannot be used yet.
     expect(g.world.visibleEntities().some((e) => e.id.startsWith('rune.'))).toBe(false);
     g.tick(24);
     expect(g.flags()).not.toContain('seq5_done');
@@ -340,16 +341,15 @@ describe('Beat 8 headless playthrough', () => {
     expect(g.world.video).toBeNull();
     expect(g.world.sequences.active).toBeNull();
     expect(g.world.canOpenLocket()).toBe(true);
-    expect(g.world.visibleEntities().filter((e) => e.id.startsWith('rune.')).map((e) => e.id)).toEqual([
-      'rune.grounds.r1', 'rune.grounds.r2', 'rune.grounds.r3',
-    ]);
-    expect(objectiveFor(g.flags())).toBe('Find the three runes in the mirror.');
-    expect(g.press().status).toBe('none'); // the mirror plays once
+    // Hidden paint: no rune prompt until Purify wakes it.
+    expect(g.world.visibleEntities().some((e) => e.id.startsWith('rune.'))).toBe(false);
+    expect(objectiveFor(g.flags())).toBe('Find the three hidden runes. Cast Purify near the walls.');
+    expect(g.press().status).toBe('none'); // the painting scene plays once
   });
 
   it('a real clip ending early finishes the sequence; skip at every moment equals a full run', () => {
     const final = (skipAt: number | null) => {
-      const g = atMirror();
+      const g = atPainting();
       g.press();
       if (skipAt === null) g.tick(26);
       else {
@@ -363,7 +363,7 @@ describe('Beat 8 headless playthrough', () => {
     expect(full.flags).toContain('seq5_done');
     for (const t of [0, 0.02, 1, 5, 12.5, 20, 24.9]) expect(final(t), `skip at ${t}s`).toEqual(full);
     // A video that ends on its own (the real clip) behaves the same as the fallback timer.
-    const g = atMirror();
+    const g = atPainting();
     g.press();
     g.world.signal({ videoPlaying: 'seq5_felix_mirror' });
     g.tick(40);
@@ -373,66 +373,74 @@ describe('Beat 8 headless playthrough', () => {
     expect([...g.flags()].sort()).toEqual(full.flags);
   });
 
-  it('runes_done: purify each rune by interacting with its spot; the door gate opens only then', () => {
-    const g = atMirror();
+  it('runes_done: a Purify channel at each rune wakes and purifies it; the door gate opens only then', () => {
+    const g = atPainting();
     g.press();
     g.tick(26);
     const gate = GATES.find((x) => x.id === 'door.grounds.last_house_front')!;
     let n = 0;
-    for (const [id, spot] of Object.entries(RUNE_SPOTS)) {
-      // Standing in the middle of the room, no rune is in reach; at the spot, exactly that one is.
-      g.route(MIRROR_SPOT);
-      expect(g.world.visibleEntities().find((e) => e.id === id)).toBeDefined();
-      expect(g.press().status).toBe('none');
-      g.route(spot);
-      expect(g.world.prompt, id).toBe('E  Purify the rune');
-      expect(g.press()).toMatchObject({ status: 'done', id });
+    for (const id of runeIds) {
+      g.route(RUNE_SPOTS[id]!);
+      expect(g.press().status, id).toBe('none');
+      expect(runeState(g.store.getState().world.entities, id)).toBe('hidden');
+      g.fight.purifyAt(runeAimPoint(id));
       n++;
-      g.world.tick(SIM_DT, { x: g.pos.x, z: g.pos.z }); // the next frame evaluates the "all three" rule
-      expect(g.store.getState().world.entities[id]?.['purified']).toBe(true);
+      expect(runeState(g.store.getState().world.entities, id)).toBe('purified');
       expect(g.flags().includes('runes_done'), `after ${n}`).toBe(n === 3);
       expect(isGateOpen(gate, g.flags())).toBe(n === 3);
     }
-    expect(g.flags()).toContain('runes_done');
     expect(objectiveFor(g.flags())).toBe('Enter the Last House.');
     expect(g.world.visibleEntities().some((e) => e.id.startsWith('rune.'))).toBe(false);
     expect(g.world.canOpenLocket()).toBe(true);
   });
 
-  it('a rune cannot be purified twice and magic never matters', () => {
-    const g = atMirror();
+  it('a short Purify wakes a rune; then E finishes it, once, and magic never matters', () => {
+    const g = atPainting();
     g.press();
     g.tick(26);
+    const id = 'rune.grounds.r1';
+    g.route(RUNE_SPOTS[id]!);
+    g.fight.purifyAt(runeAimPoint(id), 0.4); // released before the channel ends
+    expect(runeState(g.store.getState().world.entities, id)).toBe('revealed');
     g.store.setState((s) => ({ player: { ...s.player, magic: 0 } }));
-    g.route(RUNE_SPOTS['rune.grounds.r1']!);
-    expect(g.press()).toMatchObject({ status: 'done', id: 'rune.grounds.r1' });
+    expect(g.world.prompt).toBe('E  Purify the rune');
+    expect(g.press()).toMatchObject({ status: 'done', id });
+    expect(runeState(g.store.getState().world.entities, id)).toBe('purified');
     expect(g.press().status).toBe('none');
     expect(g.flags()).not.toContain('runes_done');
   });
 
-  it('P4 hints: Felix at 30 s, the mirror at 60 s, the real-room pulse at 90 s, only near the mirror', () => {
+  it('before the painting scene Purify at a rune spot does nothing', () => {
+    const g = atPainting();
+    g.route(RUNE_SPOTS['rune.grounds.r2']!);
+    g.fight.purifyAt(runeAimPoint('rune.grounds.r2'));
+    expect(runeState(g.store.getState().world.entities, 'rune.grounds.r2')).toBe('hidden');
+  });
+
+  it('P4 hints: Felix at 30 s, the Angel at 60 s, the rune pulse at 90 s, only near the painting', () => {
     const away = setup('lane');
     for (const f of ['enc_approach_resolved', 'padlock_open', 'seq5_done'] as const) away.store.getState().setFlag(f);
     away.tick(100);
     expect(away.world.spoken.some((l) => l.includes('_p4_'))).toBe(false);
 
-    const g = atMirror();
+    const g = atPainting();
     g.press();
     g.tick(26);
     g.tick(25);
     expect(g.world.spoken).not.toContain('vo_felix_p4_h1');
     g.tick(8);
     expect(g.world.spoken).toContain('vo_felix_p4_h1');
+    expect(g.world.highlights).toContain('clue.grounds.painting');
     g.tick(30);
     expect(g.world.spoken).toContain('vo_angel_p4_h2');
-    expect(g.world.highlights).toContain('mirror.grounds.antique');
+    expect(getLine('vo_angel_p4_h2')!.text).toMatch(/Purify/);
     expect(g.world.highlights).not.toContain('rune.grounds.r1');
     g.tick(30);
     expect(g.world.spoken).toContain('vo_angel_p4_h3');
     expect(g.world.highlights).toEqual(expect.arrayContaining(['rune.grounds.r1', 'rune.grounds.r2', 'rune.grounds.r3']));
   });
 
-  it('the dev start "grounds" lands on cp_outbuilding with the mirror next', () => {
+  it('the dev start "grounds" lands on cp_outbuilding with the painting next', () => {
     const g = setup('grounds');
     expect(g.store.getState().game.checkpointId).toBe('cp_outbuilding');
     expect(g.store.getState().player.pos).toEqual([-52, 0, 25.5]);

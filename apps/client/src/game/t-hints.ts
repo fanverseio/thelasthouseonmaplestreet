@@ -19,7 +19,7 @@ interface TPuzzle {
 export const T_HINT_PUZZLES: readonly TPuzzle[] = [
   { id: 'p5_board', requires: 'enc_interior_resolved', grants: 'board_solved', indirect: 'vo_angel_p5_h1', exact: 'vo_angel_p5_t2' },
   { id: 'p3_padlock', requires: 'enc_approach_resolved', grants: 'padlock_open', indirect: 'vo_angel_p3_h1', exact: 'vo_angel_p3_t2' },
-  // Note 18: after the mirror scene the second T explains where the three runes are.
+  // After the painting scene the second T explains where the three hidden runes are and how to wake them.
   { id: 'p4_runes', requires: 'seq5_done', grants: 'runes_done', indirect: 'vo_angel_p4_h2', exact: 'vo_angel_p4_t2' },
 ];
 

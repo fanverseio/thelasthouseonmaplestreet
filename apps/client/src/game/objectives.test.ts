@@ -18,8 +18,8 @@ describe('objectiveFor', () => {
     const steps: [string[], string][] = [
       [['lane_open'], 'Follow the back lane to the Last House.'],
       [['lane_open', 'enc_approach_resolved'], 'Open the outbuilding padlock.'],
-      [['lane_open', 'enc_approach_resolved', 'padlock_open'], 'Look into the mirror.'],
-      [['padlock_open', 'seq5_done'], 'Find the three runes in the mirror.'],
+      [['lane_open', 'enc_approach_resolved', 'padlock_open'], 'Look at the painting in the outbuilding.'],
+      [['padlock_open', 'seq5_done'], 'Find the three hidden runes. Cast Purify near the walls.'],
       [['seq5_done', 'runes_done'], 'Enter the Last House.'],
       [['runes_done', 'enc_interior_resolved'], 'Solve the talking board.'],
       [['enc_interior_resolved', 'board_solved'], 'Approach the seal.'],

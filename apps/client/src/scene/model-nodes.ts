@@ -57,3 +57,14 @@ export const STAY_VISIBLE_ENTITIES: ReadonlySet<string> = new Set([
 export function propNodeVisible(id: string, offered: ReadonlySet<string>): boolean {
   return offered.has(id) || STAY_VISIBLE_ENTITIES.has(id);
 }
+
+/**
+ * Kinds the scene always draws itself, so they never get a grey marker box: doors, enemies, the seal, the runes and
+ * lights (a light with an E prompt, like Felix's window, is part of the house model; note 2).
+ */
+const NO_MARKER = ['door.', 'enemy.', 'seal.', 'rune.', 'light.'];
+
+/** True when an entity gets a grey marker box: the scene does not draw it and no model node replaces it. */
+export function needsMarker(id: string, hasNode: boolean): boolean {
+  return !hasNode && !NO_MARKER.some((p) => id.startsWith(p));
+}

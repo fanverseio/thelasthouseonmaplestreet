@@ -299,22 +299,22 @@ Placeholders for Beat 7: hounds are boxes that do not move or growl. Felix's win
 
 Start: `?start=grounds` (outbuilding door (-52, 25.5), padlock open). Sets `seq5_done`, then `runes_done`. Opens the Last House front door.
 
-- B8.1. Walk through the doorway to the south wall (-52, 31). A mirror 3 m wide hangs on it (centre -52, 32.2). Face it. -> Prompt "Look into the antique mirror". You see a reflection of the room. There are no glowing marks in the room or in the reflection yet.
+- B8.1. Walk through the doorway to the south wall (-52, 31). A big gilded painting, 3 m wide, hangs on it (centre -52, 32.2), lit by a small brass picture light. Until the author's image exists the canvas is a warm dark brown. Face it. -> Prompt "Look at the painting". There are no glowing marks in the room yet.
 - B8.2. Press E. -> A black panel with `seq5_felix_mirror` and "cinematic placeholder" for 25 s. You cannot move. T does not open. The ring "Hold E to skip" shows.
-- B8.3. Hold E for 1 s, or wait the full 25 s (try both on different runs). -> The same end state: objective "Find the three runes in the mirror."
-- B8.4. Face the mirror again. -> Three violet glyphs (a ring and a cross) show in the reflection only: two on the north wall either side of the door gap (about (-54.5, 28) and (-49.5, 28)) and one on the east wall near the south corner (about (-48.8, 31.5)); that one shows only from the west half of the room. Report exactly what you see: this reflection is the least tested visual.
-- B8.5. Turn round to the real walls. -> Bare walls. No glyphs on the real walls.
-- B8.6. Stand within 2.5 m of one real spot and face it. -> The prompt is "Purify the rune". Press E. -> That glyph turns pale blue in the mirror and a faint blue ring stays lit on the real wall. Your magic bar does not drop (try with magic low). E again does nothing.
-- B8.7. Purify the other two in any order. -> After the third: objective "Enter the Last House." A creak plays once (the front door gate opens).
-- B8.8. On run 2 stand near the mirror (within 14 m) after the clip and wait. -> At 30 s Felix whispers "Look where I was." At 60 s the Angel says "The glass sees what you can't. Use it." and the mirror pulses. At 90 s the Angel says "There. By your shoulder. Can you feel it?" and the runes you have not found pulse faintly on the real walls (the one place a rune shows outside the mirror).
-- B8.9. Press T before the mirror scene. -> A placeholder line about a mirror in a carriage house. After the scene, T gives a line in your tone ("He blames himself. Children always do..." for kind) and then a second one. During the idle hints T gives the hint in order (an invented line at 30 s).
-- B8.10. Quit to the menu after purifying one rune and press Continue (section 3). -> The purified rune is still purified.
-- B8.N1. Runes in the real room before the 90 s hint, or after you purify them.
+- B8.3. Hold E for 1 s, or wait the full 25 s (try both on different runs). -> The same end state: objective "Find the three hidden runes. Cast Purify near the walls."
+- B8.4. Select Purify (2) and walk near the walls. -> Near a hidden rune (about 3.5 m) the wall shimmers faintly violet. The spots: two on the north wall either side of the door gap (about (-54.5, 28) and (-49.5, 28)) and one on the east wall near the south corner (about (-48.8, 31.5)).
+- B8.5. Aim at a shimmering spot and hold LMB (Purify). -> The violet paint flows in along the strokes of an ornate sigil and glows; light runs along the strokes. Keep holding until the channel ends. -> The rune turns warm gold and stays lit. Your magic bar does not drop (try with magic low).
+- B8.6. On another rune, release LMB early. -> The rune stays awake (violet). The prompt "Purify the rune" shows when you face it within 2.5 m; E finishes it. E again does nothing.
+- B8.7. Purify the other runes in any order. -> After the third: objective "Enter the Last House." A creak plays once (the front door gate opens).
+- B8.8. On run 2 stand in the room (within 14 m of the painting) after the clip and wait. -> At 30 s Felix whispers "Look where I was." and the painting frame pulses. At 60 s the Angel says "Her paint still holds magic. Cast Purify near the walls and watch it wake." At 90 s the Angel says "There. By your shoulder. Can you feel it?" and the runes you have not found shimmer.
+- B8.9. Press T before the painting scene. -> A placeholder line about a family portrait in a carriage house. After the scene, T gives a line in your tone ("He blames himself. Children always do..." for kind) and then a second one. During the idle hints T gives the hint in order (an invented line at 30 s).
+- B8.10. Quit to the menu after purifying one rune and press Continue (section 3). -> The purified rune is still purified (gold).
+- B8.N1. Runes glowing before Purify wakes them (other than the faint shimmer or the 90 s hint).
 - B8.N2. A smoke wall inside the grounds.
-- B8.N3. Any damage from the mirror.
+- B8.N3. Any damage from the runes or the painting.
 - B8.N4. A way into the Last House from the front door before the runes are done (the door says "The front door will not open").
 
-Placeholders for Beat 8: the clip is a black panel; the cracking mirror and Felix's three lines exist only in the future clip. Runes are flat marks. Hit-testing is "near it and facing it, press E", not a spell cast.
+Placeholders for Beat 8: the clip is a black panel; Felix's lines exist only in the future clip. The painting canvas waits for `apps/client/public/assets/textures/painting_rosalind_family.jpg`.
 
 ### Beat 9. The Last House interior (about 3 min)
 
@@ -1720,3 +1720,38 @@ Cause: the AudioContext could be suspended, so the voice was scheduled on a froz
 | Step | Result | Note |
 |---|---|---|
 | 20.1-20.7 | | |
+
+---
+
+## 21. Painting, hidden runes, Last House porch, no grey box: playtest notes 2, 16-19 (added 2026-11-21)
+
+The mirror and the small portrait are gone. One big painting hangs where the mirror was, the runes are hidden paint woken by Purify, and the Last House front was rebuilt. Steps 10-14 of section 19 are replaced by this section. Use a New Game for step 1 and `?start=grounds` for steps 2-18. Mark each PASS, FAIL or N/A.
+
+1. (Note 2) New Game. In Felix's bedroom walk to the open window. Before you press E there is no grey or green box in or under the window. Press E ("Look out the window"): the line plays as before.
+2. (Note 18) `?start=grounds`. Walk into the outbuilding. On the south wall (straight ahead) hangs one painting, about 3 m wide, in an ornate gold frame with corner rosettes, a crest on top, a small plate below and a brass picture light. There is no mirror and no small portrait on the west wall.
+3. (Note 18) Until the author adds `painting_rosalind_family.jpg`, the canvas is a warm dark brown with soft brush marks (not a flat box). If the file is there, the family portrait shows: Rosalind, a younger Elena and baby Felix.
+4. (Note 16) Nothing in the room shows a reflection of the hands.
+5. (Note 18) Face the painting: prompt "Look at the painting". Press E: the `seq5_felix_mirror` placeholder clip plays, as the mirror did before. Skip and full run end the same.
+6. (Note 17) Objective: "Find the three hidden runes. Cast Purify near the walls." The walls look bare.
+7. (Note 17) Select Purify (2). Walk along the north wall (the door wall). Near each side of the door the wall shimmers faintly violet. Do the same on the east wall near the south corner.
+8. (Note 17) Aim at the shimmer and hold LMB. The rune wakes: violet paint flows in along curved strokes, an ornate sigil with spirals, loops and dots (not a ring with a cross). Light keeps running along the strokes.
+9. (Note 17) Keep holding until the channel ends. The rune turns warm gold. Magic does not drop.
+10. (Note 17) Each rune is a different sigil: a warding knot (north wall, west), an eye with lashes (north wall, east), three linked arcs in a dotted ring (east wall).
+11. (Note 17) Wake one rune and release early. Face it within 2.5 m: prompt "Purify the rune". E finishes it.
+12. (Note 17) After the third rune: objective "Enter the Last House". `runes_done` is set, the creak plays.
+13. (Hints) On another run, wait in the room after the clip. 30 s: Felix "Look where I was." and the painting frame pulses. 60 s: Angel "Her paint still holds magic...". 90 s: the unfound runes shimmer.
+14. (T ladder) After the clip press T once: the indirect hint ("Her paint still holds magic..."). Press T again: "Oh, honestly. Hold Purify near the walls, child. Two marks by the doorway, one on the east wall..." No flag changes.
+15. (Note 19) Walk out to the Last House front (x -62, z 33). The porch now has stone steps, a stone pointed arch with jamb stones, voussoirs and a keystone, turned posts with plinths and capitals, a steep little gable with bargeboard and a quatrefoil roundel, and an iron lantern. The front windows have arched frames, stone hood moulds and sills.
+16. (Note 19) The door is a plank door with wood grain, two rails, three iron strap hinges with studs and a ring knocker. Before the runes it is shut. After the runes it swings ajar and a cold blue-white light glows in the opening and spills on the porch. E ("Enter the Last House") works as before.
+17. Continue from a save just after the runes: the runes are gold and the door is ajar.
+18. Look for missing shapes, flicker or z-fighting around the painting, the runes and the porch (note what and where).
+
+### Questions for you
+- Note 17: the runes stay where they were (two by the door, one on the east wall), not right next to the painting, so the old hints still fit. Say if you want them moved onto the painting wall.
+- The cinematic id stays `seq5_felix_mirror` (it is a save and clip id). Its clip prompt still describes a mirror; it changes when the cinematics are made.
+- Re-voiced lines (ElevenLabs, about 430 characters): `vo_angel_p4_h2`, `vo_angel_p4_t2`, `vo_angel_b8_any_c1`, `vo_angel_b8_neutral_c2`, `vo_angel_b8_dark_c2`. `vo_elena_b8_portrait` was removed.
+
+### Results (section 21)
+| Step | Result | Note |
+|---|---|---|
+| 21.1-21.18 | | |

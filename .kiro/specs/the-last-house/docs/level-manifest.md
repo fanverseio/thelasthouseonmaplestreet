@@ -164,7 +164,7 @@ Columns: **Crit** = critical (rejects every Angel action except `flicker_lights`
 | `enemy.grounds.hound_1`, `hound_2`              | enemy        | -            | yes  | `enc_approach`      |
 | `puzzle.grounds.padlock`                        | puzzle       | interactable | yes  | -                   |
 | `door.grounds.outbuilding`                      | door         | -            | yes  | -                   |
-| `mirror.grounds.antique`                        | mirror       | interactable | yes  | `seq5_felix_mirror` |
+| `clue.grounds.painting`                         | clue         | inspectable  | yes  | `seq5_felix_mirror` |
 | `puzzle.grounds.runes`, `rune.grounds.r1`..`r3` | puzzle, rune | -            | yes  | `seq5_felix_mirror` |
 | `door.grounds.last_house_front`                 | door         | interactable | yes  | -                   |
 | `light.grounds.lantern`                         | light        | angelFlicker | no   | -                   |

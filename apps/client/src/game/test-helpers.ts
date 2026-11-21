@@ -15,7 +15,7 @@ import { STUB_ENCOUNTERS, type StubEncounterId } from './encounter-stub.ts';
 import { EnemySystem, type Enemy, type EnemyEvent } from './enemies.ts';
 import { gateChanges } from './gates.ts';
 import { SIM_DT } from './player.ts';
-import { SpellSystem, type SpellEvent, type SpellHit } from './spells.ts';
+import { SPELL_CONFIG, SpellSystem, type SpellEvent, type SpellHit } from './spells.ts';
 import type { PlayerPose } from './world-runtime.ts';
 
 export type StartEvent = 'garden' | 'grounds' | 'interior';
@@ -135,6 +135,19 @@ export function createFighter(host: FighterHost, options: { keepAlive?: boolean 
       step(e);
       input.lmbHeldMs = 0;
       run(0.1, e);
+    },
+    /** Select Purify and hold LMB at a point (a hidden rune on the wall) for `seconds`, release, then wait out the cooldown. */
+    purifyAt(at: AimPoint, seconds = 3) {
+      select('purify');
+      run(spells.cooldownLeft('purify') + SIM_DT, at); // idle ticks elsewhere do not step the spells
+      input.lmbDown = true;
+      input.lmbHeldMs = 0;
+      run(seconds, at);
+      input.lmbDown = false;
+      input.lmbReleased = true;
+      step(at);
+      input.lmbHeldMs = 0;
+      run(SPELL_CONFIG.purify.cooldown + 0.1, at);
     },
     /** Select Ward and press LMB. */
     ward() {

@@ -1,26 +1,24 @@
 import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
-import { AdditiveBlending, CanvasTexture, SRGBColorSpace } from 'three';
+import { AdditiveBlending, CanvasTexture, DoubleSide, ExtrudeGeometry, RepeatWrapping, Shape, ShapeGeometry, SRGBColorSpace } from 'three';
 import type { Group, MeshStandardMaterial, PointLight } from 'three';
 import type { EntityId, ProgressFlag } from '@tlh/shared';
 import {
   HOUSE66_DOOR,
   LAST_HOUSE_DOOR,
   PADLOCK,
-  PORTRAIT,
   SHED,
   lastHouseDoorAjar,
+  lastHouseDoorOutline,
   shedDoorOpen,
 } from '../content/world/story-props-layout.ts';
-import { outbuildingDoorOpen } from '../content/world/exterior-layout.ts';
 import type { WorldRuntime } from '../game/world-runtime.ts';
 import { entityNodeName, registerModelNodes } from './model-nodes.ts';
 
-/** View only (notes 8, 11, 15, 18, 19). Everything follows flags and runtime state; nothing here writes state. */
+/** View only (notes 8, 11, 15, 19). Everything follows flags and runtime state; nothing here writes state. */
 
 const BULB = 'light.hideout.shed_bulb' as EntityId;
 const PADLOCK_ID = 'puzzle.grounds.padlock' as EntityId;
-const PORTRAIT_ID = 'clue.grounds.portrait' as EntityId;
 
 /** Hides the entity's grey marker box: the real model below replaces it (interactables.tsx). */
 function useReplacesMarker(id: string): void {
@@ -182,118 +180,195 @@ function Padlock({ flags, runtime }: { flags: readonly ProgressFlag[]; runtime?:
 }
 
 // ---------------------------------------------------------------------------------------------------------------
-// Note 18: Rosalind with baby Felix, painted behind the mirror's runes: the portrait hints at what to do.
+// Note 19: the Last House front door. A plank door in the pointed stone surround of last_house_ext.glb: vertical
+// boards with grain, two ledges, three iron strap hinges with studs, a ring knocker. Once runes_done opens the gate it
+// swings ajar and a cold light spills out of the house.
 
-function paintPortrait(): CanvasTexture {
+/** Vertical oak boards with grain and dark joints, drawn once (the whole leaf, 1.2 x 3.16 m). */
+function paintBoards(): CanvasTexture {
   const c = document.createElement('canvas');
-  c.width = 220;
-  c.height = 280;
+  c.width = 256;
+  c.height = 640;
   const g = c.getContext('2d')!;
-  g.fillStyle = '#3a2f22';
-  g.fillRect(0, 0, 220, 280);
-  // A mirror painted behind them, with three glyphs in it.
-  g.strokeStyle = '#c9a227';
-  g.lineWidth = 5;
-  g.strokeRect(120, 24, 80, 120);
-  g.strokeStyle = '#e08cff';
-  g.lineWidth = 3;
-  for (const [x, y] of [[140, 56], [180, 56], [160, 112]] as const) {
-    g.beginPath();
-    g.arc(x, y, 9, 0, Math.PI * 2);
-    g.moveTo(x - 9, y);
-    g.lineTo(x + 9, y);
-    g.moveTo(x, y - 9);
-    g.lineTo(x, y + 9);
-    g.stroke();
+  const boards = 5;
+  const bw = c.width / boards;
+  let seed = 31;
+  const rnd = () => {
+    seed = (seed * 16807) % 2147483647;
+    return seed / 2147483647;
+  };
+  for (let i = 0; i < boards; i++) {
+    const shade = 40 + Math.floor(rnd() * 14);
+    g.fillStyle = `rgb(${shade + 22}, ${shade + 6}, ${shade - 8})`;
+    g.fillRect(i * bw, 0, bw, c.height);
+    // grain: long wavy lines and a knot or two
+    for (let k = 0; k < 14; k++) {
+      const x0 = i * bw + 3 + rnd() * (bw - 6);
+      g.strokeStyle = `rgba(20, 10, 4, ${0.18 + rnd() * 0.22})`;
+      g.lineWidth = 0.6 + rnd() * 1.4;
+      g.beginPath();
+      g.moveTo(x0, 0);
+      for (let y = 0; y <= c.height; y += 32) g.lineTo(x0 + Math.sin(y * 0.013 + k) * (1.5 + rnd() * 2.5), y);
+      g.stroke();
+    }
+    if (rnd() > 0.4) {
+      const kx = i * bw + bw * (0.3 + rnd() * 0.4);
+      const ky = 80 + rnd() * 480;
+      g.fillStyle = 'rgba(18, 9, 3, 0.55)';
+      g.beginPath();
+      g.ellipse(kx, ky, 3 + rnd() * 3, 7 + rnd() * 5, 0, 0, Math.PI * 2);
+      g.fill();
+    }
+    g.fillStyle = 'rgba(6, 3, 1, 0.85)';
+    g.fillRect(i * bw, 0, 2, c.height); // the joint between boards
   }
-  // Rosalind (dark dress, grey hair in a bun) holding the baby (pale bundle).
-  g.fillStyle = '#1e1a1e';
-  g.beginPath();
-  g.ellipse(80, 250, 62, 80, 0, Math.PI, 0);
-  g.fill();
-  g.fillStyle = '#d8c0a0';
-  g.beginPath();
-  g.arc(80, 118, 26, 0, Math.PI * 2);
-  g.fill();
-  g.fillStyle = '#9a9a9a';
-  g.beginPath();
-  g.arc(80, 98, 24, Math.PI, 0);
-  g.arc(80, 76, 11, 0, Math.PI * 2);
-  g.fill();
-  g.fillStyle = '#efe6d2';
-  g.beginPath();
-  g.ellipse(88, 205, 34, 24, -0.4, 0, Math.PI * 2);
-  g.fill();
-  g.fillStyle = '#e0c4a4';
-  g.beginPath();
-  g.arc(112, 190, 14, 0, Math.PI * 2);
-  g.fill();
+  // weathering: lighter along the bottom, darker toward the head
+  const grad = g.createLinearGradient(0, 0, 0, c.height);
+  grad.addColorStop(0, 'rgba(0, 0, 0, 0.35)');
+  grad.addColorStop(0.7, 'rgba(0, 0, 0, 0)');
+  grad.addColorStop(1, 'rgba(120, 110, 90, 0.18)');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, c.width, c.height);
   const t = new CanvasTexture(c);
   t.colorSpace = SRGBColorSpace;
+  t.wrapS = t.wrapT = RepeatWrapping;
+  // ExtrudeGeometry's UVs are in metres: one copy of the canvas over the whole leaf.
+  t.repeat.set(1 / LAST_HOUSE_DOOR.width, 1 / LAST_HOUSE_DOOR.height);
   return t;
 }
 
-function Portrait({ flags, runtime }: { flags: readonly ProgressFlag[]; runtime?: WorldRuntime }) {
-  useReplacesMarker(PORTRAIT_ID);
-  useRuntime(runtime);
-  const tex = useMemo(paintPortrait, []);
-  const glow = useRef<MeshStandardMaterial>(null);
-  useFrame(({ clock }) => {
-    if (glow.current) glow.current.emissiveIntensity = runtime?.highlights.includes(PORTRAIT_ID) ? 0.6 + Math.sin(clock.elapsedTime * 2) * 0.3 : 0;
+function doorShape(inset = 0): Shape {
+  const pts = lastHouseDoorOutline();
+  const cx = LAST_HOUSE_DOOR.width / 2;
+  const cy = LAST_HOUSE_DOOR.height * 0.45;
+  const s = new Shape();
+  pts.forEach(([x, y], i) => {
+    // pull each point toward the centre to make a slightly smaller copy (the glow opening, the leaf fits inside)
+    const k = inset === 0 ? 1 : 1 - inset;
+    const px = cx + (x - cx) * k;
+    const py = y === 0 ? y : cy + (y - cy) * k;
+    if (i === 0) s.moveTo(px, py);
+    else s.lineTo(px, py);
   });
-  if (!outbuildingDoorOpen(flags)) return null;
-  const { x, y, z, width, height } = PORTRAIT;
+  s.closePath();
+  return s;
+}
+
+const IRON = { color: '#2a2c33', metalness: 1, roughness: 0.5 } as const;
+
+/** One iron strap hinge running from the hinge side across the boards, with studs and a split scroll end. */
+function Strap({ y, len }: { y: number; len: number }) {
+  const studs = Math.max(3, Math.round(len / 0.18));
   return (
-    <group position={[x, y, z]} rotation={[0, Math.PI / 2, 0]}>
-      <mesh castShadow>
-        <boxGeometry args={[width + 0.16, height + 0.16, 0.06]} />
-        <meshStandardMaterial ref={glow} color="#5a4a2a" roughness={0.6} emissive="#ffd27a" emissiveIntensity={0} />
+    <group position={[0, y, -0.042]}>
+      <mesh position={[len / 2, 0, 0]} castShadow>
+        <boxGeometry args={[len, 0.07, 0.012]} />
+        <meshStandardMaterial {...IRON} />
       </mesh>
-      <mesh position={[0, 0, 0.035]}>
-        <planeGeometry args={[width, height]} />
-        <meshStandardMaterial map={tex} roughness={0.9} />
+      {Array.from({ length: studs }, (_, i) => (
+        <mesh key={i} position={[0.08 + (i * (len - 0.16)) / (studs - 1), 0, -0.008]}>
+          <sphereGeometry args={[0.014, 6, 4]} />
+          <meshStandardMaterial {...IRON} roughness={0.35} />
+        </mesh>
+      ))}
+      {[1, -1].map((s) => (
+        <mesh key={s} position={[len + 0.03, s * 0.03, 0]} rotation={[0, 0, s * 0.6]}>
+          <torusGeometry args={[0.035, 0.008, 4, 10, Math.PI * 1.3]} />
+          <meshStandardMaterial {...IRON} />
+        </mesh>
+      ))}
+      {/* the knuckle on the hinge side */}
+      <mesh position={[0.005, 0, 0.03]}>
+        <cylinderGeometry args={[0.02, 0.02, 0.12, 8]} />
+        <meshStandardMaterial {...IRON} />
       </mesh>
     </group>
   );
 }
 
-// ---------------------------------------------------------------------------------------------------------------
-// Note 19: once runes_done opens the gate, the Last House front door stands ajar and light spills from the crack.
+function DoorLeaf() {
+  const { width } = LAST_HOUSE_DOOR;
+  const tex = useMemo(paintBoards, []);
+  const geo = useMemo(() => {
+    const g = new ExtrudeGeometry(doorShape(), { depth: 0.06, bevelEnabled: true, bevelThickness: 0.008, bevelSize: 0.008, bevelSegments: 1, curveSegments: 1 });
+    g.translate(0, 0, -0.03);
+    return g;
+  }, []);
+  return (
+    <group>
+      <mesh geometry={geo} castShadow receiveShadow>
+        <meshStandardMaterial map={tex} color="#9a7a62" roughness={0.78} />
+      </mesh>
+      {/* Two ledges across the back show as raised rails on the face. */}
+      {[0.45, 1.75].map((y) => (
+        <mesh key={y} position={[width / 2, y, -0.04]} castShadow>
+          <boxGeometry args={[width - 0.08, 0.11, 0.02]} />
+          <meshStandardMaterial map={tex} color="#7a5e4a" roughness={0.8} />
+        </mesh>
+      ))}
+      <Strap y={0.3} len={width * 0.8} />
+      <Strap y={1.35} len={width * 0.7} />
+      <Strap y={2.3} len={width * 0.55} />
+      {/* Ring knocker on a round plate, and a keyhole escutcheon below it. */}
+      <group position={[width - 0.24, 1.25, -0.045]}>
+        <mesh rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.055, 0.055, 0.012, 12]} />
+          <meshStandardMaterial {...IRON} />
+        </mesh>
+        <mesh position={[0, -0.08, -0.012]}>
+          <torusGeometry args={[0.075, 0.011, 6, 16]} />
+          <meshStandardMaterial {...IRON} roughness={0.4} />
+        </mesh>
+        <mesh position={[0, -0.32, 0]}>
+          <boxGeometry args={[0.06, 0.13, 0.01]} />
+          <meshStandardMaterial {...IRON} />
+        </mesh>
+        <mesh position={[0, -0.32, -0.006]}>
+          <boxGeometry args={[0.012, 0.045, 0.004]} />
+          <meshBasicMaterial color="#050505" />
+        </mesh>
+      </group>
+    </group>
+  );
+}
 
 function LastHouseDoor({ flags }: { flags: readonly ProgressFlag[] }) {
   const ajar = lastHouseDoorAjar(flags);
   const light = useRef<PointLight>(null);
   const spill = useRef<MeshStandardMaterial>(null);
+  const glow = useRef<MeshStandardMaterial>(null);
   const leaf = useRef<Group>(null);
-  const angle = useRef(0);
+  const angle = useRef(ajar ? LAST_HOUSE_DOOR.ajarRad : 0);
+  const opening = useMemo(() => new ShapeGeometry(doorShape(0.02)), []);
   useFrame(({ clock }, dt) => {
     angle.current += ((ajar ? LAST_HOUSE_DOOR.ajarRad : 0) - angle.current) * Math.min(1, dt * 2);
     if (leaf.current) leaf.current.rotation.y = angle.current;
     const t = clock.elapsedTime;
     const k = ajar ? 0.8 + Math.sin(t * 1.7) * 0.12 + Math.sin(t * 5.3) * 0.06 : 0;
     if (light.current) light.current.intensity = 5 * k;
-    if (spill.current) spill.current.opacity = 0.55 * k;
+    if (spill.current) spill.current.opacity = 0.5 * k;
+    if (glow.current) glow.current.emissiveIntensity = 2.2 * k;
   });
-  const { z, width, height, hingeX } = LAST_HOUSE_DOOR;
-  if (!ajar) return null;
-  const jambX = hingeX + width - 0.05;
+  const { z, sill, hingeX } = LAST_HOUSE_DOOR;
   return (
-    <group>
-      {/* The dark gap, with a glowing strip in it. */}
-      <mesh position={[jambX, height / 2, z - 0.03]}>
-        <planeGeometry args={[0.3, height - 0.1]} />
-        <meshBasicMaterial color="#cfe6ff" toneMapped={false} fog={false} />
+    <group position={[0, sill, 0]}>
+      {/* The opening behind the leaf: dark while shut, a cold glow once the door stands ajar. */}
+      <mesh geometry={opening} position={[hingeX, 0, z - 0.03]}>
+        <meshStandardMaterial ref={glow} color="#06080c" emissive="#bfdcff" emissiveIntensity={0} roughness={1} toneMapped={false} side={DoubleSide} />
       </mesh>
-      {/* The door leaf, hinged on the west side, pushed out toward the grounds. */}
-      <group ref={leaf} position={[hingeX, 0, z - 0.05]}>
-        <Box p={[width / 2, height / 2, 0]} s={[width, height, 0.08]} color="#241a1c" />
+      {/* The leaf, hinged on the west jamb; it swings out toward the grounds. */}
+      <group ref={leaf} position={[hingeX, 0, z - 0.07]}>
+        <DoorLeaf />
       </group>
-      {/* Aura: a cone of light on the ground and a glow on the facade. */}
-      <pointLight ref={light} position={[jambX, 1.2, z - 0.8]} intensity={0} distance={9} color="#9fd0ff" />
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[jambX, 0.05, z - 1.4]}>
-        <planeGeometry args={[1.6, 2.6]} />
-        <meshStandardMaterial ref={spill} color="#9fd0ff" emissive="#9fd0ff" emissiveIntensity={1} transparent opacity={0} blending={AdditiveBlending} depthWrite={false} fog={false} />
-      </mesh>
+      {ajar && (
+        <>
+          <pointLight ref={light} position={[hingeX + 0.9, 1.1, z - 0.9]} intensity={0} distance={9} color="#9fd0ff" />
+          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[hingeX + 0.75, 0.01, z - 1.3]}>
+            <planeGeometry args={[1.5, 2.4]} />
+            <meshStandardMaterial ref={spill} color="#9fd0ff" emissive="#9fd0ff" emissiveIntensity={1} transparent opacity={0} blending={AdditiveBlending} depthWrite={false} fog={false} />
+          </mesh>
+        </>
+      )}
     </group>
   );
 }
@@ -304,7 +379,6 @@ export function StoryProps({ flags, runtime }: { flags: readonly ProgressFlag[];
       <Shed flags={flags} runtime={runtime} />
       <House66Door />
       <Padlock flags={flags} runtime={runtime} />
-      <Portrait flags={flags} runtime={runtime} />
       <LastHouseDoor flags={flags} />
     </>
   );

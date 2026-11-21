@@ -43,10 +43,10 @@ export const LOCKET_PLACEHOLDER_LINES: readonly DialogueLine[] = [
   { id: 'vo_angel_b7_neutral_c2', speaker: 'Angel', text: 'Hounds are the smoke\'s idea of a joke. I find it lacks my timing.', placeholder: P },
   { id: 'vo_angel_b7_dark_c2', speaker: 'Angel', text: 'Keep moving, sweet thing. Hounds are a toll, not a wall.', placeholder: P },
   // Beat 8
-  { id: 'vo_angel_b8_any_c1', speaker: 'Angel', text: 'A mirror in a carriage house. Rosalind never did anything by halves.', placeholder: P },
+  { id: 'vo_angel_b8_any_c1', speaker: 'Angel', text: 'A family portrait in a carriage house. Rosalind never did anything by halves.', placeholder: P },
   { id: 'vo_angel_b8_kind_c2', speaker: 'Angel', text: 'He was so brave, your boy. Be brave back, dear heart.', placeholder: P },
-  { id: 'vo_angel_b8_neutral_c2', speaker: 'Angel', text: 'Three marks in a glass. The reflection knows the way and the room does not. Curious.', placeholder: P },
-  { id: 'vo_angel_b8_dark_c2', speaker: 'Angel', text: 'Cast, burn, move on. The mirror is only a lock with better manners.', placeholder: P },
+  { id: 'vo_angel_b8_neutral_c2', speaker: 'Angel', text: 'Three marks in hidden paint. The walls remember what the room forgot. Curious.', placeholder: P },
+  { id: 'vo_angel_b8_dark_c2', speaker: 'Angel', text: 'Cast, burn, move on. The runes are only a lock with better manners.', placeholder: P },
   // Beat 9
   { id: 'vo_angel_b9_kind_c2', speaker: 'Angel', text: "Careful on the stairs, dear heart. I've only just got used to you.", placeholder: P },
   { id: 'vo_angel_b9_neutral_c2', speaker: 'Angel', text: 'Every house has a room it hides. This one has several.', placeholder: P },
