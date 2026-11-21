@@ -1621,3 +1621,20 @@ Models: home_elena.glb (house shell, rooms, entity props) and street_front.glb (
 | AR.14 | | |
 | AR.15 | | |
 | AR.16 | | |
+
+## 17. Angel T key: one-shot sounds, key hint, puzzle hints (added 2026-11-21)
+Use a dev start with the locket taken, e.g. [localhost:5173/?start=street](http://localhost:5173/?start=street). Hard reload (Ctrl+Shift+R) first so no old code is cached.
+
+| Step | Do this | Pass when |
+|---|---|---|
+| TH.1 | Start, wait for the Angel cluster at bottom left | Small text "T - Call the Angel" shows under the lights, above the HP/MP bars, and stays |
+| TH.2 | Press T once, then do nothing for 20 s | A short soft whisper sound plays and ends by itself. No sound keeps going. The Angel line fades on its own |
+| TH.3 | Press T twice quickly | The first line is cut with a soft fade-out sound, the next line starts. No noise stays after |
+| TH.4 | Press Esc during and after a T line | No sound is left running; Esc only pauses |
+| TH.5 | Reach the outbuilding padlock (beat 7, hounds cleared, `?start=` a later point if needed), do not open it. Press T | Angel plays an indirect hint ("Your grandmother was fond of dates.") with a soft chime |
+| TH.6 | Press T again at the padlock | Angel teases lightly and says "Nineteen sixty-six". A twinkle sound plays. Press T more: same line, no new progress |
+| TH.7 | Enter 1966 and open the padlock, press T | Normal Angel lines again, no puzzle hint |
+| TH.8 | In the Last House, clear the cat. Before solving the talking board press T | Indirect hint: "What does a house that holds something need?" |
+| TH.9 | Press T again at the board | Angel teases and spells K, E, E, P, E, R |
+| TH.10 | Solve the board, press T | Normal Angel lines. No flag changed by any hint press (door and objective unchanged) |
+| TH.11 | Delete `sfx_angel_whisper.mp3` from `apps/client/public/assets/audio/sfx/` temporarily, press T | A short synth tick plays instead, no error. Restore the file |

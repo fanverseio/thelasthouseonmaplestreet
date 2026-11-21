@@ -119,6 +119,7 @@ export function AngelPanel({ line }: { line: SubtitleLine | null }) {
         </div>
         <div className="angel-line">{shown?.text ?? ''}</div>
       </div>
+      <div className="angel-key-hint">T - Call the Angel</div>
     </div>
   );
 }

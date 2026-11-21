@@ -177,6 +177,7 @@ body,
 /* Angel panel: bottom-left, directly above the HUD bars (two rows, about 2.4rem). */
 .angel-panel { position: absolute; left: 1.25rem; bottom: 4rem; max-width: 22rem; display: flex; flex-direction: column; align-items: flex-start; gap: 0.15rem; pointer-events: none; }
 .angel-cluster { display: block; }
+.angel-key-hint { font-family: Georgia, 'Times New Roman', serif; font-size: 0.8rem; letter-spacing: 0.04em; color: rgba(242, 238, 230, 0.6); text-shadow: 0 1px 3px #000; }
 .angel-text { font-family: Georgia, 'Times New Roman', serif; color: #f2eee6; text-shadow: 0 1px 3px #000, 0 0 8px rgba(0, 0, 0, 0.85); line-height: 1.35; transition: opacity 0.4s ease-out; }
 .angel-name { font-size: 0.8em; letter-spacing: 0.12em; text-transform: uppercase; }
 @media (prefers-reduced-motion: reduce) { .angel-text { transition: none; } }

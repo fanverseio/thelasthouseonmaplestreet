@@ -154,3 +154,14 @@ describe('event routing', () => {
     expect(cuesForNewFlags([], ['fuse_placed', 'journal_1', 'lane_open'])).toEqual([]); // a load
   });
 });
+
+describe('Angel T sounds', () => {
+  it('picks a one-shot cue per line kind, all with files', async () => {
+    const { cueForAngelLine } = await import('./audio-cues.ts');
+    expect(cueForAngelLine('vo_angel_b1_c1', false)).toBe('sfx_angel_whisper');
+    expect(cueForAngelLine('vo_angel_b1_c1', true)).toBe('sfx_angel_fade');
+    expect(cueForAngelLine('vo_angel_p3_h1', false)).toBe('sfx_angel_chime');
+    expect(cueForAngelLine('vo_angel_p5_t2', false)).toBe('sfx_angel_tease');
+    for (const c of ['sfx_angel_whisper', 'sfx_angel_chime', 'sfx_angel_fade', 'sfx_angel_tease']) expect(isFileCue(c)).toBe(true);
+  });
+});

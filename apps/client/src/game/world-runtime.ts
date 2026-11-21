@@ -19,6 +19,7 @@ import type { GameStore } from '../store/game-store.ts';
 import { checkpointForEvent } from './checkpoints.ts';
 import { canOpenLocket, emptyPlayed, markPlayed, selectClassicLine, type LocketPolicy, type PlayedLines } from './dialogue.ts';
 import { highlightsOf, hintLevelFor, initialHintState, stepHint, type HintState } from './hints.ts';
+import { activeTPuzzle, tHintLine } from './t-hints.ts';
 import { findAllInRange, INTERACT_RANGE, pickUp, useSocket as consumeSocket, type Hit, type Interactable } from './interaction.ts';
 import { createSequenceRunner, type SequenceDef, type SequenceEffect, type SequenceRunner, type SequenceSignal } from './sequences.ts';
 
@@ -246,6 +247,8 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
   const present = new Set<EntityId>();
   let hintStates: Record<string, HintState> = Object.fromEntries(hints.map((h) => [h.id, initialHintState()]));
   let played: PlayedLines = emptyPlayed();
+  /** T presses per puzzle while its ladder is active (memory only; resets on load, which is harmless). */
+  const tPresses: Partial<Record<PuzzleId, number>> = {};
   let subtitle: (SpokenLine & { until: number }) | null = null;
   let video: { clipId: string; fallbackSeconds: number } | null = null;
   let prompt: string | null = null;
@@ -718,7 +721,13 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
       ...(activePuzzle(flags) && { puzzle: activePuzzle(flags)! }),
       played,
     };
-    const pick = selectClassicLine(ctx);
+    const tPuzzle = activeTPuzzle(flags);
+    let pick: { id: string } | null;
+    if (tPuzzle) {
+      // Padlock or talking board in progress: T climbs the hint ladder (indirect first, then the teasing exact answer).
+      tPresses[tPuzzle.id] = (tPresses[tPuzzle.id] ?? 0) + 1;
+      pick = { id: tHintLine(tPuzzle, tPresses[tPuzzle.id]!) };
+    } else pick = selectClassicLine(ctx);
     if (!pick) return null;
     const line = getLine(pick.id);
     if (!line) return null;
@@ -728,6 +737,7 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
     subtitle = { ...speaker, until: simTime + subtitleSeconds(line.text) };
     options.onLine?.(speaker);
     changed();
+    if (tPuzzle) return { line: speaker, hasNext: false };
     const next = selectClassicLine({ ...ctx, played });
     return { line: speaker, hasNext: next !== null && (played[next.id] ?? 0) === 0 };
   }

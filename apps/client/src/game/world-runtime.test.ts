@@ -11,6 +11,7 @@ import { moveAndSlide } from './collision.ts';
 import { PLAYER_RADIUS, SIM_DT } from './player.ts';
 import { createWorldRuntime, zoneAt } from './world-runtime.ts';
 import { validateSequenceDef } from './sequences.ts';
+import { activeTPuzzle, tHintLevel } from './t-hints.ts';
 
 /** A headless Elena: real collision, a speed cap, the runtime ticked every step. */
 function setup() {
@@ -333,5 +334,44 @@ describe('Classic locket in later beats', () => {
     const { store, rt } = setup();
     for (const f of PATH) expect(store.getState().setFlag(f).ok, f).toBe(true);
     expect(rt.locketLine()?.line.lineId).toBe('vo_angel_p6_h_north');
+  });
+});
+
+describe('T hints for the padlock and the talking board', () => {
+  const upTo = (flag: ProgressFlag) => PATH.slice(0, PATH.indexOf(flag) + 1);
+
+  const ladder = (flags: ProgressFlag[], solved: ProgressFlag) => {
+    const { store, rt } = setup();
+    for (const f of flags) expect(store.getState().setFlag(f).ok, f).toBe(true);
+    const before = [...store.getState().progress.flags];
+    const ids = [1, 2, 3, 4].map(() => rt.locketLine()?.line.lineId);
+    // Playing hints never changes a flag or the puzzle itself.
+    expect(store.getState().progress.flags).toEqual(before);
+    // Solving the puzzle ends the ladder: T is back to ordinary Angel lines, never stuck.
+    expect(store.getState().setFlag(solved).ok).toBe(true);
+    return { ids, after: rt.locketLine()?.line.lineId };
+  };
+
+  it('padlock: press 1 is the indirect hint, press 2 and later give the exact answer', () => {
+    const { ids, after } = ladder(upTo('enc_approach_resolved'), 'padlock_open');
+    expect(ids).toEqual(['vo_angel_p3_h1', 'vo_angel_p3_t2', 'vo_angel_p3_t2', 'vo_angel_p3_t2']);
+    expect(getLine('vo_angel_p3_t2')?.text).toContain('Nineteen sixty-six');
+    expect(after).toBeTruthy();
+    expect(after).not.toMatch(/_p3_/);
+  });
+
+  it('talking board: press 1 indirect, press 2 spells KEEPER', () => {
+    const { ids, after } = ladder(upTo('enc_interior_resolved'), 'board_solved');
+    expect(ids).toEqual(['vo_angel_p5_h1', 'vo_angel_p5_t2', 'vo_angel_p5_t2', 'vo_angel_p5_t2']);
+    expect(getLine('vo_angel_p5_t2')?.text).toContain('K, E, E, P, E, R');
+    expect(after).not.toMatch(/_p5_/);
+  });
+
+  it('the ladder is off before the puzzle can be solved', () => {
+    expect(activeTPuzzle(upTo('lane_open'))).toBeNull();
+    expect(activeTPuzzle(upTo('padlock_open'))).toBeNull();
+    expect(activeTPuzzle(upTo('enc_approach_resolved'))?.id).toBe('p3_padlock');
+    expect(tHintLevel(1)).toBe(1);
+    expect(tHintLevel(2)).toBe(2);
   });
 });

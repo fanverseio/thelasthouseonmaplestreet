@@ -27,7 +27,7 @@ import { ExteriorScene } from '../scene/exterior-scene.tsx';
 import { PlayerRig } from '../scene/player-rig.tsx';
 import { loadedLastHouse, loadSceneHook, preloadLastHouse } from '../services/scene-loader.ts';
 import { bindInput } from '../services/input-bindings.ts';
-import { cuesForEnemyEvent, cuesForRitualEvent, cuesForSpellEvent } from '../services/audio-cues.ts';
+import { cuesForEnemyEvent, cuesForRitualEvent, cuesForSpellEvent, cueForAngelLine } from '../services/audio-cues.ts';
 import { duckForEffect, sfx } from '../services/sfx.ts';
 import { duckAmbienceFor, startSoundDirector, type SoundDirector } from '../services/sound-director.ts';
 import { createVoicePlayer } from '../services/voice-player.ts';
@@ -91,6 +91,7 @@ export function GameView() {
   const voice = useMemo(() => createVoicePlayer(), []);
   // Set while T asks for a locket line: that line cuts the one playing instead of waiting (author: T skips).
   const locketSkip = useRef(false);
+  const lastTPress = useRef(-Infinity);
   // One world runtime per game view: New Game mounts a fresh view, so timers and fired triggers start clean.
   const { world: runtime, encounters, choices, ritual, ending } = useMemo(
     () =>
@@ -237,7 +238,12 @@ export function GameView() {
     if (gameStore.getState().game.activeMode !== 'ai') {
       locketSkip.current = true;
       try {
-        if (runtime.locketLine()) sfx.play('sfx_locket_open');
+        const res = runtime.locketLine();
+        if (res) {
+          const t = performance.now();
+          sfx.play(cueForAngelLine(res.line.lineId, t - lastTPress.current < 6000));
+          lastTPress.current = t;
+        }
       } finally {
         locketSkip.current = false;
       }

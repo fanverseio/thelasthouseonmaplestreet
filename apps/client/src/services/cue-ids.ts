@@ -74,6 +74,10 @@ export const SFX_CUE_IDS: readonly string[] = [
   'sfx_locket_open',
   'sfx_locket_close',
   'sfx_hint_chime',
+  'sfx_angel_whisper',
+  'sfx_angel_chime',
+  'sfx_angel_fade',
+  'sfx_angel_tease',
 ];
 
 export const WHISPER_CUES: readonly string[] = SFX_CUE_IDS.filter((id) => id.startsWith('sfx_whisper_'));

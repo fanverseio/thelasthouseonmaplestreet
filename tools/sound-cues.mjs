@@ -114,6 +114,11 @@ export const SOUND_CUES = [
   sfx('sfx_locket_open', 1, 'A small silver locket clicking open with a tiny hinge click and a soft shimmer of magic.'),
   sfx('sfx_locket_close', 1, 'A small silver locket snapping shut with a gentle click and a tiny fading shimmer.'),
   sfx('sfx_hint_chime', 1.5, 'A soft glassy chime of two gentle notes, a quiet helpful magical hint. Not music.'),
+  // The Angel speaking through the locket: one-shot, each ends by itself (no loops).
+  sfx('sfx_angel_whisper', 1.2, 'A short airy magical whisper-like breath of wind with a faint silver shimmer, like a spirit stirring inside a locket. No words, no voice, no music. Soft and brief.'),
+  sfx('sfx_angel_chime', 1.2, 'One soft glassy chime with a short gentle tail that fades to silence. Delicate, ghostly, not music.'),
+  sfx('sfx_angel_fade', 1.5, 'A quiet airy magical shimmer that fades out smoothly to silence, like a spirit voice drifting away. No words, no music.'),
+  sfx('sfx_angel_tease', 1.2, 'A playful sly little rising twinkle of two glassy notes with a faint breathy giggle of wind. No words, no voice, no music. Brief.'),
 ];
 
 /**

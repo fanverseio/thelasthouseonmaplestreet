@@ -208,3 +208,13 @@ export function cuesForPuzzleEvent(puzzle: PuzzleName, e: PuzzleEvent): CueReque
       return [];
   }
 }
+
+/**
+ * The one-shot sound for a T press in Classic. A T press that cuts a line still playing fades it out;
+ * the indirect puzzle hint gets a chime, the teasing exact answer a sly twinkle, any other line a whisper.
+ */
+export function cueForAngelLine(lineId: string, interrupting: boolean): string {
+  if (/^vo_angel_p[35]_t2$/.test(lineId)) return 'sfx_angel_tease';
+  if (/^vo_angel_p[35]_h1$/.test(lineId)) return 'sfx_angel_chime';
+  return interrupting ? 'sfx_angel_fade' : 'sfx_angel_whisper';
+}

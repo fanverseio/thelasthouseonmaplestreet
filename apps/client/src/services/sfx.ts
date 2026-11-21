@@ -64,6 +64,14 @@ export const CUE_TABLE: Readonly<Record<string, readonly CueLayer[]>> = {
     { type: 'tone', wave: 'sine', f0: 70, f1: 30, start: 0, seconds: 0.4, gain: 1 },
     { type: 'noise', f0: 400, f1: 100, start: 0, seconds: 0.3, gain: 0.6 },
   ],
+  // The Angel speaking through the locket: short, ends by itself (synth stands in when a file is missing)
+  sfx_angel_whisper: [{ type: 'noise', f0: 2500, f1: 1200, start: 0, seconds: 0.6, gain: 0.25 }],
+  sfx_angel_chime: [{ type: 'tone', wave: 'sine', f0: 880, f1: 880, start: 0, seconds: 0.9, gain: 0.25 }],
+  sfx_angel_fade: [{ type: 'noise', f0: 1800, f1: 600, start: 0, seconds: 0.9, gain: 0.2 }],
+  sfx_angel_tease: [
+    { type: 'tone', wave: 'sine', f0: 660, f1: 700, start: 0, seconds: 0.3, gain: 0.25 },
+    { type: 'tone', wave: 'sine', f0: 990, f1: 1040, start: 0.15, seconds: 0.5, gain: 0.25 },
+  ],
   sfx_teleport: [
     { type: 'tone', wave: 'sine', f0: 900, f1: 200, start: 0, seconds: 0.35, gain: 0.3 },
     { type: 'noise', f0: 2000, f1: 400, start: 0, seconds: 0.3, gain: 0.35 },
