@@ -9,6 +9,7 @@ import { GroundMist, Halo } from './atmosphere.tsx';
 import { HouseKit, KIT_BOX_IDS, Streetlight } from './kit.tsx';
 import { Backdrop } from './backdrop.tsx';
 import { GroundsScene } from './grounds-scene.tsx';
+import { StoryProps } from './story-props.tsx';
 import { veilOpacity } from '../game/gates.ts';
 import type { WorldRuntime } from '../game/world-runtime.ts';
 import { PLACEMENTS } from '../content/world/placements.ts';
@@ -170,7 +171,7 @@ export function ExteriorScene({ flags, runtime }: { flags: readonly ProgressFlag
         <meshStandardMaterial color="#14161c" roughness={1} />
       </mesh>
 
-      {BOXES.filter((b) => !KIT_BOX_IDS.has(b.id) && b.id !== 'house.last' && b.id !== 'garage.no31').map((b) => (
+      {BOXES.filter((b) => !KIT_BOX_IDS.has(b.id) && b.id !== 'house.last' && b.id !== 'garage.no31' && b.id !== 'shed.no40').map((b) => (
         <mesh key={b.id} position={[b.x, b.h / 2, b.z]} castShadow receiveShadow>
           <boxGeometry args={[b.w, b.h, b.d]} />
           <meshStandardMaterial color={b.color} roughness={0.9} />
@@ -214,6 +215,7 @@ export function ExteriorScene({ flags, runtime }: { flags: readonly ProgressFlag
       ))}
       <WindowShadow runtime={runtime} />
       <GroundsScene flags={flags} runtime={runtime} />
+      <StoryProps flags={flags} runtime={runtime} />
 
       {STREETLIGHTS.map(([x, z]) => (
         <group key={`${x},${z}`} position={[x, 0, z]}>

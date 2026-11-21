@@ -4,6 +4,7 @@
  * nodes on the corrupted ones). Pure data and functions; characters.tsx draws them.
  */
 import type { EnemyState } from '../game/enemies.ts';
+import { SHED } from '../content/world/story-props-layout.ts';
 
 export type ClipName = 'idle' | 'walk' | 'run' | 'windup' | 'strike' | 'slam_windup' | 'slam' | 'stagger' | 'stunned' | 'purified';
 
@@ -71,13 +72,15 @@ export interface NpcLook extends CharacterLook {
   lift: number;
   /** Entity whose placement the NPC stands on (Felix has none of his own: he sleeps above the central seal). */
   at: string;
+  /** Where the model is drawn when that differs from the placement (Gartner sits inside the solid shed). View only. */
+  view?: { x: number; z: number };
 }
 
 /** NPC entity id -> look. */
 export const NPC_LOOKS: Readonly<Record<string, NpcLook>> = {
   'npc.hideout.gartner': {
     url: `${M}gartner.glb`, corrupted: false, aura: 0, eye: 0, walkSpeed: 1, runsAbove: null,
-    idleClip: 'idle_scared', nearClip: 'talk', lift: 0, at: 'npc.hideout.gartner',
+    idleClip: 'idle_scared', nearClip: 'talk', lift: 0, at: 'npc.hideout.gartner', view: SHED.gartner,
   },
   'npc.ritual.felix': {
     url: `${M}felix.glb`, corrupted: false, aura: 0, eye: 0, walkSpeed: 1, runsAbove: null, ghost: true,

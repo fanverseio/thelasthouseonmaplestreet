@@ -76,6 +76,7 @@ export const PLACEMENTS: Readonly<Record<EntityId, Placement>> = {
   'puzzle.grounds.padlock': { x: -52, z: 26.5, r: 0.2 },
   // Beat 8: the antique mirror hangs inside the outbuilding; the three runes sit on its inside walls
   'mirror.grounds.antique': { x: -52, z: 32.2, r: 0.8 },
+  'clue.grounds.portrait': { x: -55.2, z: 31.5, r: 0.5 },
   'rune.grounds.r1': { x: -54.5, z: 27.9, r: 0.3 },
   'rune.grounds.r2': { x: -49.5, z: 27.9, r: 0.3 },
   'rune.grounds.r3': { x: -48.8, z: 31.5, r: 0.3 },

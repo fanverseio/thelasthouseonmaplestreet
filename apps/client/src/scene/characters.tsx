@@ -426,7 +426,7 @@ export function NpcModel({ id, look, at }: { id: string; look: NpcLook; at?: { x
   const rig = useRig(look);
   const group = useRef<Group>(null);
   const yaw = useRef(0);
-  const p = at ?? PLACEMENTS[look.at]!;
+  const p = at ?? look.view ?? PLACEMENTS[look.at]!;
   // The model replaces the entity's greybox marker (interactables.tsx).
   useEffect(() => registerModelNodes([entityNodeName(id)]), [id]);
   useFrame(({ camera, clock }, delta) => {

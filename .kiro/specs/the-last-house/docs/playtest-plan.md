@@ -1667,3 +1667,37 @@ Start a New Game for steps 1-8, `?start=training` for 9-10, `?start=street` for 
 | Step | Result | Note |
 |---|---|---|
 | 18.1-18.14 | | |
+
+## 19. Look and story: playtest notes 8, 11, 14, 15, 18, 19 (added 2026-11-21)
+
+Use a New Game or the dev starts (`?start=garden` for 1-3, `?start=house66` for 4-6, `?start=lane` for 7-9, `?start=grounds` for 10-18). Mark each PASS, FAIL or N/A. Shed, "66", padlock, portrait and door are built from simple shapes (greybox); they will be replaced by real art later.
+
+1. (Note 8) After beating Mr. Briggs and taking the walkie, walk to Gartner's shed behind No. 40. The shed door is shut and you cannot see Gartner.
+2. (Note 8) Press E at the door ("Knock on the shed door"). The door swings open and you see Gartner inside, with a lit bulb, a shelf, a crate and a blanket. The confession plays as before.
+3. (Note 8) After the scene (seq4_done) the door stays open, the shed is empty and you still cannot walk into the shed. The journal page next to it still works.
+4. (Note 11) Walk to House 66 (north-west). A dark red front door with a gold-framed "66" plate is lit and easy to read from the yard.
+5. (Note 11) The fuse box, fuse placing and the Watcher fight work as before.
+6. (Note 14, voice) Walk the back lane past your own garden. Felix's window lights up. Elena says: "That's my house, behind the fence. Felix's window... the light is on." The sentence now clearly means her own home. Mark FAIL if it still sounds like the Last House.
+7. (Note 15) At the outbuilding door, the padlock looks like a padlock: brass body, silver shackle on top, keyhole, a plate on the door.
+8. (Note 15) After the hounds, press E on the padlock. The number lock opens as before and the code 1966 opens the door. The padlock is gone afterwards.
+9. (Note 15) Press T twice while the lock is open: first the indirect Angel hint, then the exact answer (unchanged).
+10. (Note 18) Enter the outbuilding. A framed picture hangs on the west wall (left as you walk in): a woman with a bun holding a baby, with a mirror and three purple marks painted behind them.
+11. (Note 18) Press E at the portrait. Elena says it is Grandma holding baby Felix, with a mirror and three marks, and tells you to find them in the mirror. You can repeat it.
+12. (Note 18) Do the mirror scene. Stay near the mirror for 30 s without acting: the portrait frame pulses gold (hint), then the old mirror hints follow (60 s, 90 s).
+13. (Note 18) After the mirror scene, press T once: the Angel says the short mirror hint. Press T again: the Angel says where the three runes are (two on the wall with the door, one on the side wall near the glass), find them in the glass, turn around, purify. No flag changes.
+14. (Note 18) Purify all three runes. T goes back to normal Angel lines.
+15. (Note 19) Before the runes are done, the Last House front door is shut. After the third rune the door swings ajar and blue-white light glows from the crack and spills on the ground. The glow flickers a little.
+16. (Note 19) Walk to the door and press E ("Enter the Last House"). You still enter the house as before.
+17. (Note 19) Load the save from just after the runes (Continue). The door is still ajar and glowing.
+18. Play the same path without cheats and check that no flag changed order: the same flags are set in the same places as in section 1.
+
+### Questions for you
+- Note 14: the line "That's our house" plays at your own back garden (Felix's window), not at the Last House, so the old wording confused things. I changed it to "That's my house, behind the fence..." and re-voiced it. If you want a line at the Last House as well, tell me what Elena should say.
+- Note 8: I chose the simple option. Elena cannot walk into the shed, but she sees the inside through the open door. A walkable interior would need new colliders.
+- New voice lines made for this change (ElevenLabs, about 270 characters): `vo_elena_b8_portrait`, `vo_angel_p4_t2`, and the re-voiced `vo_elena_b7_01`.
+- Notes 18: the portrait is a painted texture drawn in code (not a model). I did not make the mirror a body reflection.
+
+### Results (section 19)
+| Step | Result | Note |
+|---|---|---|
+| 19.1-19.18 | | |

@@ -12,4 +12,5 @@ export const PUZZLE_LINES: readonly DialogueLine[] = [
   // Pressing T again at the same puzzle: the Angel teases, then gives the answer (game/t-hints.ts).
   { id: 'vo_angel_p3_t2', speaker: 'Angel', text: 'Oh, honestly. Nineteen sixty-six, dear. The year on the journal page. Do try to keep up.' },
   { id: 'vo_angel_p5_t2', speaker: 'Angel', text: 'Still stuck? Charming. K, E, E, P, E, R. Keeper. I am blushing on your behalf.' },
+  { id: 'vo_angel_p4_t2', speaker: 'Angel', text: 'Oh, honestly. Face the mirror, child. Two glyphs behind you by the doorway, one on the side wall. Find each in the glass, turn around, purify. Do try.' },
 ];

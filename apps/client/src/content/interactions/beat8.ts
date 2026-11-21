@@ -30,6 +30,13 @@ export const BEAT8: InteractionContent = {
       actions: [{ do: 'startSequence', sequence: 'seq5_felix_mirror' }],
     },
     ...RUNES.map(rune),
+    // Note 18: Rosalind holding baby Felix, painted before the same mirror with three glyphs. Hangs in the outbuilding.
+    {
+      id: 'clue.grounds.portrait',
+      prompt: 'Look at the portrait',
+      show: { flags: ['padlock_open'] },
+      actions: [{ do: 'say', line: 'vo_elena_b8_portrait' }],
+    },
   ],
   triggers: [],
   hints: [
@@ -40,7 +47,7 @@ export const BEAT8: InteractionContent = {
       startFlag: 'seq5_done',
       cancelFlag: 'runes_done',
       steps: [
-        { atSeconds: 30, say: 'vo_felix_p4_h1' },
+        { atSeconds: 30, say: 'vo_felix_p4_h1', highlight: 'clue.grounds.portrait' },
         { atSeconds: 60, say: 'vo_angel_p4_h2', highlight: 'mirror.grounds.antique' },
         { atSeconds: 90, say: 'vo_angel_p4_h3', highlight: 'rune.grounds.r1' },
         { atSeconds: 90, highlight: 'rune.grounds.r2' },
