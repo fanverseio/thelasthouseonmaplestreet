@@ -42,3 +42,18 @@ export function subscribeModelNodes(listener: () => void): () => void {
 export function modelNodesVersion(): number {
   return version;
 }
+
+/**
+ * Furniture whose interaction ends (the drawer after the locket is taken, the pumpkin jar after the key, the drawing
+ * after it is read) but whose model must stay in the room. Only the interaction hides; the model does not.
+ */
+export const STAY_VISIBLE_ENTITIES: ReadonlySet<string> = new Set([
+  'socket.home.drawer',
+  'prop.home.pumpkin_jar',
+  'clue.home.drawing',
+]);
+
+/** Whether a prop model node is shown: while its entity is offered, or always for furniture that stays. */
+export function propNodeVisible(id: string, offered: ReadonlySet<string>): boolean {
+  return offered.has(id) || STAY_VISIBLE_ENTITIES.has(id);
+}

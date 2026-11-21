@@ -1638,3 +1638,32 @@ Use a dev start with the locket taken, e.g. [localhost:5173/?start=street](http:
 | TH.9 | Press T again at the board | Angel teases and spells K, E, E, P, E, R |
 | TH.10 | Solve the board, press T | Normal Angel lines. No flag changed by any hint press (door and objective unchanged) |
 | TH.11 | Delete `sfx_angel_whisper.mp3` from `apps/client/public/assets/audio/sfx/` temporarily, press T | A short synth tick plays instead, no error. Restore the file |
+
+## 18. Prompts and triggers: playtest notes 1, 2, 3, 4, 5, 6, 17 (added 2026-11-21)
+
+Start a New Game for steps 1-8, `?start=training` for 9-10, `?start=street` for 11 and `?start=grounds` for 12. Mark each PASS, FAIL or N/A.
+
+1. Walk into Felix's bedroom and up to the costume chair. Elena says the costume line only. She does NOT say "The window's open" (note 1).
+2. Walk to the window in the bedroom's west wall. The prompt "E  Look out the window" shows (note 2).
+3. Press E at the window. Elena says "The window's open. Why is the window open?" once. The prompt then goes away (notes 1, 2).
+4. Finish the drawing, pumpkin jar and key steps. The pumpkin jar and the drawing stay in the room after you use them (note 3).
+5. Unlock the drawer with the key. The drawer stays visible; only the key leaves your hands (note 3).
+6. During the Angel's introduction, no "Mom?" from Felix and no "Felix! Stay there" from Elena play. The Angel's last line (take me with you) comes right after her talk about something old being awake (note 4).
+7. After the intro, T works and the front door opens as before (flags unchanged).
+8. Open the Settings glow option "bright". The bedroom window shows a gold ring while the "E" prompt is available, and no second blue ring (note 2).
+9. Stun the practice hound (hit it with Arcane Bolt until it stops). A bold line shows low on the screen: "Purify (2) to save, or charged Bolt (1) to destroy" (note 5).
+10. Leave the hound stunned. The line stays. Purify or destroy it: the line goes away (note 5).
+11. On the street fox before Purify is learned, a stun shows "Charged Bolt (1) to destroy, or leave it stunned" (note 5).
+12. At the streetlight at the intersection, the blue ring shows before the Felix scene. After the scene it is gone and no E is expected there. The streetlight is a cinematic spot, not an E prompt (note 6).
+13. In the outbuilding (after the mirror scene), stand in front of the mirror, then at its left and right ends. All three purple runes show in the mirror, bigger and brighter than before (note 17).
+14. Walk to each rune's wall spot and Purify it as before. Runes done still opens the Last House door.
+
+### Questions for you
+- Note 6: I treated the ring at the streetlight as the Seq 2 cinematic spot and only removed the leftover ring after Seq 2. If you meant a different spot, send its note position.
+- Note 3: I kept the drawer, jar and drawing models in the room. If a different item vanished (for example the note or the locket), tell me which.
+- Note 4: Felix's "Mom?" is removed from the intro and waits for a future cinematic at the front door (TODO in `content/sequences/beat1.ts`).
+
+### Results (section 18)
+| Step | Result | Note |
+|---|---|---|
+| 18.1-18.14 | | |

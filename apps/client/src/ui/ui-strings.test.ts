@@ -22,7 +22,7 @@ describe('the encounter panel hint for FSM enemies', () => {
   const src = Object.values(files)[0] ?? '';
 
   it('shows the stunned hint line, the Ward prompt, and keeps the keyboard fallbacks', () => {
-    expect(src).toContain("'Stunned: 2 + hold LMB to Purify · 1 + hold LMB to Destroy'");
+    expect(src).toContain("'Purify (2) to save, or charged Bolt (1) to destroy'");
     expect(src).toContain("'Ward: press 3, then click'");
     expect(src).toContain("e.code === 'Digit2'");
     expect(src).toContain("e.code === 'Enter'");

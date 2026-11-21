@@ -1,6 +1,6 @@
 import { useFrame } from '@react-three/fiber';
 import { useMemo, useRef, useSyncExternalStore } from 'react';
-import { Group, Mesh, MeshBasicMaterial, MeshStandardMaterial, PlaneGeometry, type Camera, type Object3D, type Scene, type WebGLRenderer } from 'three';
+import { AdditiveBlending, Group, Mesh, MeshBasicMaterial, MeshStandardMaterial, PlaneGeometry, type Camera, type Object3D, type Scene, type WebGLRenderer } from 'three';
 import { Reflector } from 'three/examples/jsm/objects/Reflector.js';
 import type { EntityId, ProgressFlag } from '@tlh/shared';
 import {
@@ -9,6 +9,7 @@ import {
   OUTBUILDING_DOOR,
   OUTBUILDING_WALL_HEIGHT,
   OUTBUILDING_WALLS,
+  RUNE_WALL,
 } from '../content/world/grounds-layout.ts';
 import { outbuildingDoorOpen } from '../content/world/exterior-layout.ts';
 import type { WallRect } from '../content/world/home-layout.ts';
@@ -17,12 +18,6 @@ import type { WorldRuntime } from '../game/world-runtime.ts';
 import { useGame } from '../store/index.ts';
 
 const RUNES = ['rune.grounds.r1', 'rune.grounds.r2', 'rune.grounds.r3'] as const;
-/** Each rune is drawn flat on the inside wall nearest its spot: [x, z, rotation about Y]. */
-const RUNE_WALL: Record<(typeof RUNES)[number], { x: number; z: number; ry: number }> = {
-  'rune.grounds.r1': { x: -54.5, z: 27.42, ry: 0 },
-  'rune.grounds.r2': { x: -49.5, z: 27.42, ry: 0 },
-  'rune.grounds.r3': { x: -48.42, z: 31.5, ry: -Math.PI / 2 },
-};
 const RUNE_Y = 1.5;
 
 function Wall({ r, color }: { r: WallRect; color: string }) {
@@ -36,21 +31,21 @@ function Wall({ r, color }: { r: WallRect; color: string }) {
   );
 }
 
-/** A flat greybox glyph: a ring and a cross. */
+/** A flat glyph: a ring and a cross, glowing (additive) so it reads in the dark mirror. Drawn 1.6x the old size. */
 function Glyph({ color, opacity = 1 }: { color: string; opacity?: number }) {
   return (
-    <group>
+    <group scale={1.6}>
       <mesh>
         <ringGeometry args={[0.28, 0.36, 24]} />
-        <meshBasicMaterial color={color} transparent opacity={opacity} />
+        <meshBasicMaterial color={color} transparent opacity={opacity} blending={AdditiveBlending} depthWrite={false} fog={false} />
       </mesh>
       <mesh>
         <planeGeometry args={[0.08, 0.6]} />
-        <meshBasicMaterial color={color} transparent opacity={opacity} />
+        <meshBasicMaterial color={color} transparent opacity={opacity} blending={AdditiveBlending} depthWrite={false} fog={false} />
       </mesh>
       <mesh>
         <planeGeometry args={[0.6, 0.08]} />
-        <meshBasicMaterial color={color} transparent opacity={opacity} />
+        <meshBasicMaterial color={color} transparent opacity={opacity} blending={AdditiveBlending} depthWrite={false} fog={false} />
       </mesh>
     </group>
   );
@@ -70,7 +65,7 @@ function Mirror({ showRunes, purified }: { showRunes: boolean; purified: Readonl
       textureWidth: 512,
       textureHeight: 512,
       clipBias: 0.003,
-      color: 0x9aa6b4,
+      color: 0xc8d2e0,
       multisample: 0,
     });
     const inner = r.onBeforeRender as unknown as BeforeRender;
@@ -97,7 +92,7 @@ function Mirror({ showRunes, purified }: { showRunes: boolean; purified: Readonl
             const w = RUNE_WALL[id];
             return (
               <group key={id} position={[w.x, RUNE_Y, w.z]} rotation={[0, w.ry, 0]}>
-                <Glyph color={purified.has(id) ? '#9fe8ff' : '#b04adf'} />
+                <Glyph color={purified.has(id) ? '#9fe8ff' : '#e08cff'} />
               </group>
             );
           })}

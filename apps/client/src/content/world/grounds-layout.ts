@@ -12,8 +12,24 @@ export const OUTBUILDING_BOUNDS = { minX: -56, maxX: -48, minZ: 27, maxZ: 33 } a
 export const OUTBUILDING_WALL_HEIGHT = 3;
 /** Just outside the door (cp_outbuilding respawn). */
 export const OUTBUILDING_PORCH = { x: -52, z: 25.5, yaw: Math.PI } as const;
-/** The mirror plane: centre, width, height and bottom edge. It faces north (into the room). */
-export const MIRROR_PLANE = { x: -52, z: 32.58, width: 3, height: 2.2, bottom: 0.3 } as const;
+/** The mirror plane: centre, width, height and bottom edge. It faces north (into the room). Wide enough that all three runes show from the middle of the room (note 17). */
+export const MIRROR_PLANE = { x: -52, z: 32.58, width: 6, height: 2.2, bottom: 0.3 } as const;
+
+/** Each rune is drawn flat on the inside wall nearest its spot: [x, z, rotation about Y]. View data. */
+export const RUNE_WALL = {
+  'rune.grounds.r1': { x: -54.5, z: 27.42, ry: 0 },
+  'rune.grounds.r2': { x: -49.5, z: 27.42, ry: 0 },
+  'rune.grounds.r3': { x: -48.42, z: 31.5, ry: -Math.PI / 2 },
+} as const;
+
+/** True when a viewer at (x, z) sees the rune's reflection inside the mirror's width (flat mirror, image behind it). */
+export function runeVisibleInMirror(viewer: { x: number; z: number }, rune: { x: number; z: number }): boolean {
+  const imageZ = 2 * MIRROR_PLANE.z - rune.z;
+  if (viewer.z >= MIRROR_PLANE.z) return false; // behind the mirror
+  const t = (MIRROR_PLANE.z - viewer.z) / (imageZ - viewer.z);
+  const hitX = viewer.x + (rune.x - viewer.x) * t;
+  return Math.abs(hitX - MIRROR_PLANE.x) <= MIRROR_PLANE.width / 2;
+}
 
 const w = (id: string, minX: number, minZ: number, maxX: number, maxZ: number): WallRect => ({ id, minX, minZ, maxX, maxZ });
 

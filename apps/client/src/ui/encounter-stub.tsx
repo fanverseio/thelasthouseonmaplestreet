@@ -9,9 +9,9 @@ const DESTROY_HOLD_MS = 700;
 const PURIFY_HOLD_MS = SPELL_CONFIG.purify.channelS * 1000;
 
 export const WARD_HINT = 'Ward: press 3, then click';
-export const STUNNED_HINT = 'Stunned: 2 + hold LMB to Purify · 1 + hold LMB to Destroy';
+export const STUNNED_HINT = 'Purify (2) to save, or charged Bolt (1) to destroy';
 /** Before Purify is taught only the destroy half is true. */
-export const STUNNED_HINT_NO_PURIFY = 'Stunned: 1 + hold LMB to Destroy';
+export const STUNNED_HINT_NO_PURIFY = 'Charged Bolt (1) to destroy, or leave it stunned';
 
 const panelStyle = {
   position: 'absolute',
@@ -96,7 +96,12 @@ export function EncounterPanel({ encounters }: { encounters: EncounterRuntime })
           Weaken (E)
         </button>
       )}
-      {active.canChoose && fsm && <small data-testid="stun-hint">{active.canPurify ? STUNNED_HINT : STUNNED_HINT_NO_PURIFY}</small>}
+      {/* Note 5: shown from the stun until the player acts (the encounter resolves and the panel goes away). */}
+      {active.canChoose && fsm && (
+        <strong data-testid="stun-hint" style={{ fontSize: '1.05rem', pointerEvents: 'none' }}>
+          {active.canPurify ? STUNNED_HINT : STUNNED_HINT_NO_PURIFY}
+        </strong>
+      )}
       {active.canChoose && !fsm && (
         <>
           <div>

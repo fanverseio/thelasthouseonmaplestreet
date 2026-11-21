@@ -98,7 +98,17 @@ describe('Beat 1 headless playthrough: New Game to home_done', () => {
     expect(flags()).toContain('bed_seen');
     expect(rt.spoken).toContain('vo_elena_b1_01');
     tick(3.1);
+    // Note 1: the window line does not play just from walking to the chair.
+    expect(rt.spoken).not.toContain('vo_elena_b1_02');
+
+    // Note 2: the window shows an E prompt, and the line plays only when it is used.
+    walkTo(-25.7, 40.7);
+    expect(rt.prompt).toBe('E  Look out the window');
+    expect(press()).toMatchObject({ status: 'done', id: 'light.home.felix_window' });
     expect(rt.spoken).toContain('vo_elena_b1_02');
+    expect(flags()).toEqual(['bed_seen']); // no new flag
+    tick(0.1);
+    expect(rt.prompt).not.toBe('E  Look out the window');
 
     // The drawer is locked (no key): refused, nothing changes. Elena cannot leave through the front door either.
     walkTo(-18.2, 37.8);
@@ -151,7 +161,10 @@ describe('Beat 1 headless playthrough: New Game to home_done', () => {
     tick(30);
     expect(rt.sequences.active).toBeNull();
     expect(flags()).toContain('angel_awake');
-    expect(rt.spoken).toEqual(expect.arrayContaining(['vo_felix_b1_01', 'vo_angel_b1_04']));
+    expect(rt.spoken).toEqual(expect.arrayContaining(['vo_angel_b1_04']));
+    // Note 4: nothing of Felix's voice misfires right after the locket opens.
+    expect(rt.spoken).not.toContain('vo_felix_b1_01');
+    expect(rt.spoken).not.toContain('vo_elena_b1_08');
     expect(rt.canOpenLocket()).toBe(true);
 
     // Optional journal page

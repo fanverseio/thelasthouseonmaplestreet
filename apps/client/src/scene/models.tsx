@@ -5,7 +5,7 @@ import { MeshBasicMaterial, SRGBColorSpace } from 'three';
 import type { Material, Mesh, MeshStandardMaterial, Object3D } from 'three';
 import { PLACEMENTS } from '../content/world/placements.ts';
 import type { WorldRuntime } from '../game/world-runtime.ts';
-import { entityNodeName, registerModelNodes } from './model-nodes.ts';
+import { entityNodeName, propNodeVisible, registerModelNodes } from './model-nodes.ts';
 
 /** Entity kinds the greybox draws as props; their model nodes follow the runtime's visible set. */
 const PROP_KINDS = new Set(['clue', 'prop', 'socket', 'pickup', 'puzzle']);
@@ -136,7 +136,7 @@ function Loaded({ url, runtime, hidden, receiveOnly, lightmapGain = 1 }: Omit<Mo
   for (const [name, entry] of entityNodes.current) {
     const kind = entry.id.split('.')[0] ?? '';
     if (hiddenSet.has(name)) entry.node.visible = false;
-    else if (PROP_KINDS.has(kind) && runtime) entry.node.visible = visible.has(entry.id);
+    else if (PROP_KINDS.has(kind) && runtime) entry.node.visible = propNodeVisible(entry.id, visible);
     else entry.node.visible = true;
   }
 

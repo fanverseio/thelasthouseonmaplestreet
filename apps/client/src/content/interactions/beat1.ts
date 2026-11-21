@@ -13,6 +13,17 @@ export const BEAT1: InteractionContent = {
       ],
     },
     {
+      // Optional (no flag): the open-window line plays here, not when Elena walks into the bedroom (note 1).
+      // The window is the existing entity light.home.felix_window (also lit later by atm_home_window).
+      id: 'light.home.felix_window',
+      prompt: 'Look out the window',
+      show: { notEntities: [{ id: 'light.home.felix_window', key: 'looked', is: true }] },
+      actions: [
+        { do: 'setEntity', id: 'light.home.felix_window', key: 'looked', value: true },
+        { do: 'say', line: 'vo_elena_b1_02' },
+      ],
+    },
+    {
       id: 'prop.home.pumpkin_jar',
       prompt: 'Look inside the pumpkin jar',
       show: { flags: ['drawing_seen'], notFlags: ['drawer_key_taken'] },
@@ -60,7 +71,6 @@ export const BEAT1: InteractionContent = {
       actions: [
         { do: 'setFlag', flag: 'bed_seen' },
         { do: 'say', line: 'vo_elena_b1_01' },
-        { do: 'say', line: 'vo_elena_b1_02', after: 3 },
       ],
     },
   ],

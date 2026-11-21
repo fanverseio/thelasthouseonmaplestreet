@@ -6,6 +6,7 @@ import { PLACEMENTS } from '../content/world/placements.ts';
 import { sceneOfEntity } from '../content/world/scene-of.ts';
 import type { WorldRuntime } from '../game/world-runtime.ts';
 import { useGame, useSettings } from '../store/index.ts';
+import { activeLeads } from './glow-leads.ts';
 import type { InteractGlow } from '../store/settings-store.ts';
 
 /**
@@ -13,7 +14,7 @@ import type { InteractGlow } from '../store/settings-store.ts';
  * and lights worth looking at. The setting `interactGlow` turns it off or makes it subtle, so the final
  * game can keep some things plain. View only.
  */
-const LEADS: readonly EntityId[] = ['light.home.felix_window', 'prop.street.window_14', 'light.street.intersection'] as EntityId[];
+
 
 const USABLE = '#ffd27a';
 const LEAD = '#9fc4ff';
@@ -65,6 +66,7 @@ export function PointGlow({ runtime }: { runtime: WorldRuntime }) {
   useSyncExternalStore(runtime.subscribe, () => runtime.version);
   const mode = useSettings((s) => s.interactGlow);
   const scene = useGame((s) => s.game.scene);
+  const flags = useGame((s) => s.progress.flags);
   if (mode === 'off') return null;
 
   const usable: Beacon[] = runtime
@@ -72,7 +74,7 @@ export function PointGlow({ runtime }: { runtime: WorldRuntime }) {
     .filter((e) => !e.id.startsWith('enemy.') && !e.id.startsWith('trg.'))
     .map((e) => ({ id: e.id, x: e.x, z: e.z, r: e.r, color: USABLE, tall: e.id.startsWith('door.') || e.id.startsWith('seal.') }));
   const taken = new Set(usable.map((u) => u.id));
-  const leads: Beacon[] = LEADS.flatMap((id) => {
+  const leads: Beacon[] = activeLeads(flags).flatMap((id) => {
     const p = PLACEMENTS[id];
     return p && !taken.has(id) && sceneOfEntity(id) === scene ? [{ id, x: p.x, z: p.z, r: p.r, color: LEAD, tall: false }] : [];
   });
