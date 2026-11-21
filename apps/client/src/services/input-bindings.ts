@@ -1,3 +1,4 @@
+import { ensureAudioContext } from './audio-engine.ts';
 import { InputController, stepPointerLock, type PointerLockEvent, type PointerLockState } from '../game/input.ts';
 
 /**
@@ -27,6 +28,7 @@ export function bindInput(opts: InputBindingsOptions): () => void {
   };
 
   const onKeyDown = (e: KeyboardEvent) => {
+    ensureAudioContext(); // a key press is a user gesture: wake a suspended AudioContext so voice plays at once
     if (!isActive() && e.code !== 'Escape') return;
     if (['Space', 'Tab'].includes(e.code)) e.preventDefault();
     input.keyDown(e.code, e.repeat);
@@ -36,6 +38,7 @@ export function bindInput(opts: InputBindingsOptions): () => void {
     if (document.pointerLockElement === element && isActive()) input.mouseMove(e.movementX, e.movementY);
   };
   const onMouseDown = (e: MouseEvent) => {
+    ensureAudioContext();
     if (document.pointerLockElement !== element) return;
     if (isActive()) input.mouseDown(e.button);
   };

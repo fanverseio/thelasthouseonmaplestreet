@@ -25,7 +25,18 @@ export function ensureAudioContext(): AudioContext | null {
   const Ctor = typeof window === 'undefined' ? undefined : window.AudioContext;
   if (!Ctor) return null;
   context = new Ctor();
+  if (context.state === 'suspended') void context.resume?.();
   return context;
+}
+
+/** Resolve once the context runs. Gives up after `timeoutMs` (a context without a user gesture may never resume). */
+export async function resumeContext(ctx: Pick<AudioContext, 'state' | 'resume'>, timeoutMs = 400): Promise<void> {
+  if (ctx.state === 'running') return;
+  try {
+    await Promise.race([ctx.resume(), new Promise<void>((r) => setTimeout(r, timeoutMs))]);
+  } catch {
+    // stays suspended; playback is scheduled and starts when the context runs
+  }
 }
 
 export function audioReady(): boolean {

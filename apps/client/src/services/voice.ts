@@ -4,7 +4,7 @@
  */
 import { getLine } from '../content/dialogue/index.ts';
 import { settingsStore } from '../store/index.ts';
-import { audioEngine, ensureAudioContext, getBuses, VOICE_DUCK_LEVEL } from './audio-engine.ts';
+import { audioEngine, ensureAudioContext, getBuses, resumeContext, VOICE_DUCK_LEVEL } from './audio-engine.ts';
 
 export const VO_BASE_PATH = '/assets/audio/vo';
 export const MIN_SUBTITLE_MS = 1800;
@@ -88,6 +88,12 @@ export function playVoiceLine(id: string, text?: string, deps: VoiceDeps = {}): 
         return false;
       }
       const buffer = await ctx.decodeAudioData(await res.arrayBuffer());
+      if (stopped) {
+        finish();
+        return false;
+      }
+      // A suspended context freezes its clock, so wait for it to run before scheduling the line.
+      await resumeContext(ctx);
       if (stopped) {
         finish();
         return false;

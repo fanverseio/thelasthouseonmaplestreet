@@ -1701,3 +1701,22 @@ Use a New Game or the dev starts (`?start=garden` for 1-3, `?start=house66` for 
 | Step | Result | Note |
 |---|---|---|
 | 19.1-19.18 | | |
+
+---
+
+## 20. Angel voice plays at once on T (added 2026-11-21)
+
+Cause: the AudioContext could be suspended, so the voice was scheduled on a frozen clock and only played after a click. Fix: the voice waits for the context to resume (max 0.4 s), and any key press or mouse press wakes the context.
+
+- 20.1. Reload the page with Ctrl+Shift+R. Accept the warning (or skip it if already accepted). Start a new game and find the locket. -> Normal.
+- 20.2. Press T once. -> The Angel's voice starts within about half a second. You do NOT need Esc or a click. The pointer stays locked and there is no "Click to resume".
+- 20.3. Press T again while she talks. -> She fades out fast and the next line plays at once.
+- 20.4. Reload, and start Continue from the menu. Walk a few steps, then press T first. -> Voice plays at once.
+- 20.5. Press E on an item that has a spoken line (drawer, window). -> The line is voiced at once.
+- 20.6. Switch to another tab for 30 s, come back, click the game, press T. -> Voice plays at once.
+- 20.7. Near the padlock or talking board press T twice. -> The hint ladder is unchanged (indirect, then exact answer).
+
+### Results (section 20)
+| Step | Result | Note |
+|---|---|---|
+| 20.1-20.7 | | |

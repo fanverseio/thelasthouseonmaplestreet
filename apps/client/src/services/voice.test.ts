@@ -72,3 +72,45 @@ describe('voice fades', () => {
     await p.done;
   });
 });
+
+describe('voice with a suspended AudioContext', () => {
+  it('resumes the context before it schedules the line', async () => {
+    const events: string[] = [];
+    const param = { value: 0, setValueAtTime: () => undefined, linearRampToValueAtTime: () => undefined, cancelScheduledValues: () => undefined };
+    const ctx = {
+      state: 'suspended',
+      currentTime: 0,
+      resume: async () => {
+        events.push('resume');
+        (ctx as { state: string }).state = 'running';
+      },
+      decodeAudioData: async () => ({ duration: 2 }),
+      createGain: () => ({ gain: param, connect: () => undefined }),
+      createBufferSource: () => ({ buffer: null, connect: () => undefined, start: () => void events.push('start'), stop: () => undefined, onended: null }),
+      destination: {},
+    } as unknown as AudioContext;
+    const fetchFn = (async () => ({ ok: true, headers: { get: () => 'audio/mpeg' }, arrayBuffer: async () => new ArrayBuffer(8) })) as unknown as typeof fetch;
+    const p = playVoiceLine('vo_test', 'hi', { fetchFn, getContext: () => ctx, getVolume: () => 1 });
+    expect(await p.started).toBe(true);
+    expect(events).toEqual(['resume', 'start']);
+  });
+
+  it('still plays when resume never settles', async () => {
+    vi.useFakeTimers();
+    const param = { value: 0, setValueAtTime: () => undefined, linearRampToValueAtTime: () => undefined, cancelScheduledValues: () => undefined };
+    const ctx = {
+      state: 'suspended',
+      currentTime: 0,
+      resume: () => new Promise<void>(() => undefined),
+      decodeAudioData: async () => ({ duration: 2 }),
+      createGain: () => ({ gain: param, connect: () => undefined }),
+      createBufferSource: () => ({ buffer: null, connect: () => undefined, start: () => undefined, stop: () => undefined, onended: null }),
+      destination: {},
+    } as unknown as AudioContext;
+    const fetchFn = (async () => ({ ok: true, headers: { get: () => 'audio/mpeg' }, arrayBuffer: async () => new ArrayBuffer(8) })) as unknown as typeof fetch;
+    const p = playVoiceLine('vo_test2', 'hi', { fetchFn, getContext: () => ctx, getVolume: () => 1 });
+    const started = p.started;
+    await vi.advanceTimersByTimeAsync(500);
+    await expect(started).resolves.toBe(true);
+  });
+});
