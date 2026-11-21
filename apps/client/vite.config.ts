@@ -1,6 +1,7 @@
 import { fileURLToPath } from 'node:url';
 import react from '@vitejs/plugin-react';
 import { defineConfig, loadEnv } from 'vite';
+import { notesImagePlugin } from './vite-notes-plugin.ts';
 
 const repoRoot = fileURLToPath(new URL('../..', import.meta.url));
 
@@ -22,7 +23,8 @@ export default defineConfig(({ mode }) => {
   const apiPort = readPort(env.PORT, 3000, 'PORT');
 
   return {
-    plugins: [react()],
+    // notesImagePlugin: dev server only (playtest note screenshots into test-image/, see src/dev/notes/).
+    plugins: [react(), notesImagePlugin(repoRoot)],
     server: {
       port: clientPort,
       strictPort: true,

@@ -33,7 +33,8 @@ test('the Last House scene loads lazily in dev via ?scene=last_house', async ({ 
   await page.getByRole('button', { name: 'New Game' }).click();
   await page.getByRole('button', { name: 'Classic Story Mode' }).click();
   await expect(page.getByTestId('game-view')).toBeVisible();
-  await expect(page.getByRole('status')).toHaveCount(0);
+  // The interior is a lazy chunk; a cold dev server under parallel tests can take well over 5 s to serve it.
+  await expect(page.getByRole('status')).toHaveCount(0, { timeout: 30_000 });
   await expect(page.locator('canvas')).toBeVisible();
   expect(errors).toEqual([]);
 });

@@ -1,5 +1,6 @@
 import { Canvas } from '@react-three/fiber';
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { notesEnabled } from '../dev/notes/notes-enabled.ts';
 import { InputController } from '../game/input.ts';
 import { devKillPlayer } from '../game/dev-start.ts';
 import { attachRuntime } from '../game/save.ts';
@@ -54,11 +55,29 @@ import { Subtitles, type SubtitleLine } from './subtitles.tsx';
 import { VideoPlaceholder } from './video-placeholder.tsx';
 
 /**
+ * Playtest notes (dev server only, `?notes=1`; see src/dev/notes/). In a built game `import.meta.env.DEV` is false,
+ * so these stay null and the notes code is never loaded.
+ */
+const NotesPanel = import.meta.env.DEV ? lazy(() => import('../dev/notes/notes-panel.tsx')) : null;
+const NotePins = import.meta.env.DEV ? lazy(() => import('../dev/notes/note-pins.tsx')) : null;
+const notesOn = (): boolean => {
+  if (!import.meta.env.DEV) return false;
+  let storage: Storage | null;
+  try {
+    storage = window.localStorage;
+  } catch {
+    storage = null;
+  }
+  return notesEnabled(true, window.location.search, storage);
+};
+
+/**
  * The playable view: canvas, input wiring and the "Click to resume" overlay.
  * Pointer lock is requested only from a click. Losing it pauses the game.
  */
 export function GameView() {
   const container = useRef<HTMLDivElement>(null);
+  const notes = useMemo(notesOn, []);
   const input = useMemo(() => new InputController(), []);
   // Spells: one headless system per game view. Enemies (5.3) register with it as targets and read its hit events.
   const spells = useMemo(() => new SpellSystem({ store: gameStore }), []);
@@ -281,7 +300,13 @@ export function GameView() {
 
   return (
     <div ref={container} className="game-view" data-testid="game-view" data-phase={phase}>
-      <Canvas shadows camera={{ fov: 80, near: 0.1, far: 200, position: [0, 1.65, 0] }} dpr={[1, 2]}>
+      <Canvas
+        shadows
+        camera={{ fov: 80, near: 0.1, far: 200, position: [0, 1.65, 0] }}
+        dpr={[1, 2]}
+        // Note screenshots read the last frame, so keep it (dev notes only; costs a little speed).
+        {...(notes ? { gl: { preserveDrawingBuffer: true } } : {})}
+      >
         {scene === 'last_house' && Interior ? <Interior flags={flags} /> : <ExteriorScene flags={flags} runtime={runtime} />}
         <Interactables runtime={runtime} flags={flags} />
         <EncounterEnemies encounters={encounters} />
@@ -293,7 +318,17 @@ export function GameView() {
         <PlayerRig input={input} runtime={runtime} onOpenLocket={openLocket} skipHold={skipHold} spells={spells} spellContext={spellContext} />
         <SpellFx spells={spells} input={input} />
         <Hands spells={spells} input={input} />
+        {notes && NotePins && (
+          <Suspense fallback={null}>
+            <NotePins />
+          </Suspense>
+        )}
       </Canvas>
+      {notes && NotesPanel && (
+        <Suspense fallback={null}>
+          <NotesPanel host={container} activeSequence={() => runtime.sequences.active} />
+        </Suspense>
+      )}
       {phase === 'playing' && <CombatOverlays feedback={feedback} encounters={encounters} />}
       {phase === 'playing' && <Hud actions={runtime.actions} tutorial={runtime.tutorial ? (TUTORIAL_TEXT[runtime.tutorial] ?? null) : null} />}
       {phase === 'playing' && <div className="crosshair" aria-hidden="true" />}

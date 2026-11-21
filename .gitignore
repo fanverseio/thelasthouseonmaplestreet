@@ -27,6 +27,8 @@ playwright-report/
 test-results/
 # Manual playtest screenshots (large PNGs, kept local)
 /test/
+# Playtest note screenshots from the dev server (N key with ?notes=1), kept local
+/test-image/
 
 # Local runtime data
 data/
