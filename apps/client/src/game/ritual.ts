@@ -32,14 +32,14 @@ export const ANCHOR_DIRS: readonly AnchorDir[] = ['north', 'east', 'west'];
 
 /**
  * One typed config. From combat-tuning.md: ring 1.2 s telegraph / 15 damage / radius 2.5 m, pool 5 damage/s, wraiths
- * (2 alive, respawn 8 s), pressure by anchors restored. Everything marked "invented" is not in the doc.
+ * (1 alive at a time by author decision, respawn 8 s), pressure by anchors restored. Everything marked "invented" is not in the doc.
  */
 export const RITUAL_TUNING = {
   /** Index = anchors restored (0..2); at 3 every attack stops. */
   pressure: [
     { wraiths: 1, ringEveryS: 4, pools: false },
-    { wraiths: 2, ringEveryS: 3.5, pools: false },
-    { wraiths: 2, ringEveryS: 3, pools: true },
+    { wraiths: 1, ringEveryS: 3.5, pools: false },
+    { wraiths: 1, ringEveryS: 3, pools: true },
   ],
   ring: { telegraphS: 1.2, radius: 2.5, damage: 15, /** How long the "landed" cue shows (invented). */ landedS: 0.6 },
   /** Pools drift slowly towards Elena; all numbers except `dps` are invented. */
@@ -50,7 +50,7 @@ export const RITUAL_TUNING = {
   chamber: { minX: -10, maxX: 10, minZ: -28, maxZ: -8 },
   north: { holdS: 3, shellHp: 100, shellRegrowS: 20, shellRadius: 1.4, shellY: 1.1, floorMagic: 40 },
   east: { holdS: 6, strikeEveryS: 1.5, strikeWarnS: 0.5, strikeDamage: 10, strikePauseS: 0.8, floorMagic: 25 },
-  west: { channelS: 4, harassWraiths: 2, floorMagic: 30, targetRadius: 1.0, targetY: 1.2 },
+  west: { channelS: 4, harassWraiths: 1, floorMagic: 30, targetRadius: 1.0, targetY: 1.2 },
   /** Elena may keep a channel going this close to the anchor (INTERACT_RANGE 2.5 + the anchor's radius, invented margin). */
   rangeM: 3.1,
   /** Inside this distance of an unrestored anchor the magic floor applies and the rune icon shows. */
@@ -549,7 +549,7 @@ export function createRitualRuntime(options: RitualOptions): RitualRuntime {
     ringClock = 0;
     poolClock = 0;
     landedLeft = 0;
-    wraithIds.clear(); // the EnemySystem already removed the transient wraiths
+    for (const id of wraithIds) enemies?.remove(id); // never leave a smoke behind: exactly one attacker\n    wraithIds.clear();
     corpses.clear();
     wraithClock = T.wraith.graceAfterDeathS;
     if (shellBrokenFor !== null) shellBrokenFor = 0; // the shell's regrow clock restarts

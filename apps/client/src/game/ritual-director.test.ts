@@ -52,7 +52,7 @@ describe('smoke pressure scales with the anchors restored', () => {
     expect(t.ritual.view()).toMatchObject({ active: false, strike: 'idle', rings: [], pools: [] });
   });
 
-  it('wraiths: 1 alive with no anchor, 2 with one or two, none at the end; pools only from the second anchor', () => {
+  it('wraiths: always 1 alive (never 2), none at the end; pools only from the second anchor', () => {
     const t = ritualRig({ keepAlive: true });
     t.tick(1);
     expect(t.ritual.wraithCount()).toBe(1);
@@ -61,12 +61,12 @@ describe('smoke pressure scales with the anchors restored', () => {
     expect(t.ritual.view().pools).toHaveLength(0);
     t.grant('north');
     t.tick(1);
-    expect(t.ritual.wraithCount()).toBe(2);
+    expect(t.ritual.wraithCount()).toBe(1);
     t.tick(30);
     expect(t.ritual.view().pools).toHaveLength(0);
     t.grant('east');
     t.tick(RITUAL_TUNING.pool.everyS + 1);
-    expect(t.ritual.wraithCount()).toBe(2);
+    expect(t.ritual.wraithCount()).toBe(1);
     expect(t.ritual.view().pools.length).toBeGreaterThan(0);
     expect(t.ritual.view().pools.length).toBeLessThanOrEqual(RITUAL_TUNING.pool.max);
     t.grant('west');
@@ -342,13 +342,13 @@ describe('anchor west: channel Purify on the anchor for 4 s', () => {
     expect(t.flags()).toContain('anchor_west');
   });
 
-  it('at least two wraiths harass while Elena is at the anchor', () => {
+  it('still one wraith while Elena is at the anchor', () => {
     const t = ritualRig({ keepAlive: true });
     t.tick(1);
     expect(t.ritual.wraithCount()).toBe(1);
     t.driver.stand('west');
     t.tick(1);
-    expect(t.ritual.wraithCount()).toBe(2);
+    expect(t.ritual.wraithCount()).toBe(1);
   });
 });
 
@@ -409,5 +409,19 @@ describe('magic never blocks an anchor', () => {
 describe('sanity', () => {
   it('the sim step is the one the tuning assumes', () => {
     expect(SIM_DT).toBeGreaterThan(0);
+  });
+
+  it('dies several times and still exactly one smoke attacker is alive', () => {
+    const t = ritualRig({ keepAlive: true });
+    t.grant('north');
+    for (let i = 0; i < 6; i++) {
+      t.tick(5);
+      expect(t.ritual.wraithCount()).toBe(1);
+      expect(t.enemies.all().filter((e) => e.id.startsWith('wraith.') && e.alive)).toHaveLength(1);
+      t.store.setState((s) => ({ player: { ...s.player, hp: 0 } }));
+      t.tick(0.2);
+      t.tick(5);
+    }
+    expect(t.enemies.all().filter((e) => e.id.startsWith('wraith.') && e.alive)).toHaveLength(1);
   });
 });
