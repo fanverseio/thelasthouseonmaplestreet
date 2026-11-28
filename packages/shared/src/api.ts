@@ -56,19 +56,35 @@ export const LLM_PROTOCOLS = ['openai', 'anthropic', 'mock'] as const;
 export const LlmProtocolSchema = z.enum(LLM_PROTOCOLS);
 export type LlmProtocol = z.infer<typeof LlmProtocolSchema>;
 
+/** Coarse AI credit left (shared spend ceiling). Percent is whole; USD is rounded to cents. */
+export const CreditsSchema = z.object({
+  remainingPct: z.number().int().min(0).max(100),
+  remainingUsd: z.number().nonnegative(),
+  ceilingUsd: z.number().nonnegative(),
+});
+export type Credits = z.infer<typeof CreditsSchema>;
+
 export const ConfigStatusResponseSchema = z.object({
   mode: AppModeSchema,
   aiAvailable: z.boolean(),
   provider: z.object({ protocol: LlmProtocolSchema, model: z.string() }).nullable(),
+  /** True when AI needs a login (two passphrases) before chat works. */
+  loginRequired: z.boolean(),
   session: z.object({
     active: z.boolean(),
     expiresAt: z.string().optional(),
     chatsRemaining: z.number().int().nonnegative().optional(),
   }),
+  credits: CreditsSchema.nullable(),
 });
 export type ConfigStatusResponse = z.infer<typeof ConfigStatusResponseSchema>;
 
-export const AccessRedeemRequestSchema = z.object({ code: z.string().min(8).max(64) });
+/** Login for AI mode: two passphrases that must both match one configured account. */
+export const AccessRedeemRequestSchema = z.object({
+  passphrase1: z.string().min(1).max(200),
+  passphrase2: z.string().min(1).max(200),
+});
+export type AccessRedeemRequest = z.infer<typeof AccessRedeemRequestSchema>;
 export const AccessRedeemResponseSchema = z.object({
   expiresAt: z.string(),
   chatsRemaining: z.number().int().nonnegative(),
@@ -150,8 +166,16 @@ export const AngelChatResponseSchema = z.object({
   tone: z.enum(['warm', 'wry', 'cold', 'urgent', 'playful']),
   proposedActions: z.array(WireProposalSchema).max(MAX_PROPOSALS_PER_RESPONSE).optional(),
   sideQuestOffer: z.object({ templateId: z.string().max(40), targetId: EntityIdSchema }).optional(),
-  usage: z.object({ chatsRemaining: z.number().int().nonnegative().optional() }),
+  usage: z.object({ chatsRemaining: z.number().int().nonnegative().optional(), credits: CreditsSchema.optional() }),
 });
+
+/** What the model itself must return (the server adds `usage`). */
+export const AngelModelOutputSchema = z.object({
+  speech: z.string().min(1).max(2000),
+  tone: z.enum(['warm', 'wry', 'cold', 'urgent', 'playful']).catch('wry'),
+  proposedActions: z.array(WireProposalSchema).max(4).optional(),
+});
+export type AngelModelOutput = z.infer<typeof AngelModelOutputSchema>;
 export type AngelChatResponse = z.infer<typeof AngelChatResponseSchema>;
 
 export const TtsRequestSchema = z.object({ text: z.string().min(1).max(400) });

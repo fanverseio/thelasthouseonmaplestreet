@@ -1,11 +1,17 @@
 import { ConfigStatusResponseSchema, HealthResponseSchema } from '@tlh/shared';
 import { describe, expect, it } from 'vitest';
 import { loadServerConfig } from '../config.ts';
+import { createServices } from '../services.ts';
 import { handleApiRequest } from './router.ts';
 import type { HandlerContext } from './types.ts';
 
+const offline = (async () => {
+  throw new Error('offline');
+}) as unknown as typeof fetch;
+
 function ctx(env: Record<string, string> = {}, uptimeMs = 5_000): HandlerContext {
-  return { config: loadServerConfig(env), startedAt: 1_000, now: () => 1_000 + uptimeMs };
+  const config = loadServerConfig(env);
+  return { config, services: createServices(env, config, offline, () => {}), startedAt: 1_000, now: () => 1_000 + uptimeMs };
 }
 
 const get = (path: string) => new Request(`http://127.0.0.1:3000${path}`);
@@ -23,7 +29,7 @@ describe('GET /api/health', () => {
 describe('GET /api/config/status', () => {
   it('reports no provider when nothing is configured', async () => {
     const body = ConfigStatusResponseSchema.parse(await (await handleApiRequest(get('/api/config/status'), ctx())).json());
-    expect(body).toEqual({ mode: 'local', aiAvailable: false, provider: null, session: { active: false } });
+    expect(body).toEqual({ mode: 'local', aiAvailable: false, provider: null, loginRequired: false, session: { active: false }, credits: null });
   });
 
   it('shows protocol and model locally, never the key or base URL', async () => {
@@ -63,9 +69,18 @@ describe('hosted fail closed', () => {
     expect((await status({ APP_MODE: 'hosted', LLM_PROTOCOL: 'mock' })).aiAvailable).toBe(false);
   });
 
-  it('reports AI available only with provider and Redis both set', async () => {
-    const env = { APP_MODE: 'hosted', LLM_PROTOCOL: 'mock', UPSTASH_REDIS_REST_URL: 'https://x.example', UPSTASH_REDIS_REST_TOKEN: 't' };
-    expect((await status(env)).aiAvailable).toBe(true);
+  it('reports AI available only with provider, Redis, secret and an account all set', async () => {
+    const env = {
+      APP_MODE: 'hosted',
+      LLM_PROTOCOL: 'mock',
+      UPSTASH_REDIS_REST_URL: 'https://x.example',
+      UPSTASH_REDIS_REST_TOKEN: 't',
+      SESSION_SECRET: 's'.repeat(32),
+      ACCESS_CODE_HASHES: `judge1:${'a'.repeat(64)}`,
+    };
+    // The fake Redis host is unreachable, so status fails closed even though everything is configured.
+    expect((await status(env)).aiAvailable).toBe(false);
+    expect((await status({ ...env, SESSION_SECRET: '' })).aiAvailable).toBe(false);
   });
 });
 

@@ -1,6 +1,7 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { MAX_REQUEST_BODY_BYTES } from '@tlh/shared';
 import type { ServerConfig } from './config.ts';
+import { createServices, type Services } from './services.ts';
 import { errorResponse } from './handlers/json.ts';
 import { handleApiRequest } from './handlers/router.ts';
 import type { HandlerContext } from './handlers/types.ts';
@@ -36,8 +37,8 @@ async function send(res: ServerResponse, response: Response): Promise<void> {
 }
 
 /** Local Node server for development. Binds to 127.0.0.1 only. */
-export function createLocalServer(config: ServerConfig, now: () => number = Date.now): Server {
-  const ctx: HandlerContext = { config, now, startedAt: now() };
+export function createLocalServer(config: ServerConfig, services: Services = createServices({}, config), now: () => number = Date.now): Server {
+  const ctx: HandlerContext = { config, services, now, startedAt: now() };
 
   return createServer((req, res) => {
     void (async () => {

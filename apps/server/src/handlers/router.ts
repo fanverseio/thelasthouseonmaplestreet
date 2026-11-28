@@ -1,3 +1,5 @@
+import { accessLogoutHandler, accessRedeemHandler } from './access-redeem.ts';
+import { angelChatHandler } from './angel-chat.ts';
 import { configStatusHandler } from './config-status.ts';
 import { healthHandler } from './health.ts';
 import { errorResponse } from './json.ts';
@@ -5,10 +7,12 @@ import type { Handler, HandlerContext } from './types.ts';
 
 type Method = 'GET' | 'POST' | 'DELETE';
 
-/** Route table. New endpoints from docs/contracts.md section 7 are added here. */
+/** Route table (docs/contracts.md section 7). */
 const ROUTES: Record<string, Partial<Record<Method, Handler>>> = {
   '/api/health': { GET: healthHandler },
   '/api/config/status': { GET: configStatusHandler },
+  '/api/access/redeem': { POST: accessRedeemHandler, DELETE: accessLogoutHandler },
+  '/api/angel/chat': { POST: angelChatHandler },
 };
 
 export async function handleApiRequest(request: Request, ctx: HandlerContext): Promise<Response> {

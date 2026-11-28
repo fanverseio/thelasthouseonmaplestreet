@@ -1,4 +1,5 @@
 import { AppModeSchema, DEFAULT_API_PORT, LlmProtocolSchema, type AppMode, type LlmProtocol } from '@tlh/shared';
+import { upstashCredentials } from './store/usage-store.ts';
 
 /**
  * Server configuration read from environment variables.
@@ -60,7 +61,7 @@ export function loadServerConfig(env: Env): ServerConfig {
       hasBaseUrl: Boolean(env.LLM_BASE_URL?.trim()),
       hasKey: Boolean(env.LLM_API_KEY?.trim()),
     },
-    hasStore: Boolean(env.UPSTASH_REDIS_REST_URL?.trim() && env.UPSTASH_REDIS_REST_TOKEN?.trim()),
+    hasStore: Boolean(upstashCredentials(env)),
   };
 }
 

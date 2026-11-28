@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { ConfigError, loadServerConfig } from './config.ts';
 import { createLocalServer } from './server.ts';
+import { createServices } from './services.ts';
 
 /**
  * Local API entry point (APP_MODE=local by default).
@@ -28,7 +29,7 @@ try {
   throw error;
 }
 
-const server = createLocalServer(config);
+const server = createLocalServer(config, createServices(process.env, config));
 
 server.on('error', (error: NodeJS.ErrnoException) => {
   if (error.code === 'EADDRINUSE') {
