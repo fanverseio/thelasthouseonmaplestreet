@@ -29,6 +29,7 @@ Short, durable notes that a future session needs and cannot easily re-derive. Ke
 - TypeScript is pinned to 6.0.x (typescript-eslint 8 rejects TS 7). TS 6 defaults `types` to [], so set them per tsconfig.
 - Server runs `.ts` directly (Node >=22.18 type stripping): use `.ts` import extensions, `import type`, no enums or parameter properties.
 - `packages/shared` must stay free of Node types (browser + server). Put Node-only tests in `apps/server`.
+- Server code imports shared via `apps/server/src/shared.ts` (relative), not `@tlh/shared`: Vercel functions cannot resolve the package's `.ts` export. Root tsconfig `rewriteRelativeImportExtensions` makes Vercel emit `.js` specifiers.
 - PowerShell tool: chaining several long `cmd /c npm ...` calls can drop output; run them one per call.
 - Commit messages: build in PowerShell, write `commit-msg.tmp` in the repo root, `git commit -F`, delete it. Editor-tool writes to `.git/` or TEMP are not visible to the shell; `-m` breaks on double quotes.
 - The command filter blocks writing the literal dev-server command inside a heredoc; build it from parts when writing docs.

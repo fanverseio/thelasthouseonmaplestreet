@@ -163,3 +163,6 @@ Open: forced-control worst case is ~264 s vs the 180 s PRD cap; author must rais
 ## 2026-11-28 19:30 | milestone | AI-Enhanced Mode works (small scope)
 Server: openai/anthropic/mock adapters (tool -> json_mode -> plain, zod, one repair, 8 s), /api/angel/chat, /api/access/redeem, memory + Upstash REST stores, limits, spend ceiling, fail closed. Client: director, validator (flicker/reveal/restore only), AI locket, top-left credit bar, Classic fallback with dim locket. Real provider (openai protocol from .env) answers in ~1.3-3.6 s via json_mode; tool calling is rejected with a 4xx by that provider.
 Decision (author): login is two matching passphrases (PASSPHRASE_01/02 or ACCESS_CODE_HASHES label:sha256(p1\np2)); JUDGE_ACCOUNTS was empty and is not read. Not built: side quests, glitches, live TTS, /api/config/llm form. Hosted AI needs the Vercel steps in hosting-ops.md section 10.
+
+## 2026-11-28 19:44 | gotcha | Vercel functions could not import .ts files
+Every hosted /api route returned 500: Vercel compiles function TS to .js but kept `.ts` import specifiers (ERR_MODULE_NOT_FOUND). Fix in 8b2ed5b: root tsconfig.json `rewriteRelativeImportExtensions: true`, and server code imports shared through the relative re-export apps/server/src/shared.ts (the package exports point at .ts). Verified live: /api/health 200.

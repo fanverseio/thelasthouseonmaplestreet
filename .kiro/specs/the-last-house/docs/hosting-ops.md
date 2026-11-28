@@ -91,7 +91,7 @@ Notes:
 
 ## 10. Turning on hosted AI (by hand, in Vercel)
 
-Code is ready (AI chat, login, Upstash store, limits, fail closed). Until every step below is done, hosted AI stays off and the game plays Classic.
+Code is ready (AI chat, login, Upstash store, limits, fail closed). Checked live on 2026-11-28 after commit 8b2ed5b: `/api/health` returns 200 with `"mode":"hosted"`, and `/api/config/status` returns `"aiAvailable":false,"loginRequired":true` (fail closed, no AI env yet). Before 8b2ed5b every hosted `/api` route returned 500 (ERR_MODULE_NOT_FOUND on the `.ts` import); the root `tsconfig.json` now sets `rewriteRelativeImportExtensions` and server code imports shared code through `apps/server/src/shared.ts`. Until every step below is done, hosted AI stays off and the game plays Classic.
 
 1. **Upstash**: Vercel dashboard > Storage (or Marketplace) > Upstash for Redis > Create > connect it to this project (Production and Preview). The integration injects `KV_REST_API_URL` and `KV_REST_API_TOKEN` (or `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`); the server reads either pair. Nothing to copy by hand.
 2. **Hash for the login pair**: on the author's machine run `node tools/hash-access-code.mjs` (it reads `PASSPHRASE_01`/`PASSPHRASE_02` or the lower-case names from `.env`). Open `asset_creation/access-hashes.txt` and copy its one line.
