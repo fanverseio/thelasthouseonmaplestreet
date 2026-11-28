@@ -132,6 +132,8 @@ export interface WorldRuntime {
   readonly tutorial: string | null;
   /** Last sequence light effect per light (view animates flicker from at + seconds, sim time). */
   readonly lights: Readonly<Record<string, LightFx>>;
+  /** Start a light effect now (shared by sequences and the Angel's restricted effect API). */
+  setLight(target: string, effect: LightFx['effect'], seconds: number): void;
   /** Entities a sequence has spawned and not despawned (e.g. the window shadow). */
   readonly present: ReadonlySet<EntityId>;
   readonly sequences: SequenceRunner;
@@ -283,6 +285,12 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
     );
   }
 
+  /** The one light-effect function: sequences, triggers and the Angel's flicker all use it. */
+  function setLight(target: string, effect: LightFx['effect'], seconds: number): void {
+    lights = { ...lights, [target]: { effect, at: simTime, seconds } };
+    changed();
+  }
+
   function say(lineId: string): void {
     const line = getLine(lineId);
     if (!line) return;
@@ -304,8 +312,7 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
     onEffect: (e: SequenceEffect) => {
       options.onEffect?.(e);
       if (e.k === 'light') {
-        lights = { ...lights, [e.target]: { effect: e.effect, at: simTime, seconds: e.seconds ?? 2 } };
-        changed();
+        setLight(e.target, e.effect, e.seconds ?? 2);
       } else if (e.k === 'spawn' || e.k === 'despawn') {
         if (e.k === 'spawn') present.add(e.target);
         else present.delete(e.target);
@@ -568,10 +575,7 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
       hintStates[h.id] = r.state;
       for (const step of r.fired) {
         if (step.say) say(step.say);
-        if (step.flicker) {
-          lights = { ...lights, [step.flicker]: { effect: 'flicker', at: simTime, seconds: 4 } };
-          changed();
-        }
+        if (step.flicker) setLight(step.flicker, 'flicker', 4);
       }
     }
     if (highlights().join() !== before) changed();
@@ -802,6 +806,7 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
     get lights() {
       return lights;
     },
+    setLight,
     get present() {
       return present;
     },

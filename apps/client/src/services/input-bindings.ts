@@ -48,7 +48,11 @@ export function bindInput(opts: InputBindingsOptions): () => void {
   const onVisibility = () => {
     if (document.hidden) feed('tab_hidden');
   };
-  const onClick = () => feed('user_click');
+  // Clicks inside an overlay that needs the cursor (the AI locket's text box) never request pointer lock.
+  const onClick = (e: MouseEvent) => {
+    if (e.target instanceof Element && e.target.closest('[data-no-lock]')) return;
+    feed('user_click');
+  };
 
   window.addEventListener('keydown', onKeyDown);
   window.addEventListener('keyup', onKeyUp);

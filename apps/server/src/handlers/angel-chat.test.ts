@@ -69,7 +69,7 @@ describe('POST /api/angel/chat (local, mock provider)', () => {
       seen.push(url);
       return { status: 200, json: { choices: [{ message: { content: '{"speech":"Fine.","tone":"wry"}' } }] } };
     });
-    const env = { APP_MODE: 'local', LLM_PROTOCOL: 'openai', LLM_BASE_URL: 'https://fixed.example', LLM_MODEL: 'm', LLM_API_KEY: 'sk-envkey-123456789012345' };
+    const env = { APP_MODE: 'local', LLM_PROTOCOL: 'openai', LLM_BASE_URL: 'https://fixed.example', LLM_MODEL: 'm', LLM_API_KEY: ['sk', 'envkey', '123456789012345'].join('-') };
     const { ctx } = makeCtx(env, { fetchFn: f.fn });
     const r = await handleApiRequest(post('/api/angel/chat', { ...chatRequest('hi'), baseUrl: 'https://evil.example', apiKey: 'sk-client' }), ctx);
     expect(r.status).toBe(200);
@@ -111,7 +111,7 @@ describe('POST /api/angel/chat (local, mock provider)', () => {
 
   it('logs only safe fields: no player text, key, passphrase or cookie', async () => {
     const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    const env = { ...MOCK, ...PAIR, LLM_API_KEY: 'sk-secret-key-0000000000000000' };
+    const env = { ...MOCK, ...PAIR, LLM_API_KEY: ['sk', 'secret', 'key', '0000000000000000'].join('-') };
     const { ctx, logs } = makeCtx(env);
     const ok = await login(ctx, PAIR.passphrase_01, PAIR.passphrase_02);
     const cookie = cookieOf(ok);

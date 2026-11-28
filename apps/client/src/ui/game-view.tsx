@@ -45,6 +45,14 @@ import { Hud } from './hud.tsx';
 import { PositionReadout } from './position-readout.tsx';
 import { JournalPage } from './journal-page.tsx';
 import { Locket } from './locket.tsx';
+import { AiLocket, CreditBadge } from './ai-locket.tsx';
+import { createAngelDirector } from '../game/angel-director.ts';
+import { buildSnapshot } from '../game/angel-memory.ts';
+import { createAngelEffectApi } from '../game/world-effects.ts';
+import { MAX_MAGIC } from '../game/spells.ts';
+import { createWorldRegistry } from '../content/world/index.ts';
+import { PLACEMENTS } from '../content/world/placements.ts';
+import { fetchConfigStatus, sendAngelChat } from '../services/api-client.ts';
 import { PuzzleOverlay } from './puzzle-overlay.tsx';
 import { AnchorHud, HoldBar, SmokeStrike } from './ritual-hud.tsx';
 import { SettingsScreen } from './screens.tsx';
@@ -208,6 +216,49 @@ export function GameView() {
     if (shouldSpawnTraining(import.meta.env.DEV, window.location.search)) spawnTrainingEnemy(enemies, trainingSpawnFor(window.location.search));
   }, [enemies]);
   useEffect(() => attachRuntime(runtime), [runtime]); // autosave reads / Continue restores the runtime state
+  // AI-Enhanced Mode: the Angel director (chat, fallback, validated world actions). Unused in Classic.
+  const registry = useMemo(() => createWorldRegistry(), []);
+  const angel = useMemo(() => {
+    const zoneNow = () => {
+      const s = gameStore.getState();
+      return zoneAt(s.player.pos[0], s.player.pos[2], s.game.scene, s.progress.flags);
+    };
+    const owner = () => runtime.sequences.active ?? (encounters.hostileActive() ? 'encounter' : null);
+    return createAngelDirector({
+      store: gameStore,
+      effects: createAngelEffectApi(gameStore, runtime),
+      transport: sendAngelChat,
+      context: () => {
+        const s = gameStore.getState();
+        return { registry, placements: PLACEMENTS, zone: zoneNow(), pos: { x: s.player.pos[0], z: s.player.pos[2] }, simTime: runtime.simTime, activeOwner: owner(), maxMagic: MAX_MAGIC };
+      },
+      snapshot: () => {
+        const zone = zoneNow();
+        const nearby = registry.inZone(zone).filter((e) => e.capabilities.some((c) => c.startsWith('angel'))).map((e) => e.id);
+        return buildSnapshot({ state: gameStore.getState(), zone, registry, nearby, inEncounter: encounters.hostileActive() });
+      },
+      classicLine: () => runtime.locketLine()?.line.text ?? null,
+    });
+  }, [registry, runtime, encounters]);
+  const activeMode = useGame((s) => s.game.activeMode);
+  const [aiLocketOpen, setAiLocketOpen] = useState(false);
+  const refreshAiStatus = useCallback(async () => {
+    try {
+      const st = await fetchConfigStatus();
+      angel.setCredits(st.credits);
+      if (!st.aiAvailable) angel.setStatus('unavailable');
+      else if (st.loginRequired && !st.session.active) {
+        angel.setStatus('unavailable');
+        angel.setNeedsLogin(true);
+      } else if (st.credits?.remainingPct === 0) angel.setStatus('budget_exhausted');
+      else angel.setStatus('ready');
+    } catch {
+      angel.setStatus('degraded');
+    }
+  }, [angel]);
+  useEffect(() => {
+    if (activeMode === 'ai') void refreshAiStatus();
+  }, [activeMode, refreshAiStatus]);
   const phase = useGame((s) => s.game.phase);
   const flags = useGame((s) => s.progress.flags);
   const scene = useGame((s) => s.game.scene);
@@ -275,14 +326,18 @@ export function GameView() {
       }
       return;
     }
-    // Later AI mode: the full locket overlay, which pauses the game only while the player types.
-    const next = runtime.locketLine();
-    if (!next) return;
-    setLocket(next);
+    // AI mode: the full locket overlay with a text box. It pauses the game and releases pointer lock.
+    setAiLocketOpen(true);
     sfx.play('sfx_locket_open');
     gameStore.getState().setPhase('locket'); // freezes the sim; the rig only ticks while playing
     if (document.pointerLockElement) document.exitPointerLock();
   }, [runtime]);
+  const closeAiLocket = useCallback(() => {
+    sfx.play('sfx_locket_close');
+    setAiLocketOpen(false);
+    gameStore.getState().setPhase('paused'); // shows "Click to resume"
+    angel.closeLocket(); // queued Angel actions are re-validated and applied now
+  }, [angel]);
   const closeLocket = useCallback(() => {
     sfx.play('sfx_locket_close');
     setLocket(null);
@@ -314,7 +369,7 @@ export function GameView() {
   }, [runtime]);
 
   return (
-    <div ref={container} className="game-view" data-testid="game-view" data-phase={phase}>
+    <div ref={container} className="game-view" data-testid="game-view" data-phase={phase} data-ai={activeMode === 'ai' ? 'true' : 'false'}>
       <Canvas
         shadows
         camera={{ fov: 80, near: 0.1, far: 200, position: [0, 1.65, 0] }}
@@ -377,6 +432,8 @@ export function GameView() {
       {phase === 'locket' && locket && (
         <Locket line={locket.line} hasNext={locket.hasNext} onNext={nextLocket} onClose={closeLocket} />
       )}
+      {phase === 'locket' && aiLocketOpen && <AiLocket director={angel} onClose={closeAiLocket} onLogin={() => void refreshAiStatus()} />}
+      {activeMode === 'ai' && (phase === 'playing' || phase === 'locket') && <CreditBadge director={angel} />}
       {phase === 'overlay' && runtime.page && <JournalPage key={runtime.page.id} title={runtime.page.title} text={runtime.page.text} onClose={closePage} />}
       {phase === 'overlay' && runtime.overlay && <PuzzleOverlay puzzle={runtime.overlay.puzzle} say={sayLine} onClose={closeOverlay} />}
       {(loadingHouse || runtime.sceneLoading) && (

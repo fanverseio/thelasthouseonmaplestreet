@@ -194,3 +194,22 @@ body,
 .angel-text { font-family: Georgia, 'Times New Roman', serif; color: #f2eee6; text-shadow: 0 1px 3px #000, 0 0 8px rgba(0, 0, 0, 0.85); line-height: 1.35; transition: opacity 0.4s ease-out; }
 .angel-name { font-size: 0.8em; letter-spacing: 0.12em; text-transform: uppercase; }
 @media (prefers-reduced-motion: reduce) { .angel-text { transition: none; } }
+
+/* AI-Enhanced Mode: locket text box, login, credit badge (top-left) */
+.ai-locket { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; background: rgba(5, 5, 10, 0.78); color: var(--fg); text-align: center; padding: 1.5rem; }
+.ai-locket-gem { font-size: 3rem; color: var(--accent); text-shadow: 0 0 18px rgba(201, 162, 74, 0.7); transition: opacity 0.6s, text-shadow 0.6s, color 0.6s; }
+.ai-locket[data-dim='true'] .ai-locket-gem { opacity: 0.35; color: #7d7a72; text-shadow: none; }
+.ai-locket-reply { max-width: 36em; margin: 0; line-height: 1.45; min-height: 3em; }
+.ai-locket .note { color: var(--muted); font-size: 0.9rem; margin: 0; max-width: 36em; }
+.ai-locket-form { display: flex; gap: 0.5rem; width: min(36rem, 90vw); }
+.ai-locket-form input, .ai-login input { flex: 1; padding: 0.6rem 0.8rem; background: rgba(15, 16, 22, 0.9); color: var(--fg); border: 1px solid var(--muted); font: inherit; }
+.ai-locket button, .ai-login button { padding: 0.6rem 1rem; background: transparent; color: var(--fg); border: 1px solid var(--accent); font: inherit; cursor: pointer; }
+.ai-locket button:disabled, .ai-login button:disabled { opacity: 0.45; cursor: not-allowed; }
+.ai-login { display: grid; gap: 0.7rem; width: min(26rem, 90vw); text-align: left; }
+.ai-login .row { display: grid; gap: 0.3rem; }
+.credit-badge { position: absolute; top: 0.6rem; left: 1.25rem; display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0.55rem; background: rgba(7, 8, 12, 0.7); border: 1px solid var(--muted); font-size: 0.8rem; pointer-events: none; z-index: 5; }
+.credit-bar { width: 4.5rem; height: 0.35rem; background: rgba(255, 255, 255, 0.12); }
+.credit-fill { height: 100%; background: var(--accent); transition: width 0.4s; }
+.credit-badge[data-status='budget_exhausted'] .credit-fill { background: #7d7a72; }
+.credit-badge small { color: var(--muted); }
+.game-view[data-ai='true'] .hud-objective { top: 2.6rem; }

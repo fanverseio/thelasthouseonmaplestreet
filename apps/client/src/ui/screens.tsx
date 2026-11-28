@@ -1,5 +1,7 @@
-import type { Mode } from '@tlh/shared';
-import { useMemo, useState } from 'react';
+import type { ConfigStatusResponse, Mode } from '@tlh/shared';
+import { useEffect, useMemo, useState } from 'react';
+import { fetchConfigStatus } from '../services/api-client.ts';
+import { LoginForm } from './ai-locket.tsx';
 import { applyDevStart, isDevStart } from '../game/dev-start.ts';
 import { ENDING_TEXT, type EndingChoice } from '../game/ending.ts';
 import { ensureAudioContext } from '../services/audio-engine.ts';
@@ -73,14 +75,37 @@ export function MainMenu({ onView }: { onView: (view: MenuView) => void }) {
 export function NewGameScreen({ onBack }: { onBack: () => void }) {
   const existing = useMemo(() => saveStorage.load(), []);
   const [confirmed, setConfirmed] = useState(!needsOverwriteConfirm(existing));
+  const [ai, setAi] = useState<ConfigStatusResponse | null | 'error'>(null);
+  const [askLogin, setAskLogin] = useState(false);
+  useEffect(() => {
+    const ctl = new AbortController();
+    fetchConfigStatus(ctl.signal).then(setAi, () => !ctl.signal.aborted && setAi('error'));
+    return () => ctl.abort();
+  }, []);
   const start = (mode: Mode) => {
     const g = gameStore.getState();
     g.startNewGame(mode);
+    if (mode === 'ai') gameStore.setState((s) => ({ game: { ...s.game, aiStatus: 'ready' } }));
     // Developer test shortcut (dev builds only): ?start=street or ?start=garden.
     const devStart = import.meta.env.DEV ? new URLSearchParams(window.location.search).get('start') : null;
     if (isDevStart(devStart)) applyDevStart(gameStore, devStart);
     g.setPhase('paused'); // the game view asks for pointer lock; the first click resumes
   };
+  const aiReady = ai !== null && ai !== 'error' && ai.aiAvailable;
+  const chooseAi = () => {
+    if (!aiReady) return;
+    if (ai.loginRequired && !ai.session.active) setAskLogin(true);
+    else start('ai');
+  };
+  if (askLogin) {
+    return (
+      <main className="screen" data-testid="ai-login-screen">
+        <h1>Wake the Angel</h1>
+        <p>Enter both passphrases to unlock AI-Enhanced Mode.</p>
+        <LoginForm onDone={() => start('ai')} onCancel={() => setAskLogin(false)} />
+      </main>
+    );
+  }
   if (!confirmed) {
     return (
       <main className="screen" data-testid="new-game-confirm">
@@ -102,11 +127,15 @@ export function NewGameScreen({ onBack }: { onBack: () => void }) {
         Classic Story Mode
       </button>
       <p className="note">The fully authored story. No network, no AI.</p>
-      <button type="button" disabled aria-describedby="ai-note">
+      <button type="button" disabled={!aiReady} aria-describedby="ai-note" onClick={chooseAi} data-testid="ai-mode">
         AI-Enhanced Mode
       </button>
       <p className="note" id="ai-note">
-        Not available yet. It arrives with the Angel chat.
+        {ai === null
+          ? 'Checking whether the Angel can speak…'
+          : aiReady
+            ? `Talk freely with the Angel.${ai.loginRequired && !ai.session.active ? ' Needs the two passphrases.' : ''} Any AI trouble falls back to Classic with no lost progress.`
+            : 'Not available here: no AI provider is configured. Classic Mode has the full story.'}
       </p>
       <button type="button" className="secondary" onClick={onBack}>
         Back
