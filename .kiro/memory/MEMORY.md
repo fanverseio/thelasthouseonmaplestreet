@@ -12,6 +12,7 @@ Short, durable notes that a future session needs and cannot easily re-derive. Ke
 - Hosted AI: two matching passphrases (author 2026-11-28; plain PASSPHRASE_01/02 or hashed ACCESS_CODE_HASHES), Upstash quotas, spend ceiling, Vercel. No OAuth, no cloud saves. BYOK is local build only.
 - AI mode (2026-11-28): only flicker_lights, reveal_clue, restore_magic are enabled in game/angel-validator.ts ACTION_RULES. The real .env provider works through json_mode (the tool-call request is rejected with a 4xx). Vercel env steps: hosting-ops.md section 10.
 - Saves: localStorage only (`tlh.save`); finished save hides Continue.
+- Mobile (2026-11-28): Chrome mobile landscape only; game/mobile-mode.ts + ui/touch-controls.tsx; desktop unchanged. Real phone untested (playtest-plan section 23).
 - Tasks live in `tasks.md` (lowercase). `TASKS.md` was removed; on Windows the names collide.
 
 - Encounters: street fox (skippable), Briggs mini-boss, Watcher of House 66 mini-boss, approach hounds, interior cat, final ritual. Persistent stun at ~30% HP; purify (+) or held-bolt destroy (-); both outcomes drop the progression item.

@@ -1773,3 +1773,28 @@ Already checked by the agent in a real Chromium window with the real provider fr
 11. Esc, Quit to menu, Continue. **Check**: you are back in AI mode at the last checkpoint and the Angel still remembers the last few things you said.
 12. Classic regression: New Game > Classic Story Mode. **Check**: no credit bar, T plays authored lines exactly as before, no text box.
 13. Open question (author): the credit bar uses default prices (1 / 4 USD per million tokens) because `LLM_PRICE_*` are empty in `.env`. Set the real prices if you want the percentage to be true.
+
+## 23. Mobile browser mode on a real phone (added 2026-11-28)
+
+The agent checked this only in Chrome's phone emulation (Pixel 7 and iPhone 14 sizes, screenshots in `test-image/mobile/`, gitignored). A real phone is needed for feel, speed, the keyboard and full screen. Use Chrome on Android. The phone and the PC must be on the same Wi-Fi: run the client with `npm run dev --workspace @tlh/client -- --host` and open the "Network" address it prints, or open the Vercel link.
+
+1. Hold the phone upright and open the game. **Check**: "Rotate your phone" covers the screen. Turn it sideways. **Check**: the warning screen fits with no sideways scroll.
+2. Tap Continue, New Game, Classic. Tap the pause screen. **Check**: the game asks for full screen (allow it), stays landscape, and round buttons show at the bottom right; no buttons at all until you tap.
+3. Put your left thumb anywhere on the left side and push. **Check**: a ring shows under the thumb; a small push walks slowly, a full push walks at normal speed. Lifting stops Elena at once.
+4. Drag your right thumb on the right side. **Check**: the view turns smoothly with no jumps; looking straight up or down stops at the limit. Open question: is the look speed right? (Settings: Touch look speed.)
+5. Tap **Run**. **Check**: it lights up and Elena runs; tap again to walk.
+6. Walk to the front door, check the Actions panel shows, tap **E**. **Check**: the door works as with the keyboard.
+7. Tap **T**. **Check**: the Angel speaks a line at the left (Classic), the game keeps running.
+8. Start a cinematic (front door after the locket). **Check**: the touch buttons vanish, the clip plays; tap and hold about 1 s skips it.
+9. Tap ❚❚. **Check**: the game pauses and stays paused (it must not resume from the same tap). Tap the dark area to resume.
+10. Turn the phone upright mid-game. **Check**: "Rotate your phone", the game is paused; turn back, tap to resume.
+11. Pinch, double-tap and pull down on the game. **Check**: nothing zooms, scrolls or reloads; a long press shows no menu.
+12. Learn a spell (garden start) and hold **Cast**. **Check**: the bolt charges; tap casts a quick bolt; the spell icons switch spells.
+13. Open the outbuilding number lock and the talking board. **Check**: every dial, letter and Close button works by tap.
+14. AI mode: type both passphrases with the phone keyboard. Press T, tap the text box. **Check**: the keyboard opens and the text box and Speak button stay visible above it; "Close the locket" closes it.
+15. Watch the frame rate while walking down Maple Street and in the ritual chamber. Note the phone model and whether it feels smooth. Settings: try Graphics Medium too.
+16. Open question (author): should iPhone Safari be supported? It is untested and cannot go full screen.
+
+| Step | Result | Note |
+|---|---|---|
+| 23.1-23.16 | | |

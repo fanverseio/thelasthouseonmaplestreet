@@ -45,7 +45,7 @@ React, Vite, TypeScript, Three.js with React Three Fiber, Zustand, zod, Node.js,
 | Node.js | 24 LTS recommended, 22.18 minimum            | Check with `node -v` (`.nvmrc` says 24) |
 | npm     | 10 or newer (ships with Node)                | Check with `npm -v`                     |
 | Git     | any recent version                           |                                         |
-| Browser | Desktop Chrome, Edge or Firefox with WebGL 2 | Safari and mobile are not supported. Gameplay needs a keyboard and mouse |
+| Browser | Desktop Chrome, Edge or Firefox with WebGL 2; Chrome on Android phones and tablets (landscape) | Desktop needs a keyboard and mouse. Mobile uses touch controls (see [Mobile browsers](#mobile-browsers)). Safari is not tested |
 | OS      | Windows 10/11, macOS, Linux                  |                                         |
 
 No other global tools are needed. Blender, ElevenLabs and image generation are only needed to _create_ assets, not to run the game.
@@ -161,7 +161,29 @@ The server tries tool calling first, then JSON mode (openai only), then plain JS
 | 1 / 2 / 3         | Arcane Bolt / Purify / Ward                                            |
 | Esc               | Pause or close an overlay                                              |
 
-Gameplay needs a keyboard and mouse (pointer lock). On a phone or tablet only the cinematics are touch-friendly: they play in landscape (a "Rotate your phone" screen holds the clip while the device is upright), and tap-and-hold skips one.
+On desktop, gameplay needs a keyboard and mouse (pointer lock).
+
+### Mobile browsers
+
+Supported: Chrome on Android phones and tablets, **landscape only**. The game switches to mobile mode by itself on a touch screen with no mouse. A touch laptop stays in desktop mode.
+
+| Touch control             | Does                                                     |
+| ------------------------- | -------------------------------------------------------- |
+| Left thumb (left side)    | Move stick; push further to walk faster                  |
+| Right thumb (right side)  | Drag to look                                             |
+| **E**                     | Interact; hold to skip a cinematic                       |
+| **T**                     | The Whispering Locket                                    |
+| **Run**                   | Sprint on / off                                          |
+| Spell icons               | Pick Arcane Bolt, Purify or Ward (once learned)          |
+| **Cast**                  | Tap to cast; hold to charge Arcane Bolt or channel Purify |
+| ❚❚                        | Pause (tap the pause screen to resume)                   |
+
+- The first tap asks for full screen and a landscape lock. The browser may refuse either; the game still works.
+- Holding the phone upright shows "Rotate your phone" and pauses the game. Cinematics: tap and hold to skip.
+- Settings: **Touch controls** (Auto / On / Off) and **Touch look speed**. These live in `tlh.settings`, never in the save. On a developer machine, `?mobile=1` forces mobile mode and `?mobile=0` forces desktop for one page load.
+- Mobile mode picks the Low graphics preset once (you can change it), caps the pixel ratio at 1.5, turns off anti-aliasing and uses a smaller moonlight shadow map. Desktop settings are unchanged.
+- In AI-Enhanced Mode the locket's text box stays above the on-screen keyboard; a **Close the locket** button replaces Esc.
+- Limits: tested only in Chrome's phone emulation (Playwright), not on a real phone. Frame rate on a real phone is unknown. iOS Safari is not tested and has no full-screen API for pages. "Add to home screen" is not supported.
 
 ## Project structure
 
@@ -244,6 +266,7 @@ Works now:
 - [ ] `/api/health` returns `ok: true`, directly on port 3000 and through the client at `http://localhost:5173/api/health`.
 - [ ] `/?bootcheck` shows **API: ok** and **WebGL 2: available**, and the foggy test scene renders.
 - [ ] `npm run typecheck`, `npm run lint`, `npm test` and `npm run check` all pass.
+- [ ] Mobile (emulated): Chrome devtools device mode, a phone in landscape, reload. The pause screen says "Tap to resume" and the touch buttons show after a tap. `npm run test:e2e` runs the same in `apps/client/e2e/mobile.spec.ts`.
 
 Planned, not yet available:
 

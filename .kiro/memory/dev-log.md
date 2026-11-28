@@ -166,3 +166,9 @@ Decision (author): login is two matching passphrases (PASSPHRASE_01/02 or ACCESS
 
 ## 2026-11-28 19:44 | gotcha | Vercel functions could not import .ts files
 Every hosted /api route returned 500: Vercel compiles function TS to .js but kept `.ts` import specifiers (ERR_MODULE_NOT_FOUND). Fix in 8b2ed5b: root tsconfig.json `rewriteRelativeImportExtensions: true`, and server code imports shared through the relative re-export apps/server/src/shared.ts (the package exports point at .ts). Verified live: /api/health 200.
+
+## 2026-11-28 20:20 | milestone | Mobile browser mode (Chrome, landscape)
+game/mobile-mode.ts detects phones/tablets (a fine pointer keeps touch laptops desktop); `?mobile=1/0` and Settings Touch controls (Auto/On/Off) override. ui/touch-controls.tsx feeds InputState (stick, look drag, E/T/Run/spells/Cast/Pause); no pointer lock on mobile, "Tap to resume", portrait pauses. Mobile: Low preset once, DPR 1.5, no MSAA, 1024 shadow map. Checked only in Playwright phone emulation (e2e/mobile.spec.ts); real-phone checklist is playtest-plan section 23.
+
+## 2026-11-28 20:20 | gotcha | Ghost click after a touch that changes the screen
+A touch that pauses at once (React re-renders inside pointerdown/up) ends with a click on the pause screen, which resumed the game. Cancelling touchstart did not help in emulation (no touchstart reached the page). Fix: the pause screen ignores a click whose pointerId equals the Pause tap's; the touch controls stay mounted (hidden) outside play.
