@@ -1,4 +1,4 @@
-import { AngelModelOutputSchema } from '@tlh/shared';
+import { AngelModelOutputSchema } from '../shared.ts';
 import { describe, expect, it } from 'vitest';
 import { ANGEL_OUTPUT_JSON_SCHEMA, buildAngelPrompt } from '../angel/prompt.ts';
 import { chatRequest, scriptedFetch } from '../test-fixtures.ts';

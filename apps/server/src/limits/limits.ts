@@ -1,4 +1,4 @@
-import type { Credits, ErrorCode } from '@tlh/shared';
+import type { Credits, ErrorCode } from '../shared.ts';
 import type { LlmUsage } from '../llm/types.ts';
 import type { UsageStore } from '../store/usage-store.ts';
 

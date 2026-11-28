@@ -1,4 +1,4 @@
-import type { LlmProtocol } from '@tlh/shared';
+import type { LlmProtocol } from '../shared.ts';
 
 /** Provider settings. Built from env (or local server memory) only; never from a client request. */
 export interface LlmConfig {

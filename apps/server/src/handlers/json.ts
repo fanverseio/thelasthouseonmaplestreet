@@ -1,4 +1,4 @@
-import type { ApiError, ErrorCode } from '@tlh/shared';
+import type { ApiError, ErrorCode } from '../shared.ts';
 
 const BASE_HEADERS: Record<string, string> = {
   'content-type': 'application/json; charset=utf-8',

@@ -1,4 +1,4 @@
-import type { ConfigStatusResponse, Credits } from '@tlh/shared';
+import type { ConfigStatusResponse, Credits } from '../shared.ts';
 import { chatsLeft, readCredits } from '../limits/limits.ts';
 import { aiAvailable, loginRequired } from '../services.ts';
 import { resolveCaller } from './caller.ts';

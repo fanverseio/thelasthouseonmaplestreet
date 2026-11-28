@@ -1,4 +1,4 @@
-import { APP_VERSION, type HealthResponse } from '@tlh/shared';
+import { APP_VERSION, type HealthResponse } from '../shared.ts';
 import { jsonResponse } from './json.ts';
 import type { Handler } from './types.ts';
 

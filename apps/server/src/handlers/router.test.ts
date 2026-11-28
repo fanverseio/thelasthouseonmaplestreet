@@ -1,4 +1,4 @@
-import { ConfigStatusResponseSchema, HealthResponseSchema } from '@tlh/shared';
+import { ConfigStatusResponseSchema, HealthResponseSchema } from '../shared.ts';
 import { describe, expect, it } from 'vitest';
 import { loadServerConfig } from '../config.ts';
 import { createServices } from '../services.ts';

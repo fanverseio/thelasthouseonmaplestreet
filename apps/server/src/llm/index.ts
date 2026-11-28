@@ -1,4 +1,4 @@
-import { LlmProtocolSchema } from '@tlh/shared';
+import { LlmProtocolSchema } from '../shared.ts';
 import type { z } from 'zod';
 import { createAnthropicAdapter } from './anthropic.ts';
 import { createMockAdapter } from './mock.ts';

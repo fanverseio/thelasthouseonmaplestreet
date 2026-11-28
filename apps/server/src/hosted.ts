@@ -1,4 +1,4 @@
-import { MAX_REQUEST_BODY_BYTES } from '@tlh/shared';
+import { MAX_REQUEST_BODY_BYTES } from './shared.ts';
 import { loadServerConfig } from './config.ts';
 import { errorResponse } from './handlers/json.ts';
 import { handleApiRequest } from './handlers/router.ts';

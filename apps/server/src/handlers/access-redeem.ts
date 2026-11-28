@@ -1,4 +1,4 @@
-import { AccessRedeemRequestSchema } from '@tlh/shared';
+import { AccessRedeemRequestSchema } from '../shared.ts';
 import { clientIp, encodeSession, matchAccount, newSessionId, sessionCookie } from '../access/access.ts';
 import { chatsLeft } from '../limits/limits.ts';
 import { aiAvailable, loginRequired } from '../services.ts';

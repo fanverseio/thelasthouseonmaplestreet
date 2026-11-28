@@ -1,4 +1,4 @@
-import { AngelChatResponseSchema, ApiErrorSchema, ConfigStatusResponseSchema } from '@tlh/shared';
+import { AngelChatResponseSchema, ApiErrorSchema, ConfigStatusResponseSchema } from '../shared.ts';
 import { describe, expect, it, vi } from 'vitest';
 import { decodeSession, encodeSession, matchAccount, loadAccounts, pairHashHex } from '../access/access.ts';
 import { canonViolation, capSpeech } from '../angel/canon-filter.ts';

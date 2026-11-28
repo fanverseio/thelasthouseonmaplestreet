@@ -1,4 +1,4 @@
-import { type AngelChatRequest, type KnowledgeLevel, type MoralityBand } from '@tlh/shared';
+import { type AngelChatRequest, type KnowledgeLevel, type MoralityBand } from '../shared.ts';
 import type { LlmMessage } from '../llm/types.ts';
 
 /**

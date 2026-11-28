@@ -1,5 +1,5 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
-import { MAX_REQUEST_BODY_BYTES } from '@tlh/shared';
+import { MAX_REQUEST_BODY_BYTES } from './shared.ts';
 import type { ServerConfig } from './config.ts';
 import { createServices, type Services } from './services.ts';
 import { errorResponse } from './handlers/json.ts';

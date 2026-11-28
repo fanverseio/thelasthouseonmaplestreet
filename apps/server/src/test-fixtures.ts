@@ -1,4 +1,4 @@
-import type { AngelChatRequest } from '@tlh/shared';
+import type { AngelChatRequest } from './shared.ts';
 import { loadServerConfig } from './config.ts';
 import type { HandlerContext } from './handlers/types.ts';
 import { createServices, type LogEntry } from './services.ts';

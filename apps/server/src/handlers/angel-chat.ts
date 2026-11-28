@@ -1,4 +1,4 @@
-import { AngelChatRequestSchema, AngelModelOutputSchema, MAX_PROPOSALS_PER_RESPONSE, type AngelChatResponse, type ErrorCode } from '@tlh/shared';
+import { AngelChatRequestSchema, AngelModelOutputSchema, MAX_PROPOSALS_PER_RESPONSE, type AngelChatResponse, type ErrorCode } from '../shared.ts';
 import { canonViolation, capSpeech, STOCK } from '../angel/canon-filter.ts';
 import { ANGEL_OUTPUT_JSON_SCHEMA, buildAngelPrompt } from '../angel/prompt.ts';
 import { admitChat, recordSpend } from '../limits/limits.ts';

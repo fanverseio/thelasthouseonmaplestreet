@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { APP_VERSION } from '@tlh/shared';
+import { APP_VERSION } from './shared.ts';
 
 describe('APP_VERSION', () => {
   it('matches the root package.json version', () => {

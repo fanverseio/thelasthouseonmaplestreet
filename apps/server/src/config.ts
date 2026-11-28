@@ -1,4 +1,4 @@
-import { AppModeSchema, DEFAULT_API_PORT, LlmProtocolSchema, type AppMode, type LlmProtocol } from '@tlh/shared';
+import { AppModeSchema, DEFAULT_API_PORT, LlmProtocolSchema, type AppMode, type LlmProtocol } from './shared.ts';
 import { upstashCredentials } from './store/usage-store.ts';
 
 /**
