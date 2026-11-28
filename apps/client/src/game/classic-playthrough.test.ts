@@ -571,6 +571,7 @@ describe('network is disabled for the playthroughs', () => {
 });
 
 describe('Classic playthrough from New Game to both endings', () => {
+  const seen = new Set<string>();
   for (const plan of [KIND, DARK, KIND_BROKEN, DARK_KEEPER]) {
     it(`${plan.name}: ${plan.ending} ending`, () => {
       const g = createHeadlessGame();
@@ -580,8 +581,17 @@ describe('Classic playthrough from New Game to both endings', () => {
       const steps = buildSteps(plan);
       play(g, steps);
       assertEnded(g, plan, steps);
+      for (const id of g.clips) seen.add(id);
+      // One run plays 13 clips (one Briggs, one Watcher outcome, one ending). With every clip watched in full
+      // this is the forced time of a playthrough: 239-255 s by outcome, past the PRD's 180 s design cap.
+      expect(g.clips).toHaveLength(13);
+      expect(g.clips.reduce((s, id) => s + getVideoClip(id)!.targetSeconds, 0)).toBeLessThanOrEqual(255);
     }, 60_000);
   }
+
+  it('between them the four runs reach every one of the 16 clips', () => {
+    expect([...seen].sort()).toEqual(VIDEO_CLIPS.map((c) => c.id).sort());
+  });
 });
 
 describe('Classic playthrough from every checkpoint to both endings', () => {
