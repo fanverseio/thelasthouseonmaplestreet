@@ -9,8 +9,9 @@ import type { Handler } from './types.ts';
  * Hosted sessions arrive in tasks.md section 8; until then `session.active` is false.
  */
 export const configStatusHandler: Handler = (_request, ctx) => {
-  const { appMode, llm } = ctx.config;
-  const available = isLlmConfigured(llm);
+  const { appMode, llm, hasStore } = ctx.config;
+  // Hosted fails closed: no usage store means no AI, whatever the provider settings say.
+  const available = isLlmConfigured(llm) && (appMode === 'local' || hasStore);
   const body: ConfigStatusResponse = {
     mode: appMode,
     aiAvailable: available,

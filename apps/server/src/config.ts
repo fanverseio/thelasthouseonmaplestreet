@@ -15,6 +15,8 @@ export interface ServerConfig {
     hasBaseUrl: boolean;
     hasKey: boolean;
   };
+  /** True when the hosted usage store (Upstash Redis) is configured. Hosted AI needs it. */
+  hasStore: boolean;
 }
 
 type Env = Record<string, string | undefined>;
@@ -58,6 +60,7 @@ export function loadServerConfig(env: Env): ServerConfig {
       hasBaseUrl: Boolean(env.LLM_BASE_URL?.trim()),
       hasKey: Boolean(env.LLM_API_KEY?.trim()),
     },
+    hasStore: Boolean(env.UPSTASH_REDIS_REST_URL?.trim() && env.UPSTASH_REDIS_REST_TOKEN?.trim()),
   };
 }
 

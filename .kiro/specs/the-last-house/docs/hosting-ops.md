@@ -66,3 +66,20 @@ LLM provider (fixed by env)
 7. Cookie flags verified in a clean browser. Cold start time measured.
 8. Codes pasted into the Devpost form and tested from another network.
 9. Keep the deployment up until judging ends; check the spend counter daily; rotate the provider key afterwards.
+
+## 9. Classic-only deploy (current state, 2026-11-28)
+No AI key, no Redis. `GET /api/config/status` must report `aiAvailable: false` (a test covers this; hosted AI also needs `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`).
+
+What the author does in Vercel (by hand):
+1. Add New > Project > import `fanverseio/thelasthouseonmaplestreet`. Framework preset: Other. `vercel.json` sets install, build (`npm run build`) and output (`apps/client/dist`).
+2. Settings > Environments > Production > Branch Tracking: set Production Branch to `feat/phase1-foundations` (the import screen cannot set it).
+3. Settings > General: Node.js Version 24.x.
+4. Settings > Environment Variables: add `APP_MODE` = `hosted` (plain, not secret). Nothing else is needed for Classic.
+5. Firewall (Project > Firewall > Add Rule): deny all IPs except your own IPv4 and IPv6 (condition "IP Address" not equal to each, action Deny). Publish. Turn any VPN or Tailscale exit node off when opening the site. The rule covers previews too.
+6. **Before judging: delete that firewall rule and publish**, then open the site from another network.
+7. Verify: `/api/health` returns `"mode":"hosted"`; `/api/config/status` returns `"aiAvailable":false`; New Game > Classic starts; a cinematic video plays and seeks.
+
+Notes:
+- `npm run check` also runs `scripts/check-asset-case.mjs` (Linux is case-sensitive; Windows is not).
+- Static `/assets/*.js|css` are cached immutable (hashed by Vite). Models, audio, textures and video are cached one day, because their file names are not hashed.
+- `dist` is about 119 MB (84 MB video, 7 MB source maps).

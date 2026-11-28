@@ -205,9 +205,13 @@ These match `package.json` exactly (`npm run check` fails if they drift).
 | `npm run test:e2e`  | Playwright browser smoke test (starts the client itself; run `npx playwright install chromium` once first)        |
 | `npm run typecheck` | TypeScript checks for the root configs and every workspace                              |
 | `npm run lint`      | ESLint for the whole repository                                                         |
-| `npm run check`     | Secret scan of tracked and staged files, plus the README/`.env.example` sync check      |
+| `npm run check`     | Secret scan of tracked and staged files, asset file-name case check (Linux), plus the README/`.env.example` sync check |
 
 To scan only staged files before a commit: `node scripts/check-secrets.mjs --staged`.
+
+### Deploying to Vercel (Classic mode)
+
+For the repository owner only; setup and local runs never deploy. In Vercel, import the repo (preset Other; `vercel.json` sets build and output). Set the Production Branch to `feat/phase1-foundations` (Settings, Environments, Production, Branch Tracking), Node.js to 24.x, and add the variable `APP_MODE=hosted`. No key and no Redis are needed: with `APP_MODE=hosted` and no `UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN`, `/api/config/status` reports `aiAvailable: false` and the game plays Classic. To lock the site to your own IP, add a Vercel Firewall rule that denies all other IPs, and delete it before judging. Full steps: `.kiro/specs/the-last-house/docs/hosting-ops.md` section 9.
 
 ### Troubleshooting
 

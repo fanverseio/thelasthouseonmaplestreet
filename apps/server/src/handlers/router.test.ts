@@ -51,6 +51,24 @@ describe('GET /api/config/status', () => {
   });
 });
 
+describe('hosted fail closed', () => {
+  const status = async (env: Record<string, string>) =>
+    ConfigStatusResponseSchema.parse(await (await handleApiRequest(get('/api/config/status'), ctx(env))).json());
+
+  it('reports AI unavailable with no store and no provider', async () => {
+    expect((await status({ APP_MODE: 'hosted' })).aiAvailable).toBe(false);
+  });
+
+  it('reports AI unavailable when a provider is set but Redis is not', async () => {
+    expect((await status({ APP_MODE: 'hosted', LLM_PROTOCOL: 'mock' })).aiAvailable).toBe(false);
+  });
+
+  it('reports AI available only with provider and Redis both set', async () => {
+    const env = { APP_MODE: 'hosted', LLM_PROTOCOL: 'mock', UPSTASH_REDIS_REST_URL: 'https://x.example', UPSTASH_REDIS_REST_TOKEN: 't' };
+    expect((await status(env)).aiAvailable).toBe(true);
+  });
+});
+
 describe('routing', () => {
   it('returns 404 not_found for unknown routes', async () => {
     const response = await handleApiRequest(get('/api/does-not-exist'), ctx());
