@@ -19,11 +19,8 @@ export const BRIGGS_BINDING: EncounterBinding = {
   stunFlags: ['spell_purify'],
   telegraph: { promptId: 'briggs_ward', seconds: 2.5, damage: 12, hpFloor: 30, wardFlag: 'spell_ward', magicCost: 25 },
   // The walkie drops when the smoke lets go; the player picks it up (clue.garden.walkie sets walkie_found).
+  // The outcome lines (vo_elena_b4_02, vo_briggs_b4_04 / vo_elena_b4_03) are spoken in the outcome clips (beat4.ts).
   deferDrops: true,
-  outcomeLines: {
-    purify: [{ line: 'vo_elena_b4_02' }, { line: 'vo_briggs_b4_04', after: 3.5 }],
-    destroy: [{ line: 'vo_elena_b4_03' }],
-  },
 };
 
 /**
@@ -44,10 +41,7 @@ export const WATCHER_BINDING: EncounterBinding = {
   // vo_watcher_b6_05 is the 30% voice line (voiceAtHp), spoken as he reaches the stun floor.
   stunLines: [{ line: 'vo_angel_b6_01', after: 2.5 }],
   deferDrops: true,
-  outcomeLines: {
-    purify: [{ line: 'vo_watcher_b6_06' }],
-    destroy: [{ line: 'vo_elena_b6_03' }],
-  },
+  // The outcome lines (vo_watcher_b6_06 / vo_elena_b6_03) are spoken in cin_watcher_purified / _destroyed (beat6.ts).
 };
 
 /**

@@ -148,11 +148,13 @@ describe('Beat 1 headless playthrough: New Game to home_done', () => {
     expect(flags()).toContain('locket_taken');
     expect(flags()).not.toContain('angel_awake');
 
-    // 5. The Angel introduces itself (lines only, Elena keeps control). Locket stays closed meanwhile.
+    // 5. The Angel introduces itself: the clip cin_angel_intro (its first lines are spoken in the video),
+    // then two lines in the game. Locket stays closed meanwhile.
     expect(rt.sequences.active).toBe('angel_intro');
+    expect(rt.video?.clipId).toBe('cin_angel_intro');
     expect(rt.canOpenLocket()).toBe(false);
     tick(10);
-    expect(rt.spoken).toContain('vo_angel_b1_01');
+    expect(rt.spoken).not.toContain('vo_angel_b1_01');
     expect(rt.canOpenLocket()).toBe(false);
     // The door is open to walk through, but the interaction refuses until the intro is over.
     walkTo(-19.5, 36);
@@ -161,7 +163,7 @@ describe('Beat 1 headless playthrough: New Game to home_done', () => {
     tick(30);
     expect(rt.sequences.active).toBeNull();
     expect(flags()).toContain('angel_awake');
-    expect(rt.spoken).toEqual(expect.arrayContaining(['vo_angel_b1_04']));
+    expect(rt.spoken).toEqual(expect.arrayContaining(['vo_angel_b1_03', 'vo_angel_b1_04']));
     // Note 4: nothing of Felix's voice misfires right after the locket opens.
     expect(rt.spoken).not.toContain('vo_felix_b1_01');
     expect(rt.spoken).not.toContain('vo_elena_b1_08');
@@ -180,9 +182,13 @@ describe('Beat 1 headless playthrough: New Game to home_done', () => {
     expect(store.getState().game.phase).toBe('paused');
     store.getState().setPhase('playing');
 
-    // 7. Front door -> home_done, checkpoint cp_street, then the street
+    // 7. Front door -> the clip cin_home_door_felix (Felix's "Mom?" in the video) -> home_done, cp_street
     walkTo(-19.5, 36);
     expect(press()).toMatchObject({ status: 'done', id: 'door.home.front' });
+    expect(rt.video?.clipId).toBe('cin_home_door_felix');
+    expect(flags()).not.toContain('home_done');
+    tick(10.5);
+    expect(rt.video).toBeNull();
     expect(store.getState().game.checkpointId).toBe('cp_street');
     expect(walkTo(-19.5, 31)).toBeLessThan(0.1);
 

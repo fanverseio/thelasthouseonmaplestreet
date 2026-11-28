@@ -3,7 +3,6 @@
  * `input.state.interactHeldMs` every sim step; after SKIP_HOLD_SECONDS the sequence runner's skip() runs.
  * Skipping applies every flag and spell and stops the video overlay (the runner does that itself).
  */
-import type { SequenceId } from '@tlh/shared';
 import { SKIP_HOLD_SECONDS, type SequenceDef, type SequenceRunner } from './sequences.ts';
 
 const hasVideo = (steps: readonly SequenceDef['steps'][number][]): boolean =>
@@ -31,11 +30,20 @@ export interface SkipHold {
   subscribe(listener: () => void): () => void;
 }
 
-export function createSkipHold(runner: Pick<SequenceRunner, 'active' | 'skip'>, defs: readonly SequenceDef[]): SkipHold {
+/**
+ * Optional: the clip on screen, and a way to end it. Lets hold-E skip a clip inside a sequence that is not
+ * skippable itself (Briggs, Gartner): the clip ends early and the sequence goes on, so no flag is lost.
+ */
+export interface ClipSkip {
+  current(): string | null;
+  end(clipId: string): void;
+}
+
+export function createSkipHold(runner: Pick<SequenceRunner, 'active' | 'skip'>, defs: readonly SequenceDef[], clip?: ClipSkip): SkipHold {
   let available = false;
   let progress = 0;
   let version = 0;
-  let lastId: SequenceId | null = null;
+  let lastId: string | null = null;
   /** E was already down when the sequence began: it must be released and pressed again. */
   let needRelease = false;
   const listeners = new Set<() => void>();
@@ -52,14 +60,17 @@ export function createSkipHold(runner: Pick<SequenceRunner, 'active' | 'skip'>, 
     feed(heldMs) {
       const id = runner.active;
       const def = id ? defs.find((d) => d.id === id) : undefined;
-      if (!id || !isHoldSkippable(def)) {
+      const wholeSkip = isHoldSkippable(def);
+      const clipId = !wholeSkip && id ? (clip?.current() ?? null) : null;
+      if (!id || (!wholeSkip && !clipId)) {
         lastId = id;
         needRelease = false;
         set(false, 0);
         return false;
       }
-      if (id !== lastId) needRelease = heldMs > 0;
-      lastId = id;
+      const key = clipId ? `${id}:${clipId}` : id;
+      if (key !== lastId) needRelease = heldMs > 0;
+      lastId = key;
       if (heldMs <= 0) needRelease = false;
       if (needRelease) {
         set(true, 0);
@@ -67,6 +78,12 @@ export function createSkipHold(runner: Pick<SequenceRunner, 'active' | 'skip'>, 
       }
       const p = skipProgress(heldMs);
       if (p >= 1) {
+        if (clipId) {
+          clip!.end(clipId);
+          needRelease = true; // the sequence goes on: release E before anything else reacts to it
+          set(false, 0);
+          return true;
+        }
         const r = runner.skip();
         lastId = runner.active;
         needRelease = r.skipped && runner.active !== null; // a queued sequence started: release first

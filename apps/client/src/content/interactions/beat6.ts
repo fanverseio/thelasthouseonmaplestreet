@@ -33,8 +33,8 @@ export const BEAT6: InteractionContent = {
       actions: [
         { do: 'setFlag', flag: 'fuse_placed' },
         { do: 'useSocket', item: 'fuse' },
-        { do: 'say', line: 'vo_elena_b6_02' },
-        { do: 'say', line: 'vo_watcher_b6_01', after: 3 },
+        // Started here, not from an onFlag rule, so a Continue from cp_watcher does not replay it.
+        { do: 'startSequence', sequence: 'cin_watcher_appear' },
       ],
     },
     // Engages him, then weakens him (the encounter runtime decides which); the panel offers purify or destroy.
@@ -59,6 +59,12 @@ export const BEAT6: InteractionContent = {
     },
   ],
   triggers: [],
+  // The clips (content/sequences/beat6.ts); their lines are spoken in the video. `when` keeps them from playing
+  // again when a game starts with these flags already set (a dev start, or a later step of the beat).
+  onFlag: [
+    { flag: 'watcher_purified', when: { notFlags: ['fence_key_taken'] }, actions: [{ do: 'startSequence', sequence: 'cin_watcher_purified' }] },
+    { flag: 'watcher_destroyed', when: { notFlags: ['fence_key_taken'] }, actions: [{ do: 'startSequence', sequence: 'cin_watcher_destroyed' }] },
+  ],
   hints: [
     {
       id: 'p2_fuse',

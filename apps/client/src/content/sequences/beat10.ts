@@ -14,10 +14,27 @@ export const SEQ6_TWO_KEYS: SequenceDef = {
   requires: ['board_solved'],
   owns: ['seal.ritual.central'],
   policy: { locket: 'blocked', angelActions: 'blocked', control: 'locked' },
-  maxForcedSeconds: 45,
+  maxForcedSeconds: 32,
   skippable: true,
   setsOnComplete: ['seq6_done'],
-  steps: [{ t: 'video', clipId: 'seq6_two_keys', fallbackSeconds: 40 }],
+  steps: [{ t: 'video', clipId: 'seq6_two_keys', fallbackSeconds: 32 }],
 };
 
-export const BEAT10_SEQUENCES: readonly SequenceDef[] = [SEQ6_TWO_KEYS];
+/**
+ * Beat 9 to 10: Elena walks down into the ritual chamber (clip `cin_ritual_enter`, no lines). Fired once by
+ * trg.ritual.enter just inside the chamber after board_solved and before seq6_done. Sets no flags.
+ */
+export const CIN_RITUAL_ENTER: SequenceDef = {
+  id: 'cin_ritual_enter',
+  kind: 'cinematic',
+  trigger: { entity: 'trg.ritual.enter' },
+  requires: ['board_solved'],
+  owns: ['seal.ritual.central'],
+  policy: { locket: 'blocked', angelActions: 'blocked', control: 'locked' },
+  maxForcedSeconds: 8,
+  skippable: true,
+  setsOnComplete: [],
+  steps: [{ t: 'video', clipId: 'cin_ritual_enter', fallbackSeconds: 8 }],
+};
+
+export const BEAT10_SEQUENCES: readonly SequenceDef[] = [CIN_RITUAL_ENTER, SEQ6_TWO_KEYS];

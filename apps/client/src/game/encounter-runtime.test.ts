@@ -151,7 +151,7 @@ describe.each([
     expect(g.world.prompt).toBe('E  Pick up the walkie-talkie');
     expect(g.press()).toMatchObject({ status: 'done', id: 'clue.garden.walkie' });
     expect(g.world.spoken).toContain('vo_gartner_b4_01');
-    g.tick(1);
+    g.tick(16); // the outcome clip (fallback timer) plays before the sequence can end
     expect(g.flags()).toContain('seq3_done');
     expect(g.world.sequences.active).toBeNull();
 
@@ -200,7 +200,7 @@ describe('Beat 4 rules', () => {
     g.encounters.choose('briggs', 'purify');
     g.walkTo(55.8, 5);
     g.press();
-    g.tick(1);
+    g.tick(16);
     expect(g.world.sequences.checkAngelAction('light.garden.porch')).toEqual({ ok: true });
   });
 

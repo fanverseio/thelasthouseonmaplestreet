@@ -87,6 +87,12 @@ export const SEQUENCE_IDS = [
   'cin_ending_broken',
   'atm_home_window',
   'angel_intro',
+  'cin_home_door_felix',
+  'cin_watcher_appear',
+  'cin_watcher_purified',
+  'cin_watcher_destroyed',
+  'cin_last_house_enter',
+  'cin_ritual_enter',
 ] as const;
 export const SequenceIdSchema = z.enum(SEQUENCE_IDS);
 export type SequenceId = z.infer<typeof SequenceIdSchema>;

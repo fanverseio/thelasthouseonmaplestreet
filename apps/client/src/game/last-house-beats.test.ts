@@ -56,9 +56,12 @@ function setup(options: { loadScene?: (scene: string) => Promise<unknown> | null
     return Math.hypot(x - pos.x, z - pos.z);
   };
   const press = () => world.interact({ x: pos.x, z: pos.z });
-  /** Enter through the front door (synchronous loader) and stand at the entry. */
+  /** Enter through the front door (synchronous loader), let the entry clip end, and stand at the entry. */
   const enter = () => {
     expect(press()).toEqual({ status: 'done', id: DOOR });
+    expect(world.video?.clipId).toBe('cin_last_house_enter');
+    tick(13);
+    expect(world.video).toBeNull();
     const p = store.getState().player.pos;
     pos.x = p[0];
     pos.z = p[2];
@@ -116,7 +119,7 @@ describe('Beat 9-10 content', () => {
 
   it('seq6_two_keys is one skippable video step that sets seq6_done', () => {
     expect(validateSequenceDef(SEQ6_TWO_KEYS)).toEqual([]);
-    expect(SEQ6_TWO_KEYS.steps).toEqual([{ t: 'video', clipId: 'seq6_two_keys', fallbackSeconds: 40 }]);
+    expect(SEQ6_TWO_KEYS.steps).toEqual([{ t: 'video', clipId: 'seq6_two_keys', fallbackSeconds: 32 }]);
     expect(SEQ6_TWO_KEYS).toMatchObject({ skippable: true, setsOnComplete: ['seq6_done'], requires: ['board_solved'] });
     expect(SEQ6_TWO_KEYS.policy).toEqual({ locket: 'blocked', angelActions: 'blocked', control: 'locked' });
   });
@@ -170,8 +173,8 @@ describe('Beat 9 headless playthrough', () => {
     expect(s.game.scene).toBe('last_house');
     expect(s.game.checkpointId).toBe('cp_interior');
     expect(s.player.pos).toEqual([0, 0, 20]);
-    g.tick(2.1);
-    expect(g.world.spoken).toContain('vo_elena_b9_01');
+    // vo_elena_b9_01 is spoken inside the entry clip now, not by the game.
+    expect(g.world.spoken).not.toContain('vo_elena_b9_01');
     // The exterior door is no longer offered from inside.
     expect(g.world.nearest({ x: -62, z: 34.6 })).toBeNull();
   });
@@ -270,6 +273,9 @@ function toSeal(): Game {
   solveBoard(g);
   g.walkTo(0, 0);
   g.walkTo(0, -13.5);
+  // Walking into the chamber played cin_ritual_enter (trg.ritual.enter); let it end.
+  expect(g.world.sequences.results.some((r) => r.id === 'cin_ritual_enter') || g.world.sequences.active === 'cin_ritual_enter').toBe(true);
+  g.tick(9);
   return g;
 }
 
@@ -280,11 +286,11 @@ describe('Beat 10 headless playthrough', () => {
     // Anchor doors are shut before seq6_done.
     expect(moveCheck(g.flags(), 0, -36)).toBe(false);
     expect(g.press()).toEqual({ status: 'done', id: SEAL });
-    expect(g.world.video).toEqual({ clipId: 'seq6_two_keys', fallbackSeconds: 40 });
+    expect(g.world.video).toEqual({ clipId: 'seq6_two_keys', fallbackSeconds: 32 });
     expect(g.world.sequences.active).toBe('seq6_two_keys');
     expect(g.flags()).not.toContain('seq6_done');
     expect(g.press()).toMatchObject({ status: 'refused', id: SEAL }); // no second start
-    g.tick(39);
+    g.tick(31);
     expect(g.flags()).not.toContain('seq6_done');
     g.tick(1.5);
     expect(g.flags()).toContain('seq6_done');

@@ -21,7 +21,7 @@ export const SEQ4_GARTNER_CONFESSION: SequenceDef = {
   requires: ['walkie_found'],
   owns: ['door.hideout.shed', 'npc.hideout.gartner', BULB],
   policy: { locket: 'blocked', angelActions: 'blocked', control: 'limited' },
-  maxForcedSeconds: 0,
+  maxForcedSeconds: 22,
   skippable: false,
   setsOnComplete: ['seq4_done'],
   steps: [
@@ -30,8 +30,8 @@ export const SEQ4_GARTNER_CONFESSION: SequenceDef = {
     ...say('vo_gartner_b5_01', 3.5),
     ...say('vo_elena_b5_02', 3),
     ...say('vo_gartner_b5_02', 5.5),
-    ...say('vo_gartner_b5_03', 5),
-    ...say('vo_gartner_b5_04', 5),
+    // The flashback clip carries vo_gartner_b5_03 and _04 (spoken in the video). Hold E ends the clip only.
+    { t: 'video', clipId: 'cin_gartner_confession', fallbackSeconds: 22 },
     ...say('vo_gartner_b5_05', 4),
     // The choice; its lines are spoken by the choice runtime.
     { t: 'prompt', textId: 'gartner_choice', until: 'flag', flag: 'gartner_comforted', orFlags: ['gartner_pressed'] },

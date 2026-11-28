@@ -775,7 +775,8 @@ export function createWorldRuntime(options: WorldRuntimeOptions): WorldRuntime {
       });
     },
     // Outside a sequence, a hostile enemy blocks the locket (combat_blocked), e.g. the street fox.
-    canOpenLocket: () => canOpenLocket(progress().flags, runner.active ? runner.policy.locket : 'combat_blocked', options.inCombat?.() ?? false),
+    // Never during a clip on screen (the outcome clips play inside combat-blocked sequences).
+    canOpenLocket: () => !video && canOpenLocket(progress().flags, runner.active ? runner.policy.locket : 'combat_blocked', options.inCombat?.() ?? false),
     locketLine,
     get locketPolicy() {
       return runner.policy.locket;

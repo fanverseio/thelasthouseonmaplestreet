@@ -9,14 +9,24 @@ import type { InteractionContent } from './types.ts';
 export const BEAT9: InteractionContent = {
   interactions: [
     {
+      // First entry: the clip plays while the Last House loads under it (its line is spoken in the video).
       id: 'door.grounds.last_house_front',
       prompt: 'Enter the Last House',
       lockedPrompt: 'The front door will not open',
+      show: { notEntities: [{ id: 'door.grounds.last_house_front', key: 'entered', is: true }] },
       requires: { flags: ['runes_done'] },
       actions: [
+        { do: 'setEntity', id: 'door.grounds.last_house_front', key: 'entered', value: true },
+        { do: 'startSequence', sequence: 'cin_last_house_enter' },
         { do: 'enterScene', scene: 'last_house', event: 'enter:last_house' },
-        { do: 'say', line: 'vo_elena_b9_01', after: 2 },
       ],
+    },
+    {
+      id: 'door.grounds.last_house_front',
+      prompt: 'Enter the Last House',
+      show: { entities: [{ id: 'door.grounds.last_house_front', key: 'entered', is: true }] },
+      requires: { flags: ['runes_done'] },
+      actions: [{ do: 'enterScene', scene: 'last_house', event: 'enter:last_house' }],
     },
     {
       id: 'clue.interior.journal_4',
@@ -51,7 +61,14 @@ export const BEAT9: InteractionContent = {
       actions: [],
     },
   ],
-  triggers: [],
+  triggers: [
+    // Just inside the ritual chamber (the cellar door is at z -6): Elena walks down into it once.
+    {
+      id: 'trg.ritual.enter',
+      requires: { flags: ['board_solved'], notFlags: ['seq6_done'] },
+      actions: [{ do: 'startSequence', sequence: 'cin_ritual_enter' }],
+    },
+  ],
   hints: [],
   onFlag: [{ flag: 'board_solved', actions: [{ do: 'say', line: 'vo_elena_b9_03' }] }],
 };

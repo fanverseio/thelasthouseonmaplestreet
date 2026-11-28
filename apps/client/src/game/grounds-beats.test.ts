@@ -127,7 +127,7 @@ describe('Beat 7/8 content', () => {
 
   it('seq5_felix_mirror is one skippable video step that sets only seq5_done', () => {
     const def = ALL_SEQUENCES.find((s) => s.id === 'seq5_felix_mirror')!;
-    expect(def.steps).toEqual([{ t: 'video', clipId: 'seq5_felix_mirror', fallbackSeconds: 25 }]);
+    expect(def.steps).toEqual([{ t: 'video', clipId: 'seq5_felix_mirror', fallbackSeconds: 29 }]);
     expect(def.skippable).toBe(true);
     expect(def.setsOnComplete).toEqual(['seq5_done']);
     expect(def.policy).toEqual({ locket: 'blocked', angelActions: 'blocked', control: 'locked' });
@@ -332,9 +332,9 @@ describe('Beat 8 headless playthrough', () => {
     expect(g.world.sequences.active).toBe('seq5_felix_mirror');
     expect(g.world.sequences.policy).toEqual({ locket: 'blocked', angelActions: 'blocked', control: 'locked' });
     expect(g.world.canOpenLocket()).toBe(false);
-    expect(g.world.video).toEqual({ clipId: 'seq5_felix_mirror', fallbackSeconds: 25 });
+    expect(g.world.video).toEqual({ clipId: 'seq5_felix_mirror', fallbackSeconds: 29 });
     expect(g.world.visibleEntities().some((e) => e.id.startsWith('rune.'))).toBe(false);
-    g.tick(24);
+    g.tick(28);
     expect(g.flags()).not.toContain('seq5_done');
     g.tick(2);
     expect(g.flags()).toContain('seq5_done');
@@ -351,7 +351,7 @@ describe('Beat 8 headless playthrough', () => {
     const final = (skipAt: number | null) => {
       const g = atPainting();
       g.press();
-      if (skipAt === null) g.tick(26);
+      if (skipAt === null) g.tick(30);
       else {
         g.tick(skipAt);
         const r = g.world.sequences.skip();
@@ -361,7 +361,7 @@ describe('Beat 8 headless playthrough', () => {
     };
     const full = final(null);
     expect(full.flags).toContain('seq5_done');
-    for (const t of [0, 0.02, 1, 5, 12.5, 20, 24.9]) expect(final(t), `skip at ${t}s`).toEqual(full);
+    for (const t of [0, 0.02, 1, 5, 12.5, 20, 28.9]) expect(final(t), `skip at ${t}s`).toEqual(full);
     // A video that ends on its own (the real clip) behaves the same as the fallback timer.
     const g = atPainting();
     g.press();
@@ -376,7 +376,7 @@ describe('Beat 8 headless playthrough', () => {
   it('runes_done: a Purify channel at each rune wakes and purifies it; the door gate opens only then', () => {
     const g = atPainting();
     g.press();
-    g.tick(26);
+    g.tick(30);
     const gate = GATES.find((x) => x.id === 'door.grounds.last_house_front')!;
     let n = 0;
     for (const id of runeIds) {
@@ -397,7 +397,7 @@ describe('Beat 8 headless playthrough', () => {
   it('a short Purify wakes a rune; then E finishes it, once, and magic never matters', () => {
     const g = atPainting();
     g.press();
-    g.tick(26);
+    g.tick(30);
     const id = 'rune.grounds.r1';
     g.route(RUNE_SPOTS[id]!);
     g.fight.purifyAt(runeAimPoint(id), 0.4); // released before the channel ends
@@ -425,7 +425,7 @@ describe('Beat 8 headless playthrough', () => {
 
     const g = atPainting();
     g.press();
-    g.tick(26);
+    g.tick(30);
     g.tick(25);
     expect(g.world.spoken).not.toContain('vo_felix_p4_h1');
     g.tick(8);

@@ -15,10 +15,10 @@ export const CIN_FELIX_ANCHOR: SequenceDef = {
   requires: ['ritual_active'],
   owns: ['npc.ritual.felix'],
   policy: { locket: 'blocked', angelActions: 'blocked', control: 'locked' },
-  maxForcedSeconds: 20,
+  maxForcedSeconds: 16,
   skippable: true,
   setsOnComplete: ['felix3_done'],
-  steps: [{ t: 'video', clipId: 'cin_felix_anchor', fallbackSeconds: 15 }],
+  steps: [{ t: 'video', clipId: 'cin_felix_anchor', fallbackSeconds: 16 }],
 };
 
 /** Ending A, The Bloodline Keeper (20-30 s). Sets `game_finished`; the ending flag came from the choice. */
@@ -29,10 +29,10 @@ export const CIN_ENDING_KEEPER: SequenceDef = {
   requires: ['ending_keeper'],
   owns: ['seal.ritual.central'],
   policy: { locket: 'blocked', angelActions: 'blocked', control: 'locked' },
-  maxForcedSeconds: 30,
+  maxForcedSeconds: 29,
   skippable: true,
   setsOnComplete: ['game_finished'],
-  steps: [{ t: 'video', clipId: 'cin_ending_keeper', fallbackSeconds: 25 }],
+  steps: [{ t: 'video', clipId: 'cin_ending_keeper', fallbackSeconds: 29 }],
 };
 
 /** Ending B, The Broken Seal (20-30 s). Sets `game_finished`. */

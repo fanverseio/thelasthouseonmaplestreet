@@ -67,9 +67,9 @@ describe('Beats 2-3: the street', () => {
     // The veil is open now: on to the streetlight.
     expect(walkTo(57, 29.5)).toBeLessThan(0.1);
     expect(rt.sequences.active).toBe('seq2_felix_streetlight');
-    expect(rt.video).toEqual({ clipId: 'seq2_felix_streetlight', fallbackSeconds: 20 });
+    expect(rt.video).toEqual({ clipId: 'seq2_felix_streetlight', fallbackSeconds: 28 });
     expect(rt.canOpenLocket()).toBe(false);
-    tick(20.1);
+    tick(28.1);
     expect(rt.video).toBeNull();
     expect(flags()).toEqual(expect.arrayContaining(['seq2_done', 'spell_bolt']));
     expect(store.getState().player.spellsUnlocked).toContain('arcane_bolt');
@@ -95,7 +95,7 @@ describe('Beats 2-3: the street', () => {
       store.getState().setFlag('seq1_done');
       walkTo(57, 29.5);
       expect(rt.sequences.active).toBe('seq2_felix_streetlight');
-      if (skipAt === null) tick(20.1);
+      if (skipAt === null) tick(28.1);
       else {
         tick(skipAt);
         expect(rt.sequences.skip().skipped).toBe(true);

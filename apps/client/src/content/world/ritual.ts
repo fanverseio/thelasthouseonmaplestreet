@@ -3,6 +3,7 @@ import { ent, range } from './define.ts';
 
 export const RITUAL_ENTITIES: readonly EntityDef[] = [
   ent('seal', 'ritual', 'central', { caps: ['interactable'], crit: true, owner: 'finale' }),
+  ent('trigger', 'ritual', 'enter', { crit: true, owner: 'cin_ritual_enter' }),
   ...range('door', 'ritual', ['north', 'east', 'west'], { crit: true, owner: 'finale' }),
   ...range('anchor', 'ritual', ['north', 'east', 'west'], {
     caps: ['interactable'],

@@ -29,8 +29,11 @@ export interface SequencePolicy {
 }
 
 export type SequenceStep =
-  /** Plays a clip by ID. Ends on `videoEnded`, or after `fallbackSeconds` when no clip file exists. */
-  | { t: 'video'; clipId: string; fallbackSeconds: number }
+  /**
+   * Plays a clip by ID. Ends on `videoEnded`, or after `fallbackSeconds` when no clip file exists.
+   * `ifFlag`: play only when this flag is set (else the step is passed over), for one clip per outcome.
+   */
+  | { t: 'video'; clipId: string; fallbackSeconds: number; ifFlag?: ProgressFlag }
   | { t: 'light'; target: EntityId; effect: 'flicker' | 'on' | 'off' | 'burst' | 'color'; seconds?: number }
   | { t: 'spawn' | 'despawn'; target: EntityId }
   | { t: 'audio'; cue: AudioCueId; at?: EntityId; bus: 'sfx' | 'amb' | 'mus' | 'vo' }
@@ -276,6 +279,8 @@ class Exec {
         if (!this.child.every((c) => c.done)) return 0;
         this.child = null;
         budget = left;
+      } else if (step.t === 'video' && step.ifFlag && this.remaining === null && !ctx.hasFlag(step.ifFlag)) {
+        // Conditional clip whose flag is not set: pass over it.
       } else if (step.t === 'video') {
         if (this.remaining === null) {
           this.remaining = step.fallbackSeconds;
@@ -286,6 +291,7 @@ class Exec {
           ctx.signals.delete(ended);
           ctx.signals.delete(`videoPlaying:${step.clipId}`);
           this.remaining = null;
+          ctx.emit({ k: 'videoStop', clipId: step.clipId }); // the overlay goes as soon as the clip is over
         } else if (ctx.signals.has(`videoPlaying:${step.clipId}`)) {
           return 0; // a real clip is playing: wait for its end, not the fallback timer
         } else if (this.remaining > budget) {
@@ -294,6 +300,7 @@ class Exec {
         } else {
           budget -= this.remaining;
           this.remaining = null;
+          ctx.emit({ k: 'videoStop', clipId: step.clipId });
         }
       } else if (step.t === 'wait') {
         this.remaining ??= step.seconds;

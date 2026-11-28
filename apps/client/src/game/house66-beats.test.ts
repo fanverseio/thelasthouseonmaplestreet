@@ -76,7 +76,7 @@ function playGartner(g: Game, choice: 'comfort' | 'press') {
   // The panel is not open yet, and pressing E again does not restart or break the scene.
   expect(g.choices.view()).toBeNull();
   expect(g.press().status).toBe('refused');
-  g.tick(30);
+  g.tick(42); // the dialogue and the flashback clip (fallback timer) before the choice
   const view = g.choices.view();
   expect(view?.options.map((o) => o.id)).toEqual(['comfort', 'press']);
   expect(JSON.stringify(view)).not.toMatch(/morality|delta|score|-?\d/);
@@ -140,7 +140,7 @@ describe.each([
     // Same information either way; only the two choice lines differ.
     const gartnerLines = g.world.spoken.filter((l) => l.startsWith('vo_gartner_b5_'));
     expect(gartnerLines).toEqual(
-      ['01', '02', '03', '04', '05', choice === 'comfort' ? '06a' : '06b', '07', '08', '09', '10'].map((n) => `vo_gartner_b5_${n}`),
+      ['01', '02', '05', choice === 'comfort' ? '06a' : '06b', '07', '08', '09', '10'].map((n) => `vo_gartner_b5_${n}`), // 03, 04: in the clip
     );
     expect(g.world.spoken).toEqual(expect.arrayContaining([choice === 'comfort' ? 'vo_elena_b5_c1' : 'vo_elena_b5_p1']));
     expect(objectiveFor(g.flags())).toBe('Find a fuse for House 66.');
@@ -177,8 +177,11 @@ function toStunnedWatcher(g: Game) {
   expect(g.flags()).toContain('fuse_placed');
   expect(g.carried()).toEqual([]);
   expect(g.store.getState().game.checkpointId).toBe('cp_watcher');
-  g.tick(3.2);
-  expect(g.world.spoken).toEqual(expect.arrayContaining(['vo_elena_b6_02', 'vo_watcher_b6_01']));
+  g.tick(0.1);
+  // cin_watcher_appear: the porch light, his turn and Felix's name (lines spoken in the video).
+  expect(g.world.video?.clipId).toBe('cin_watcher_appear');
+  g.tick(13.5);
+  expect(g.world.video).toBeNull();
   // He engages when Elena comes within 4 m; the real fight (Bolt taps) takes him to the 30% stun.
   g.route([-58, -31.5]);
   expect(g.flags()).toContain('watcher_started');
@@ -209,6 +212,9 @@ describe.each([
     expect(g.morality() - before).toBe(delta);
     expect(g.flags()).toContain(flag);
     expect(g.flags()).not.toContain('fence_key_taken'); // the key is a pickup
+    expect(g.world.video?.clipId).toBe(choice === 'purify' ? 'cin_watcher_purified' : 'cin_watcher_destroyed');
+    g.tick(15);
+    expect(g.world.video).toBeNull();
     expect(g.world.canOpenLocket()).toBe(true);
     expect(objectiveFor(g.flags())).toBe('Take the fence key.');
 
@@ -267,6 +273,7 @@ describe('Beat 6 rules', () => {
     g.press();
     g.route([59, 5], [59, -10], [55, -31], FUSEBOX_SPOT);
     g.press();
+    g.tick(14); // cin_watcher_appear
     g.route([-58, -31.5], [-58, -30]);
     expect(g.encounters.view('watcher').engaged).toBe(true);
     for (let i = 0; i < 5; i++) g.fight.tap('watcher');

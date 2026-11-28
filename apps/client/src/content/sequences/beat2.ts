@@ -53,11 +53,11 @@ export const SEQ2_FELIX_STREETLIGHT: SequenceDef = {
   requires: ['seq1_done'],
   owns: ['light.street.intersection' as EntityId],
   policy: { locket: 'blocked', angelActions: 'blocked', control: 'limited' },
-  maxForcedSeconds: 25,
+  maxForcedSeconds: 28,
   skippable: true,
   setsOnComplete: ['seq2_done', 'spell_bolt'],
   steps: [
-    { t: 'video', clipId: 'seq2_felix_streetlight', fallbackSeconds: 20 },
+    { t: 'video', clipId: 'seq2_felix_streetlight', fallbackSeconds: 28 },
     { t: 'unlockSpell', spell: 'arcane_bolt' },
   ],
 };

@@ -61,8 +61,8 @@ export const BEAT1: InteractionContent = {
       show: { notFlags: ['home_done'] },
       requires: { flags: ['locket_taken'] },
       onRefuse: [{ do: 'say', line: 'vo_elena_b1_09' }],
-      // home_done also needs angel_awake (progression rules): the door stays shut until the intro ends.
-      actions: [{ do: 'setFlag', flag: 'home_done' }],
+      // The clip sequence requires angel_awake: the door refuses until the intro ends.
+      actions: [{ do: 'startSequence', sequence: 'cin_home_door_felix' }],
     },
   ],
   triggers: [

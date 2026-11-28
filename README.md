@@ -45,7 +45,7 @@ React, Vite, TypeScript, Three.js with React Three Fiber, Zustand, zod, Node.js,
 | Node.js | 24 LTS recommended, 22.18 minimum            | Check with `node -v` (`.nvmrc` says 24) |
 | npm     | 10 or newer (ships with Node)                | Check with `npm -v`                     |
 | Git     | any recent version                           |                                         |
-| Browser | Desktop Chrome, Edge or Firefox with WebGL 2 | Safari and mobile are not supported     |
+| Browser | Desktop Chrome, Edge or Firefox with WebGL 2 | Safari and mobile are not supported. Gameplay needs a keyboard and mouse |
 | OS      | Windows 10/11, macOS, Linux                  |                                         |
 
 No other global tools are needed. Blender, ElevenLabs and image generation are only needed to _create_ assets, not to run the game.
@@ -159,6 +159,8 @@ Base URLs must use `https://`, or `http://localhost` / `http://127.0.0.1` for a 
 | 1 / 2 / 3         | Arcane Bolt / Purify / Ward                                            |
 | Esc               | Pause or close an overlay                                              |
 
+Gameplay needs a keyboard and mouse (pointer lock). On a phone or tablet only the cinematics are touch-friendly: they play in landscape (a "Rotate your phone" screen holds the clip while the device is upright), and tap-and-hold skips one.
+
 ## Project structure
 
 ```
@@ -169,7 +171,7 @@ apps/client/                Game client (Vite + React + R3F)
   src/services/             API client
   src/game/                 Headless game systems (no React/Three imports)          
   src/content/              Authored data: world, flags, beats, dialogue            
-  public/assets/            Final game assets (committed)                   [planned]
+  public/assets/            Final game assets (committed): models, textures, audio, video (cinematic clips)
   e2e/                      Playwright browser tests                                
 apps/server/src/            Local API server and shared request handlers
   handlers/                 health, config/status (access, chat, tts later)
@@ -255,6 +257,8 @@ Planned, not yet available:
 ## Assets and credits
 
 Final game assets are committed under `apps/client/public/assets/` so a fresh clone runs. Raw generator output in `assets/raw/` is git-ignored. Third-party and generated assets will be listed in `CREDITS.md`.
+
+Cinematics are 16 MP4 clips (H.264 + AAC, 1280x720, about 84 MB) in `apps/client/public/assets/video/`, one per clip id in `apps/client/src/content/video/clips.ts`, named `<clipId>.mp4`. The voices are inside the clips. The game plays them full screen; if a file is missing or fails to load, a black placeholder runs for the clip's length so the story never stops. A test checks that every clip id has a file. To replace a clip, keep the name, then remux for fast start without re-encoding: `ffmpeg -i in.mp4 -c copy -movflags +faststart <clipId>.mp4`.
 
 ## License
 

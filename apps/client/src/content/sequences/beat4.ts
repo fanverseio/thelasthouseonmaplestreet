@@ -21,7 +21,7 @@ export const SEQ3_CURSED_NEIGHBOUR: SequenceDef = {
   requires: ['seq2_done', 'seq3_started'],
   owns: [BRIGGS, 'clue.garden.walkie', 'trg.garden.enter'],
   policy: { locket: 'combat_blocked', angelActions: 'blocked', control: 'full' },
-  maxForcedSeconds: 0,
+  maxForcedSeconds: 15,
   skippable: false,
   setsOnComplete: ['seq3_done'],
   steps: [
@@ -35,9 +35,14 @@ export const SEQ3_CURSED_NEIGHBOUR: SequenceDef = {
     ...say('vo_briggs_b4_03', 1),
     // Weaken (interact); the stub stuns after a moment
     { t: 'prompt', textId: 'briggs_weaken', until: 'flag', flag: 'spell_purify' },
-    // Stun: the Angel offers the choice; the walkie drops after the outcome
+    // Stun: the Angel offers the choice
     { t: 'line', lineId: 'vo_angel_b4_02' },
-    { t: 'prompt', textId: 'briggs_choice', until: 'flag', flag: 'walkie_found' },
+    { t: 'prompt', textId: 'briggs_choice', until: 'flag', flag: 'briggs_purified', orFlags: ['briggs_destroyed'] },
+    // One clip per outcome (its lines are spoken in the video). Hold E ends the clip; the sequence goes on.
+    { t: 'video', clipId: 'cin_briggs_purified', fallbackSeconds: 15, ifFlag: 'briggs_purified' },
+    { t: 'video', clipId: 'cin_briggs_destroyed', fallbackSeconds: 9, ifFlag: 'briggs_destroyed' },
+    // The walkie drops after the outcome; taking it ends the sequence.
+    { t: 'waitFor', cond: { flag: 'walkie_found' } },
   ],
 };
 

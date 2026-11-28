@@ -211,6 +211,8 @@ Forced = control `limited` or `locked` in a cinematic. Interactive dialogue (Seq
 | **Total** | **150 s** (limit 180 s) |
 A content test sums the declared maximum durations and fails above 180 s.
 
+**Update 2026-11-28 (final clips wired):** 16 clips now play (`content/video/clips.ts`): the six above plus `cin_angel_intro` (27 s), `cin_home_door_felix` (10), `cin_briggs_purified`/`_destroyed` (15/9, inside Seq 3), `cin_gartner_confession` (22, inside Seq 4), `cin_watcher_appear` (13), `cin_watcher_purified`/`_destroyed` (14/8), `cin_last_house_enter` (12) and `cin_ritual_enter` (8), and the six above at their real lengths (28, 29, 32, 16, 29/25). Worst case is about 264 s, past the 180 s cap: the author must raise the cap or cut clips. `content/video/clip-files.test.ts` pins the current total until then. In a sequence that is not skippable (Seq 3, Seq 4), hold E ends only the clip and the sequence goes on.
+
 ## Pacing check (targets)
 
 Home 2.5, Seq 1 1.5, Seq 2 1.5, street encounter 1, neighbor 4, Gartner 2, House 66 3, approach 1.5, mirror 2, interior 2, Seq 6 1.5, ritual 4, ending 2 = **28.5 min**. Beats 1-5 = 12.5 min.

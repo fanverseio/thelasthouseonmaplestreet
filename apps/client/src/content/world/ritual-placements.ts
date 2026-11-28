@@ -8,6 +8,8 @@ import type { EntityId } from '@tlh/shared';
 import type { Placement } from './placements.ts';
 
 export const RITUAL_PLACEMENTS: Readonly<Record<EntityId, Placement>> = {
+  // Just inside the chamber from the cellar door (z -6): fires cin_ritual_enter once.
+  'trg.ritual.enter': { x: 0, z: -9, r: 2.5 },
   'anchor.ritual.north': { x: 0, z: -40, r: 0.6 },
   'anchor.ritual.east': { x: 20, z: -18, r: 0.6 },
   'anchor.ritual.west': { x: -20, z: -18, r: 0.6 },

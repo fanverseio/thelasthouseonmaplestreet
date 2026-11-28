@@ -13,10 +13,10 @@ export const SEQ5_FELIX_MIRROR: SequenceDef = {
   requires: ['padlock_open'],
   owns: ['clue.grounds.painting', 'puzzle.grounds.runes', 'rune.grounds.r1', 'rune.grounds.r2', 'rune.grounds.r3'],
   policy: { locket: 'blocked', angelActions: 'blocked', control: 'locked' },
-  maxForcedSeconds: 30,
+  maxForcedSeconds: 29,
   skippable: true,
   setsOnComplete: ['seq5_done'],
-  steps: [{ t: 'video', clipId: 'seq5_felix_mirror', fallbackSeconds: 25 }],
+  steps: [{ t: 'video', clipId: 'seq5_felix_mirror', fallbackSeconds: 29 }],
 };
 
 export const BEAT8_SEQUENCES: readonly SequenceDef[] = [SEQ5_FELIX_MIRROR];

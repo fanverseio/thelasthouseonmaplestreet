@@ -41,9 +41,9 @@ function setup(start: 'ritual' | 'ritual-choice' = 'ritual') {
     driver.restore(dir);
     world.setHeld(false);
   };
-  /** Wait out the first-anchor cinematic placeholder (15 s fallback). */
+  /** Wait out the first-anchor cinematic placeholder (16 s fallback). */
   const finishCinematic = () => {
-    tick(16);
+    tick(17);
   };
   return { store, storage, world, encounters: rig.encounters, ritual, ending, pos, flags, tick, goTo, press, restore, activate, finishCinematic, driver, rig };
 }
@@ -268,7 +268,7 @@ describe('the central seal states', () => {
   });
 
   it('the new sequences are valid skippable single-video clips with the named clip ids', () => {
-    const want = { cin_felix_anchor: 15, cin_ending_keeper: 25, cin_ending_broken: 25 } as const;
+    const want = { cin_felix_anchor: 16, cin_ending_keeper: 29, cin_ending_broken: 25 } as const;
     for (const [id, seconds] of Object.entries(want)) {
       const def = ALL_SEQUENCES.find((s) => s.id === id)!;
       expect(validateSequenceDef(def), id).toEqual([]);
@@ -300,7 +300,7 @@ describe('Beat 12: the final choice and the endings', () => {
     expect(t.store.getState().game.phase).toBe('playing');
     expect(t.world.video?.clipId).toBe(`cin_ending_${choice}`);
     if (how === 'skip') t.world.sequences.skip();
-    t.tick(26);
+    t.tick(30);
   }
 
   it('the overlay: Angel line first, then the two options, then the confirm, with no timer', () => {
@@ -428,7 +428,7 @@ describe('P8: the ending is a function of the choice only', () => {
         expect(endingOfFlags(flags), `m=${morality} ${choice}`).toBe(choice);
         expect(flags.includes('ending_keeper')).toBe(choice === 'keeper');
         expect(flags.includes('ending_broken')).toBe(choice === 'broken');
-        for (let i = 0; i < 60 * 26; i++) world.tick(SIM_DT, { x: 0, z: -14 });
+        for (let i = 0; i < 60 * 30; i++) world.tick(SIM_DT, { x: 0, z: -14 });
         expect(store.getState().progress.flags).toContain('game_finished');
         expect(store.getState().game.phase).toBe('credits');
         expect(storage.load().status).toBe('finished');

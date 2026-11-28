@@ -23,8 +23,8 @@ describe('world content', () => {
     expect(() => createWorldRegistry()).not.toThrow();
   });
 
-  it('contains every manifest entity (105) and gate (14), with per-zone counts', () => {
-    expect(ALL_ENTITIES).toHaveLength(105);
+  it('contains every manifest entity (105, plus trg.ritual.enter) and gate (14), with per-zone counts', () => {
+    expect(ALL_ENTITIES).toHaveLength(106);
     expect(GATES).toHaveLength(14);
     const expected: Record<ZoneId, number> = {
       home: 11,
@@ -35,7 +35,7 @@ describe('world content', () => {
       lane: 4,
       grounds: 13,
       interior: 9,
-      ritual: 13,
+      ritual: 14,
     };
     const reg = createWorldRegistry();
     for (const z of ZONE_IDS) expect(reg.inZone(z), z).toHaveLength(expected[z]);

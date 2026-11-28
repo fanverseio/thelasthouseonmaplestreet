@@ -12,7 +12,7 @@ import { EnemySystem } from '../game/enemies.ts';
 import type { Collider } from '../game/collision.ts';
 import { exteriorColliders } from '../content/world/exterior-layout.ts';
 import { interiorColliders } from '../content/world/interior-layout.ts';
-import { createSkipHold } from '../game/skip-hold.ts';
+import { createSkipHold, isHoldSkippable } from '../game/skip-hold.ts';
 import { SpellSystem, type SpellContext } from '../game/spells.ts';
 import { CombatFeedback, FEEDBACK_TUNING } from '../game/combat-feedback.ts';
 import { CombatFx } from '../scene/combat-fx.tsx';
@@ -52,7 +52,7 @@ import { SkipRing } from './skip-ring.tsx';
 import { SmokePuffOverlay } from './smoke-puff.tsx';
 import { SpellHud } from './spell-hud.tsx';
 import { Subtitles, type SubtitleLine } from './subtitles.tsx';
-import { VideoPlaceholder } from './video-placeholder.tsx';
+import { VideoPlayer } from './video-player.tsx';
 
 /**
  * Playtest notes (dev server only, `?notes=1`; see src/dev/notes/). In a built game `import.meta.env.DEV` is false,
@@ -150,7 +150,14 @@ export function GameView() {
   useEffect(() => ritual.on((e) => playAll(cuesForRitualEvent(e))), [ritual, playAll]);
   useSyncExternalStore(runtime.subscribe, () => runtime.version);
   const speech = routeLine(runtime.subtitle); // Angel lines go to the Angel panel, everyone else to the subtitles
-  const skipHold = useMemo(() => createSkipHold(runtime.sequences, ALL_SEQUENCES), [runtime]);
+  const skipHold = useMemo(
+    () =>
+      createSkipHold(runtime.sequences, ALL_SEQUENCES, {
+        current: () => runtime.video?.clipId ?? null,
+        end: (clipId) => runtime.signal({ videoEnded: clipId }),
+      }),
+    [runtime],
+  );
   const spellContext = useCallback((): SpellContext => {
     const f = gameStore.getState().progress.flags;
     return { hostileActive: encounters.hostileActive(), ritualActive: f.includes('ritual_active') && !f.includes('anchors_all') };
@@ -297,6 +304,14 @@ export function GameView() {
   }, [runtime, voice]);
   const sayLine = useCallback((id: string) => runtime.say(id), [runtime]);
   const videoEnded = useCallback((clipId: string) => runtime.signal({ videoEnded: clipId }), [runtime]);
+  const videoPlaying = useCallback((clipId: string) => runtime.signal({ videoPlaying: clipId }), [runtime]);
+  // Touch skip: the same rule as hold E (a skippable sequence skips whole; otherwise only the clip ends).
+  const videoSkip = useCallback(() => {
+    const id = runtime.sequences.active;
+    const def = id ? ALL_SEQUENCES.find((d) => d.id === id) : undefined;
+    if (isHoldSkippable(def)) runtime.sequences.skip();
+    else if (runtime.video) runtime.signal({ videoEnded: runtime.video.clipId });
+  }, [runtime]);
 
   return (
     <div ref={container} className="game-view" data-testid="game-view" data-phase={phase}>
@@ -345,8 +360,20 @@ export function GameView() {
       {phase === 'overlay' && <EndingChoicePanel ending={ending} />}
       {phase === 'playing' && <SkipRing skip={skipHold} />}
       {runtime.video && (
-        <VideoPlaceholder key={runtime.video.clipId} clipId={runtime.video.clipId} fallbackSeconds={runtime.video.fallbackSeconds} onEnded={videoEnded} />
+        <VideoPlayer
+          key={runtime.video.clipId}
+          clipId={runtime.video.clipId}
+          fallbackSeconds={runtime.video.fallbackSeconds}
+          onPlaying={videoPlaying}
+          onEnded={videoEnded}
+          onSkip={videoSkip}
+          paused={phase !== 'playing'}
+        />
       )}
+      <div className="rotate-overlay" role="alert" aria-hidden="true">
+        <p>Rotate your phone</p>
+        <small>The game plays in landscape.</small>
+      </div>
       {phase === 'locket' && locket && (
         <Locket line={locket.line} hasNext={locket.hasNext} onNext={nextLocket} onClose={closeLocket} />
       )}

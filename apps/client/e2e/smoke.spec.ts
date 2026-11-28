@@ -83,3 +83,12 @@ test('the first-art GLBs (home and front street) load on the street start withou
   expect(models.every((s) => s === 200)).toBe(true);
   expect(errors).toEqual([]);
 });
+
+test('the cinematic clips are served as MP4 from /assets/video', async ({ request }) => {
+  // Playwright's Chromium has no H.264 decoder, so this checks the file is served, not that it plays.
+  for (const id of ['cin_angel_intro', 'seq6_two_keys']) {
+    const res = await request.get(`/assets/video/${id}.mp4`, { headers: { Range: 'bytes=0-1023' } });
+    expect([200, 206], id).toContain(res.status());
+    expect(res.headers()['content-type'], id).toContain('video/mp4');
+  }
+});
