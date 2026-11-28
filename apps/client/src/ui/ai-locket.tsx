@@ -71,7 +71,7 @@ const STATUS_TEXT: Record<AiStatus, string> = {
  * AI-Enhanced locket: a text box (the game is paused and pointer lock released), a thinking state, and the reply.
  * Any failure shows the authored Classic line with the locket dimmed. Esc closes.
  */
-export function AiLocket({ director, onClose, onLogin }: { director: AngelDirector; onClose: () => void; onLogin: () => void }) {
+export function AiLocket({ director, onClose, onLogin, touch = false }: { director: AngelDirector; onClose: () => void; onLogin: () => void; touch?: boolean }) {
   useSyncExternalStore(director.subscribe, () => director.status);
   const size = useSettings((s) => s.subtitleSize);
   const [text, setText] = useState('');
@@ -145,7 +145,13 @@ export function AiLocket({ director, onClose, onLogin }: { director: AngelDirect
           </form>
         </>
       )}
-      <p className="note">Enter: speak · Esc: close the locket</p>
+      {touch ? (
+        <button type="button" className="secondary" onClick={onClose} data-testid="locket-close">
+          Close the locket
+        </button>
+      ) : (
+        <p className="note">Enter: speak · Esc: close the locket</p>
+      )}
     </div>
   );
 }

@@ -8,6 +8,14 @@ export const TUTORIAL_TEXT: Readonly<Record<string, string>> = {
   tut_bolt: 'LMB: Arcane Bolt',
 };
 
+/** Mobile mode wording for the same prompts (touch controls). Missing keys fall back to TUTORIAL_TEXT. */
+export const TUTORIAL_TEXT_TOUCH: Readonly<Record<string, string>> = {
+  tut_wasd: 'Left thumb: move · Right thumb: look',
+  tut_sprint: 'Run: sprint on / off',
+  tut_interact: 'E button: interact',
+  tut_bolt: 'Cast: Arcane Bolt (hold to charge)',
+};
+
 /**
  * Beats 2-3: the street (docs/beat-sheet.md). Order is enforced by `requires`; seq1 and seq2 live in
  * content/sequences/beat2.ts. cp_intersection is written by the existing seq2_done checkpoint rule.

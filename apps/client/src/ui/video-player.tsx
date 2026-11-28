@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { VideoPlaceholder } from './video-placeholder.tsx';
+import { enterMobileLandscape } from './use-mobile.ts';
 import {
   LOAD_TIMEOUT_SECONDS,
   STALL_SECONDS,
@@ -28,14 +29,6 @@ export interface VideoPlayerProps {
 
 const isTouch = (): boolean => typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches === true;
 const isPortrait = (): boolean => typeof window !== 'undefined' && window.matchMedia?.('(orientation: portrait)').matches === true;
-
-/** First gesture on a phone: go full screen and try to lock landscape. Both may be refused; that is fine. */
-function enterMobileLandscape(): void {
-  const el = document.documentElement;
-  if (!document.fullscreenElement && el.requestFullscreen) el.requestFullscreen().catch(() => undefined);
-  const orientation = screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> };
-  orientation?.lock?.('landscape').catch(() => undefined);
-}
 
 /**
  * Full-screen cinematic clip: `/assets/video/<clipId>.mp4`, letterboxed on black, with sound, no controls.

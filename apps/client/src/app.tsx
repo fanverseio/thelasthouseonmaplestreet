@@ -5,6 +5,7 @@ import { useGame, gameStore, settingsStore } from './store/index.ts';
 import { BootCheck } from './ui/boot-check.tsx';
 import { GameView } from './ui/game-view.tsx';
 import { CreditsScreen, MainMenu, NewGameScreen, SettingsScreen, WarningScreen, type MenuView } from './ui/screens.tsx';
+import { useMobile, useMobileSetup, usePortrait } from './ui/use-mobile.ts';
 
 const IN_GAME = new Set(['playing', 'paused', 'locket', 'overlay', 'sequence']);
 
@@ -14,6 +15,9 @@ export function App() {
   const flags = useGame((s) => s.progress.flags);
   const [view, setView] = useState<MenuView>('main');
   const developerPage = new URLSearchParams(window.location.search).has('bootcheck');
+  const mobile = useMobile();
+  const portrait = usePortrait();
+  useMobileSetup(mobile);
 
   // A soft click for every button press (menus, settings, the pause screen).
   useEffect(() => {
@@ -35,15 +39,29 @@ export function App() {
   }, [phase]);
 
   if (developerPage) return <BootCheck />;
-  if (IN_GAME.has(phase)) return <GameView />;
-  if (phase === 'warning') return <WarningScreen />;
-  // After an ending: credits with the ending's name, then the main menu (the save is finished, so no Continue).
-  if (phase === 'credits') return <CreditsScreen ending={endingOfFlags(flags)} onBack={() => gameStore.getState().setPhase('menu')} />;
-  if (phase === 'menu') {
-    if (view === 'new_game') return <NewGameScreen onBack={() => setView('main')} />;
-    if (view === 'settings') return <SettingsScreen onBack={() => setView('main')} />;
-    if (view === 'credits') return <CreditsScreen onBack={() => setView('main')} />;
-    return <MainMenu onView={setView} />;
+  return (
+    <>
+      {route()}
+      {mobile && portrait && (
+        <div className="rotate-overlay" role="alert" data-testid="rotate-overlay">
+          <p>Rotate your phone</p>
+          <small>The game plays in landscape.</small>
+        </div>
+      )}
+    </>
+  );
+
+  function route() {
+    if (IN_GAME.has(phase)) return <GameView />;
+    if (phase === 'warning') return <WarningScreen />;
+    // After an ending: credits with the ending's name, then the main menu (the save is finished, so no Continue).
+    if (phase === 'credits') return <CreditsScreen ending={endingOfFlags(flags)} onBack={() => gameStore.getState().setPhase('menu')} />;
+    if (phase === 'menu') {
+      if (view === 'new_game') return <NewGameScreen onBack={() => setView('main')} />;
+      if (view === 'settings') return <SettingsScreen onBack={() => setView('main')} />;
+      if (view === 'credits') return <CreditsScreen onBack={() => setView('main')} />;
+      return <MainMenu onView={setView} />;
+    }
+    return null;
   }
-  return null;
 }

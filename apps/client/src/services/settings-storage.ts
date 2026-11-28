@@ -1,5 +1,6 @@
 import { SETTINGS_STORAGE_KEY } from '@tlh/shared';
 import { z } from 'zod';
+import { MOBILE_PREFS } from '../game/mobile-mode.ts';
 import {
   defaultSettings,
   FOV_MAX,
@@ -41,6 +42,9 @@ const SettingsSchema = z.object({
   showPosition: flag(d.showPosition),
   subtitleSize: z.enum(['normal', 'large']).catch(d.subtitleSize),
   warningAcknowledged: flag(d.warningAcknowledged),
+  mobileMode: z.enum(MOBILE_PREFS).catch(d.mobileMode),
+  touchSensitivity: z.number().min(0.2).max(3).catch(d.touchSensitivity),
+  mobileDefaultsApplied: flag(d.mobileDefaultsApplied),
 });
 
 function browserStorage(): KeyValueBackend | null {
@@ -65,8 +69,8 @@ export function parseSettings(raw: string | null): SettingsData {
 
 /** The data fields only (no store actions), ready to write. */
 export function pickSettings(state: SettingsData): SettingsData {
-  const { volume, mouseSensitivity, invertY, fieldOfView, graphicsPreset, reduceFlashing, headBob, interactGlow, testBrightness, showPosition, subtitleSize, warningAcknowledged } = state;
-  return { volume: { ...volume }, mouseSensitivity, invertY, fieldOfView, graphicsPreset, reduceFlashing, headBob, interactGlow, testBrightness, showPosition, subtitleSize, warningAcknowledged };
+  const { volume, mouseSensitivity, invertY, fieldOfView, graphicsPreset, reduceFlashing, headBob, interactGlow, testBrightness, showPosition, subtitleSize, warningAcknowledged, mobileMode, touchSensitivity, mobileDefaultsApplied } = state;
+  return { volume: { ...volume }, mouseSensitivity, invertY, fieldOfView, graphicsPreset, reduceFlashing, headBob, interactGlow, testBrightness, showPosition, subtitleSize, warningAcknowledged, mobileMode, touchSensitivity, mobileDefaultsApplied };
 }
 
 /** Reads and writes the settings file. Implementations never throw. */

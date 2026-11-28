@@ -41,8 +41,11 @@ export function stepPlayer(body: PlayerBody, input: InputState, dt: number, opts
   let mz = input.moveZ;
   const len = Math.hypot(mx, mz);
   if (len > 0) {
-    mx /= len;
-    mz /= len;
+    // Keys give length 1 or sqrt 2 (normalised to 1); a touch stick below the rim walks slower.
+    if (len > 1) {
+      mx /= len;
+      mz /= len;
+    }
     const speed = input.sprint ? SPRINT_SPEED : WALK_SPEED;
     // yaw 0 faces -Z (Three.js convention); forward = (-sin yaw, -cos yaw), right = (cos yaw, -sin yaw)
     const sin = Math.sin(body.yaw);

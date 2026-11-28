@@ -163,6 +163,15 @@ export function SettingsScreen({ onBack }: { onBack: () => void }) {
       {slider('Ambience', s.volume.ambience, 0, 1, 0.05, (v) => update({ volume: { ambience: v } }))}
       {slider('Voice', s.volume.voice, 0, 1, 0.05, (v) => update({ volume: { voice: v } }))}
       {slider('Mouse sensitivity', s.mouseSensitivity, 0.2, 3, 0.1, (v) => update({ mouseSensitivity: v }))}
+      {slider('Touch look speed', s.touchSensitivity, 0.2, 3, 0.1, (v) => update({ touchSensitivity: v }))}
+      <label className="row">
+        Touch controls
+        <select value={s.mobileMode} onChange={(e) => update({ mobileMode: e.target.value as typeof s.mobileMode })} data-testid="mobile-mode">
+          <option value="auto">Auto (phones and tablets)</option>
+          <option value="on">On</option>
+          <option value="off">Off</option>
+        </select>
+      </label>
       {slider('Field of view', s.fieldOfView, FOV_MIN, FOV_MAX, 1, (v) => update({ fieldOfView: v }))}
       <label className="row">
         <input type="checkbox" checked={s.invertY} onChange={(e) => update({ invertY: e.target.checked })} />

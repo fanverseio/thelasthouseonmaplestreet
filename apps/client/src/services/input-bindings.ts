@@ -12,13 +12,22 @@ export interface InputBindingsOptions {
   onLockChange: (state: PointerLockState, pause: boolean) => void;
   /** True while gameplay input should be read (not paused, not in an overlay). */
   isActive: () => boolean;
+  /** False in mobile mode: no pointer lock; taps never request it, and leaving the tab pauses directly. */
+  pointerLock?: boolean;
 }
 
 export function bindInput(opts: InputBindingsOptions): () => void {
-  const { element, input, onLockChange, isActive } = opts;
+  const { element, input, onLockChange, isActive, pointerLock = true } = opts;
   let lock: PointerLockState = 'unlocked';
 
   const feed = (event: PointerLockEvent) => {
+    if (!pointerLock) {
+      if (event === 'window_blur' || event === 'tab_hidden') {
+        onLockChange('unlocked', true);
+        input.releaseAll();
+      }
+      return;
+    }
     const step = stepPointerLock(lock, event);
     lock = step.state;
     if (event === 'lock_acquired') input.ignoreNextMove(); // the first move after re-locking can be a huge jump

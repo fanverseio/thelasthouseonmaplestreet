@@ -3,6 +3,7 @@ import { useRef, useState, useSyncExternalStore } from 'react';
 import type { MeshStandardMaterial, PointLight, SpriteMaterial } from 'three';
 import type { EntityId, ProgressFlag } from '@tlh/shared';
 import { useSettings } from '../store/index.ts';
+import { useMobile } from '../ui/use-mobile.ts';
 import { EXTERIOR_LIGHTING } from './lighting.ts';
 import { Model } from './models.tsx';
 import { GroundMist, Halo } from './atmosphere.tsx';
@@ -147,6 +148,7 @@ function VeilWall({ v, open }: { v: Veil; open: boolean }) {
 
 export function ExteriorScene({ flags, runtime }: { flags: readonly ProgressFlag[]; runtime?: WorldRuntime }) {
   const light = EXTERIOR_LIGHTING[useSettings((s) => s.testBrightness)];
+  const shadowSize = useMobile() ? 1024 : 2048; // mobile: a lighter moonlight shadow map; desktop unchanged
   return (
     <>
       <color attach="background" args={[light.background]} />
@@ -157,7 +159,7 @@ export function ExteriorScene({ flags, runtime }: { flags: readonly ProgressFlag
         intensity={light.sun}
         color="#9fb4d8"
         castShadow
-        shadow-mapSize={[2048, 2048]}
+        shadow-mapSize={[shadowSize, shadowSize]}
         shadow-camera-left={-80}
         shadow-camera-right={80}
         shadow-camera-top={60}

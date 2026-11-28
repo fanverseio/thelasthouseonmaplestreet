@@ -77,6 +77,8 @@ export class InputController {
   readonly state: InputState = createInputState();
   private readonly down = new Set<string>();
   private skipNextMove = false;
+  private readonly stick = { x: 0, z: 0 };
+  private sprintLatch = false;
 
   keyDown(code: string, repeat = false): void {
     if (repeat || this.down.has(code)) return;
@@ -127,6 +129,25 @@ export class InputController {
     this.state.lookDY += dy;
   }
 
+  /** Touch look: deltas already filtered and scaled by game/mobile-mode.ts (touchLookDelta). */
+  touchLook(dx: number, dy: number): void {
+    this.state.lookDX += dx;
+    this.state.lookDY += dy;
+  }
+
+  /** Touch move stick: analog axes in -1..1. While non-zero they replace WASD. */
+  setStick(x: number, z: number): void {
+    this.stick.x = Math.max(-1, Math.min(1, x));
+    this.stick.z = Math.max(-1, Math.min(1, z));
+    this.recompute();
+  }
+
+  /** Touch sprint button: a toggle that stays on until pressed again. */
+  setSprintLatch(on: boolean): void {
+    this.sprintLatch = on;
+    this.recompute();
+  }
+
   mouseDown(button: number): void {
     if (button !== 0 || this.state.lmbDown) return;
     this.state.lmbDown = true;
@@ -172,6 +193,8 @@ export class InputController {
   /** Drop everything held (focus loss, pause). */
   releaseAll(): void {
     this.down.clear();
+    this.stick.x = 0;
+    this.stick.z = 0;
     const s = this.state;
     s.lmbDown = false;
     s.lmbHeldMs = 0;
@@ -184,7 +207,11 @@ export class InputController {
     const s = this.state;
     s.moveZ = (d.has(KEY_BINDINGS.forward) ? 1 : 0) - (d.has(KEY_BINDINGS.back) ? 1 : 0);
     s.moveX = (d.has(KEY_BINDINGS.right) ? 1 : 0) - (d.has(KEY_BINDINGS.left) ? 1 : 0);
-    s.sprint = d.has(KEY_BINDINGS.sprint) || d.has(KEY_BINDINGS.sprintAlt);
+    if (this.stick.x !== 0 || this.stick.z !== 0) {
+      s.moveX = this.stick.x;
+      s.moveZ = this.stick.z;
+    }
+    s.sprint = d.has(KEY_BINDINGS.sprint) || d.has(KEY_BINDINGS.sprintAlt) || this.sprintLatch;
     s.interactDown = d.has(KEY_BINDINGS.interact);
   }
 }

@@ -1,4 +1,5 @@
 import { createStore } from 'zustand/vanilla';
+import type { MobilePref } from '../game/mobile-mode.ts';
 
 /**
  * Player settings (docs/input-ux.md section 8). Stored separately from saves under `tlh.settings`
@@ -30,6 +31,12 @@ export interface SettingsData {
   showPosition: boolean;
   subtitleSize: 'normal' | 'large';
   warningAcknowledged: boolean;
+  /** Touch controls: auto-detect a phone or tablet, or force on / off. */
+  mobileMode: MobilePref;
+  /** Touch look speed (0.2..3). */
+  touchSensitivity: number;
+  /** Set once mobile mode first ran and picked the Low preset, so a later choice of the player sticks. */
+  mobileDefaultsApplied: boolean;
 }
 
 export const FOV_MIN = 70;
@@ -50,6 +57,9 @@ export function defaultSettings(): SettingsData {
     showPosition: true,
     subtitleSize: 'normal',
     warningAcknowledged: false,
+    mobileMode: 'auto',
+    touchSensitivity: 1,
+    mobileDefaultsApplied: false,
   };
 }
 
@@ -72,6 +82,7 @@ export function createSettingsStore(initial: SettingsData = defaultSettings()) {
         }
         const next = { ...patch, volume };
         if (patch.mouseSensitivity !== undefined) next.mouseSensitivity = Math.min(3, Math.max(0.2, patch.mouseSensitivity));
+        if (patch.touchSensitivity !== undefined) next.touchSensitivity = Math.min(3, Math.max(0.2, patch.touchSensitivity));
         if (patch.fieldOfView !== undefined) next.fieldOfView = Math.min(FOV_MAX, Math.max(FOV_MIN, Math.round(patch.fieldOfView)));
         return next;
       }),

@@ -4,7 +4,7 @@ import { notesEnabled } from '../dev/notes/notes-enabled.ts';
 import { InputController } from '../game/input.ts';
 import { devKillPlayer } from '../game/dev-start.ts';
 import { attachRuntime } from '../game/save.ts';
-import { TUTORIAL_TEXT } from '../content/interactions/beat2.ts';
+import { TUTORIAL_TEXT, TUTORIAL_TEXT_TOUCH } from '../content/interactions/beat2.ts';
 import { ALL_SEQUENCES } from '../content/sequences/index.ts';
 import { createEncounterWorld } from '../game/encounter-runtime.ts';
 import { shouldSpawnTraining, spawnTrainingEnemy, trainingSpawnFor } from '../game/dev-training.ts';
@@ -61,6 +61,8 @@ import { SmokePuffOverlay } from './smoke-puff.tsx';
 import { SpellHud } from './spell-hud.tsx';
 import { Subtitles, type SubtitleLine } from './subtitles.tsx';
 import { VideoPlayer } from './video-player.tsx';
+import { TouchControls } from './touch-controls.tsx';
+import { useMobile, usePortrait } from './use-mobile.ts';
 
 /**
  * Playtest notes (dev server only, `?notes=1`; see src/dev/notes/). In a built game `import.meta.env.DEV` is false,
@@ -260,6 +262,8 @@ export function GameView() {
     if (activeMode === 'ai') void refreshAiStatus();
   }, [activeMode, refreshAiStatus]);
   const phase = useGame((s) => s.game.phase);
+  const mobile = useMobile();
+  const portrait = usePortrait();
   const flags = useGame((s) => s.progress.flags);
   const scene = useGame((s) => s.game.scene);
   const [showSettings, setShowSettings] = useState(false);
@@ -299,6 +303,7 @@ export function GameView() {
     return bindInput({
       element: el,
       input,
+      pointerLock: !mobile,
       isActive: () => gameStore.getState().game.phase === 'playing',
       onLockChange: (state, pause) => {
         const s = gameStore.getState();
@@ -307,7 +312,38 @@ export function GameView() {
         } else if (pause && s.game.phase === 'playing') s.setPhase('paused');
       },
     });
-  }, [input]);
+  }, [input, mobile]);
+
+  // Mobile: upright phone pauses the game (the rotate screen covers it); a tap on the pause screen resumes.
+  const rotateBlock = mobile && portrait;
+  useEffect(() => {
+    if (rotateBlock && phase === 'playing') {
+      input.releaseAll();
+      gameStore.getState().setPhase('paused');
+    }
+  }, [rotateBlock, phase, input]);
+  // The click that ends the Pause tap lands on the pause screen; it carries the same pointer id, so skip it.
+  const pauseTap = useRef<number | null>(null);
+  const pauseTouch = useCallback(
+    (pointerId: number) => {
+      input.releaseAll();
+      pauseTap.current = pointerId;
+      gameStore.getState().setPhase('paused');
+    },
+    [input],
+  );
+  const resumeTouch = useCallback(
+    (e: React.MouseEvent) => {
+      if (!mobile || rotateBlock || (e.target instanceof Element && e.target.closest('button'))) return;
+      const id = (e.nativeEvent as PointerEvent).pointerId;
+      if (id !== undefined && id === pauseTap.current) {
+        pauseTap.current = null;
+        return;
+      }
+      if (gameStore.getState().game.phase === 'paused') gameStore.getState().setPhase('playing');
+    },
+    [mobile, rotateBlock],
+  );
 
   const openLocket = useCallback(() => {
     // Classic: T plays one line in the Angel panel; it fades by itself. Pressing T again skips to the next
@@ -371,13 +407,14 @@ export function GameView() {
   }, [runtime]);
 
   return (
-    <div ref={container} className="game-view" data-testid="game-view" data-phase={phase} data-ai={activeMode === 'ai' ? 'true' : 'false'}>
+    <div ref={container} className="game-view" data-testid="game-view" data-phase={phase} data-ai={activeMode === 'ai' ? 'true' : 'false'} data-mobile={mobile ? 'true' : 'false'}>
       <Canvas
         shadows
         camera={{ fov: 80, near: 0.1, far: 200, position: [0, 1.65, 0] }}
-        dpr={[1, 2]}
+        // Mobile: pixel ratio capped at 1.5 and no MSAA (the biggest GPU costs on a phone). Desktop unchanged.
+        dpr={mobile ? [1, 1.5] : [1, 2]}
         // Note screenshots read the last frame, so keep it (dev notes only; costs a little speed).
-        {...(notes ? { gl: { preserveDrawingBuffer: true } } : {})}
+        gl={{ antialias: !mobile, ...(notes ? { preserveDrawingBuffer: true } : {}) }}
       >
         {scene === 'last_house' && Interior ? <Interior flags={flags} /> : <ExteriorScene flags={flags} runtime={runtime} />}
         <Interactables runtime={runtime} flags={flags} />
@@ -402,7 +439,7 @@ export function GameView() {
         </Suspense>
       )}
       {phase === 'playing' && <CombatOverlays feedback={feedback} encounters={encounters} />}
-      {phase === 'playing' && <Hud actions={runtime.actions} tutorial={runtime.tutorial ? (TUTORIAL_TEXT[runtime.tutorial] ?? null) : null} />}
+      {phase === 'playing' && <Hud actions={runtime.actions} tutorial={runtime.tutorial ? ((mobile ? TUTORIAL_TEXT_TOUCH[runtime.tutorial] : undefined) ?? TUTORIAL_TEXT[runtime.tutorial] ?? null) : null} />}
       {phase === 'playing' && <div className="crosshair" aria-hidden="true" />}
       {phase === 'playing' && <SpellHud spells={spells} input={input} />}
       {phase === 'playing' && <PositionReadout />}
@@ -416,6 +453,11 @@ export function GameView() {
       {phase === 'playing' && <AnchorHud ritual={ritual} />}
       {phase === 'overlay' && <EndingChoicePanel ending={ending} />}
       {phase === 'playing' && <SkipRing skip={skipHold} />}
+      {mobile && (
+        // Stays mounted while hidden: a touch that pauses or opens an overlay still ends on these controls,
+        // so its touchstart is cancelled and no stray click lands on the screen that replaced them.
+        <TouchControls input={input} hidden={phase !== 'playing' || !!runtime.video} cinematic={runtime.sequences.policy.control === 'limited'} onPause={pauseTouch} />
+      )}
       {runtime.video && (
         <VideoPlayer
           key={runtime.video.clipId}
@@ -427,14 +469,10 @@ export function GameView() {
           paused={phase !== 'playing'}
         />
       )}
-      <div className="rotate-overlay" role="alert" aria-hidden="true">
-        <p>Rotate your phone</p>
-        <small>The game plays in landscape.</small>
-      </div>
       {phase === 'locket' && locket && (
         <Locket line={locket.line} hasNext={locket.hasNext} onNext={nextLocket} onClose={closeLocket} />
       )}
-      {phase === 'locket' && aiLocketOpen && <AiLocket director={angel} onClose={closeAiLocket} onLogin={() => void refreshAiStatus()} />}
+      {phase === 'locket' && aiLocketOpen && <AiLocket director={angel} onClose={closeAiLocket} onLogin={() => void refreshAiStatus()} touch={mobile} />}
       {activeMode === 'ai' && (phase === 'playing' || phase === 'locket') && <CreditBadge director={angel} />}
       {phase === 'overlay' && runtime.page && <JournalPage key={runtime.page.id} title={runtime.page.title} text={runtime.page.text} onClose={closePage} />}
       {phase === 'overlay' && runtime.overlay && <PuzzleOverlay puzzle={runtime.overlay.puzzle} say={sayLine} onClose={closeOverlay} />}
@@ -444,9 +482,9 @@ export function GameView() {
         </div>
       )}
       {phase !== 'playing' && phase !== 'locket' && phase !== 'overlay' && !showSettings && (
-        <div className="resume-overlay" role="dialog" aria-label="Paused">
-          <p>Click to resume</p>
-          <small>WASD move · Shift sprint · mouse look · Esc pause</small>
+        <div className="resume-overlay" role="dialog" aria-label="Paused" onClick={resumeTouch} data-testid="resume-overlay">
+          <p>{mobile ? 'Tap to resume' : 'Click to resume'}</p>
+          <small>{mobile ? 'Left thumb move · right thumb look · E use · T locket' : 'WASD move · Shift sprint · mouse look · Esc pause'}</small>
           <div className="menu-list">
             <button type="button" onClick={(e) => { e.stopPropagation(); setShowSettings(true); }}>
               Settings
