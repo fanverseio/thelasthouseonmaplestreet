@@ -1,6 +1,6 @@
 # The Last House on Maple Street
 
-> **Project status: foundations (as of 2026-11-07).** The monorepo, dev runner, local API (`/api/health`, `/api/config/status`), shared schemas, tests and repo checks work. **The game is an early greybox:** `npm run dev` opens the photosensitivity warning and main menu; New Game > Classic plays beats 1 to 4 on grey boxes: Elena's home, the empty street, Felix at the streetlight and Mr Briggs. Later beats, real art and AI mode are not built yet. Features marked **Planned, not yet available** do not exist yet. Coding agents: read [For AI Coding Agents](#for-ai-coding-agents) before running anything.
+> **Project status (2026-11-28).** Classic Mode plays the whole story to both endings (headless tests cover every checkpoint); art is partly greybox. **AI-Enhanced Mode works**: free-text Angel chat (`/api/angel/chat`), a two-passphrase login (`/api/access/redeem`), a top-left credit bar, three validated world actions (flicker lights, reveal a clue, restore magic), and a fall back to authored Classic lines on any AI failure. Not built yet: side quests, glitches, live TTS and the in-game provider form. Features marked **Planned, not yet available** do not exist yet. Coding agents: read [For AI Coding Agents](#for-ai-coding-agents) before running anything.
 
 A first-person 3D psychological horror game for desktop browsers, built for the **Kiroween 2026** hackathon (category: Costume Contest).
 
@@ -23,7 +23,7 @@ It is Halloween night. Elena Hart's eight-year-old son Felix has vanished, and M
 
 |                                    | Classic Story Mode                             | AI-Enhanced Mode                                                               |
 | ---------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------ |
-| Needs an AI key or login           | No                                             | Yes (your own key locally; an access code on the hosted demo)                  |
+| Needs an AI key or login           | No                                             | Yes (your own key locally; two passphrases on the hosted demo)                 |
 | Story, sequences, puzzles, endings | Fully authored                                 | Identical                                                                      |
 | The Angel                          | Speaks authored lines when you open the locket | Free-text conversation with memory and a personality that follows your choices |
 | Extras                             | None                                           | Validated world actions, up to two optional side quests, rare "glitches"       |
@@ -88,7 +88,7 @@ Never commit `.env` (it is git-ignored). Never paste real keys into issues, logs
 | ---------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ | -------------------------------------------- |
 | `APP_MODE`                                                                                                                                     | `local` (default) or `hosted`                          | Optional locally                             |
 | `PORT`, `CLIENT_PORT`                                                                                                                          | API and client ports (3000, 5173)                      | Optional                                     |
-| `LLM_PROTOCOL`                                                                                                                                 | `openai`, `anthropic` or `mock`                        | Optional locally (can be set in the game UI) |
+| `LLM_PROTOCOL`                                                                                                                                 | `openai`, `anthropic` or `mock`                        | Optional locally                             |
 | `LLM_BASE_URL`, `LLM_MODEL`, `LLM_API_KEY`                                                                                                     | Your AI provider                                       | Optional locally; required for hosted AI     |
 | `LLM_PRICE_INPUT_PER_MTOK`, `LLM_PRICE_OUTPUT_PER_MTOK`                                                                                        | Spend ceiling and the AI credit bar                    | Optional (cautious defaults when 0)          |
 | `PASSPHRASE_01`, `PASSPHRASE_02`                                                                                                               | The two-passphrase AI login (one plain pair)           | Optional locally; hosted needs these or hashes |
@@ -124,12 +124,9 @@ Follow these steps in order:
 
 ## Local AI configuration (bring your own key)
 
-**Planned, not yet available.** BYOK works only in the local build. The hosted demo uses one fixed server-side provider and an access code.
+BYOK works only in the local build. The hosted demo uses one fixed server-side provider and a two-passphrase login.
 
-Two ways to configure a provider locally:
-
-1. **In the game**: New Game -> AI-Enhanced Mode -> enter protocol, base URL, model and API key. The key is sent to your local API server and kept **in memory only** until the server stops.
-2. **In `.env`**: set `LLM_PROTOCOL`, `LLM_BASE_URL`, `LLM_MODEL`, `LLM_API_KEY`, then restart `npm run dev`.
+Configure a provider locally in `.env`: set `LLM_PROTOCOL`, `LLM_BASE_URL`, `LLM_MODEL`, `LLM_API_KEY`, then restart `npm run dev`. (An in-game provider form is **planned, not yet available**.)
 
 Supported protocols (any provider that speaks them):
 
@@ -139,11 +136,15 @@ Supported protocols (any provider that speaks them):
 | `anthropic` | Anthropic Messages           | `https://api.deepseek.com/anthropic`                                           |
 | `mock`      | No network; scripted replies | (none)                                                                         |
 
-Base URLs must use `https://`, or `http://localhost` / `http://127.0.0.1` for a model server on your own machine.
+The server tries tool calling first, then JSON mode (openai only), then plain JSON in the text, and remembers which one worked. Replies are checked against a schema with one repair retry; the total time limit is 8 s.
 
-**Where your key goes**: only into your local server's memory (UI) or your local `.env` file. It is never written to game saves, browser localStorage, logs or git.
+**Login (optional locally)**: if `PASSPHRASE_01` and `PASSPHRASE_02` are set, AI-Enhanced Mode asks for both before the Angel speaks (the same login judges use on the hosted demo). Leave them empty for no login.
 
-**Test the Angel**: start AI-Enhanced Mode, leave the house, press **T** and type. Near a streetlight, try "Can you make that light flicker?": the light should flicker after you close the locket. Ask it to "end the game": it answers, but nothing happens.
+**Where your key goes**: only into your local `.env` file and the local server's memory. It is never sent to the browser, written to game saves, browser localStorage, logs or git.
+
+**Credits**: in AI mode a small bar at the top left shows `AI credits NN%` of the spend ceiling (`AI_SPEND_CEILING_USD`, priced with `LLM_PRICE_*`). At 0 it reads "Angel is resting" and the Angel speaks authored Classic lines.
+
+**Test the Angel**: New Game -> AI-Enhanced Mode, leave the house, press **T** and type, then Enter. Near the street lamps, try "Can you make the lamps flicker?": the lamp flickers after you close the locket (Esc) and resume. Ask it to "end the game": it answers in character and nothing happens. If the provider fails, the locket dims and the Angel speaks an authored line; progress is never lost. `LLM_PROTOCOL=mock` gives scripted replies with no key.
 
 **Classic Mode without AI**: choose Classic Story Mode at New Game. No key, no network AI, no login.
 

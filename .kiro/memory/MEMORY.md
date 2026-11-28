@@ -5,10 +5,12 @@ Short, durable notes that a future session needs and cannot easily re-derive. Ke
 ## Status
 - 2026-11-07: Phase 1 foundations committed (e6cb6e1) and pushed to `feat/phase1-foundations`; no PR yet. tasks.md 1.7 (CI) stays open until a PR runs green. `npm run dev` shows a boot-check page only.
 - 2026-11-09: tasks.md sections 1-5 done (Classic + real combat, greybox). Section 6 cinematics mostly replaced by author-supplied video clips. Next: art track (author decides models/CC0, textures tool, ElevenLabs and video keys) or AI mode (section 7). No PR yet (no gh).
+- 2026-11-23: All 46 cinematic style frames and all 46 video clips are generated in `asset_creation/cinematics` (gitignored; status in `VIDEO-STATUS.md`). Next: author review of clips (faces, voices, lip movement) and redos/assembly. Refs rule: character sheets only, never T-pose images.
 ## Decisions that are easy to forget
 - Everyone starts at Elena's home. No chapter select, judge start or shortcuts (author decision).
 - Good ending = Elena takes over the seal's duty from Felix and leaves with him. Bad ending = seal broken, evil escapes. Ending depends only on the final choice.
-- Hosted AI: private access codes (hashed in env), Upstash quotas, spend ceiling, Vercel. No OAuth, no cloud saves. BYOK is local build only.
+- Hosted AI: two matching passphrases (author 2026-11-28; plain PASSPHRASE_01/02 or hashed ACCESS_CODE_HASHES), Upstash quotas, spend ceiling, Vercel. No OAuth, no cloud saves. BYOK is local build only.
+- AI mode (2026-11-28): only flicker_lights, reveal_clue, restore_magic are enabled in game/angel-validator.ts ACTION_RULES. The real .env provider works through json_mode (the tool-call request is rejected with a 4xx). Vercel env steps: hosting-ops.md section 10.
 - Saves: localStorage only (`tlh.save`); finished save hides Continue.
 - Tasks live in `tasks.md` (lowercase). `TASKS.md` was removed; on Windows the names collide.
 

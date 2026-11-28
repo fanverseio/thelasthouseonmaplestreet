@@ -219,46 +219,46 @@ Each milestone includes a README sync check (task 9.7 rules).
   - _Requirements: 3.1, 21.8_
 
 - [ ] 7. AI-Enhanced Mode (Nov 18-27). Promoted from `refinement/angel-world-actions` (AWA-01..14)
-- [ ] 7.1 In-memory usage store and handler wiring for local mode
+- [x] 7.1 In-memory usage store and handler wiring for local mode
   - _Requirements: 17.1_
-- [ ] 7.2 LLM adapters `openai`, `anthropic`, `mock` with the structured-output chain and error classification
+- [x] 7.2 LLM adapters `openai`, `anthropic`, `mock` with the structured-output chain and error classification
   - Verify: recorded-fixture tests for both protocols; no live calls in CI.
   - _Requirements: 17.3, 17.4, 17.5_
 - [ ] 7.3 `POST`/`DELETE /api/config/llm` (local only), base URL rules, memory-only key, redaction
   - Verify: tests that the key never appears in logs or responses; hosted mode returns 404 (P12).
   - _Requirements: 17.1, 17.2, 17.6, 17.7_
-- [ ] 7.4 Prompt builder and canon filter
+- [x] 7.4 Prompt builder and canon filter
   - Verify: golden prompt tests P15; deny-pattern tests.
   - _Requirements: 11.4-11.7_
-- [ ] 7.5 `POST /api/angel/chat` with output validation, stock fallbacks and error mapping
+- [x] 7.5 `POST /api/angel/chat` with output validation, stock fallbacks and error mapping
   - _Requirements: 11.2, 11.6, 14.1_
-- [ ] 7.6 Angel director and AI locket UI (text box, thinking state, 8 s timeout, `aiStatus`, backoff, recovery note)
+- [x] 7.6 Angel director and AI locket UI (text box, thinking state, 8 s timeout, `aiStatus`, backoff, recovery note)
   - Verify: integration tests with `MockAdapter` failure scripts (P7).
   - _Requirements: 11.1-11.3, 14.1-14.7_
-- [ ] 7.7 Memory: snapshot builder, event log, deterministic summary
+- [x] 7.7 Memory: snapshot builder, event log, deterministic summary
   - _Requirements: 11.2, 11.8_
-- [ ] 7.8 AWA-01: action schema, union and parser
+- [x] 7.8 AWA-01: action schema, union and parser
   - _Requirements: 12.1, 12.2_
-- [ ] 7.9 AWA-02/03: capability metadata validation and the typed action config
+- [x] 7.9 AWA-02/03: capability metadata validation and the typed action config
   - _Requirements: 12.3, 12.6_
-- [ ] 7.10 AWA-04/05: `world-effects` module and the restricted `AngelEffectApi`
+- [x] 7.10 AWA-04/05: `world-effects` module and the restricted `AngelEffectApi`
   - _Requirements: 12.8, 12.11_
-- [ ] 7.11 AWA-06: action ledger in the `angel` slice and the save
+- [x] 7.11 AWA-06: action ledger in the `angel` slice and the save
   - _Requirements: 12.9_
-- [ ] 7.12 AWA-07/08: validation context and validator checks
+- [x] 7.12 AWA-07/08: validation context and validator checks
   - Verify: one table-driven test per `RejectionReason`; deep-equal state after rejection (P3).
   - _Requirements: 12.3-12.7_
-- [ ] 7.13 AWA-09/13: story-safety check and the seeded reachability property test (P2, 1,000 runs)
+- [x] 7.13 AWA-09/13: story-safety check and the seeded reachability property test (P2, 1,000 runs)
   - _Requirements: 12.11, 8.7_
-- [ ] 7.14 AWA-10/11: dispatcher (queue, re-validate on locket close, discard on degrade) and director integration
+- [x] 7.14 AWA-10/11: dispatcher (queue, re-validate on locket close, discard on degrade) and director integration
   - _Requirements: 12.8, 12.10_
-- [ ] 7.15 AWA-12: adversarial and prompt-injection tests
+- [x] 7.15 AWA-12: adversarial and prompt-injection tests
   - _Requirements: 12.11, 11.6_
 - [ ] 7.16 Side quest templates and engine (P6)
   - _Requirements: 13.1-13.3_
 - [ ] 7.17 Glitch scheduler and lines
   - _Requirements: 13.4-13.6_
-- [ ] 7.18 Mode selection UI: Classic, AI local (env provider or form), AI hosted (code entry)
+- [x] 7.18 Mode selection UI: Classic, AI local (env provider or form), AI hosted (code entry). Done 2026-11-28 with the env provider and a two-passphrase login; the provider form (7.3) is not built
   - _Requirements: 16.1, 17.1_
 - [ ] 7.19 AWA-14: integration with three distinct actions plus failure and recovery; manual checklist
   - _Requirements: 12, 14_
@@ -266,13 +266,13 @@ Each milestone includes a README sync check (task 9.7 rules).
   - _Requirements: 18.4_
 
 - [ ] 8. Hosted demo on Vercel (Nov 23-27)
-- [ ] 8.1 Upstash usage store with the `KV_*` env fallback; fail closed
+- [x] 8.1 Upstash usage store with the `KV_*` env fallback; fail closed
   - _Requirements: 16.7_
-- [ ] 8.2 `tools/hash-access-code.mjs` and `POST /api/access/redeem` (constant-time compare, throttling)
+- [x] 8.2 `tools/hash-access-code.mjs` and `POST /api/access/redeem` (constant-time compare, throttling). Author change 2026-11-28: two matching passphrases instead of one code
   - _Requirements: 16.2-16.4_
-- [ ] 8.3 Signed session cookie and session store (TTL)
+- [x] 8.3 Signed session cookie and session store (TTL)
   - _Requirements: 16.2_
-- [ ] 8.4 Quotas, rate, concurrency and the spend ceiling
+- [x] 8.4 Quotas, rate, concurrency and the spend ceiling
   - Verify: server tests for each limit; refresh and cookie clearing do not reset per-code quotas.
   - _Requirements: 16.5, 16.6_
 - [ ] 8.5 Vercel entry points, `vercel.json` (build, output, `maxDuration` 30 s), security headers, CORS, body limit

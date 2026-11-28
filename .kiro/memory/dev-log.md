@@ -135,3 +135,31 @@ Rigged character GLBs (briggs, watcher, felix, gartner, fox, hound, cat) are in 
 ## 2026-11-21 19:05 | spec-change | Painting replaces the mirror; runes woken by Purify
 `mirror.grounds.antique`, the `mirror` kind and `clue.grounds.portrait` are gone; `clue.grounds.painting` (critical, owned by seq5) starts `seq5_felix_mirror` (id kept). Runes are hidden paint: a Purify channel wakes (`revealed`) and purifies them (game/runes.ts); E finishes a woken rune. Flags unchanged. Canon still says Felix's 2nd appearance is "in the antique mirror": author must reword canon when the clip is made.
 Last House porch rebuilt by headless Blender (`asset_creation/blender/build_last_house_v2.py`, libs and textures from the TheLastHouse_Assetbuild checkout); the door leaf is code-built (story-props.tsx). Gilt with metalness 1 renders near black (no env map): use 0.
+
+## 2026-11-22 | handoff | Cinematic media pipeline paused, computer off (GPU too hot)
+Style frames: all 46 shots done (1 version each, some cine_01 shots have more). Local ComfyUI, template image_qwen_image_2_1_turbo_image_edit (6 Load Image slots, 1344x768). Rule: character sheets only as refs, never T-pose or pose sheets (exception: cine_04_01_shot_02, no human-Briggs sheet). Work is in asset_creation/cinematics/ (gitignored): shots.json, accepted.json, run-shots.mjs, build-shot-list.mjs, make-contact-sheets.py (run with C:\Python311\python.exe), contact-sheets/.
+Video: run-video.mjs runs video_pika_h3_flex_ref2va locally (no credits), dialogue and SFX, no music. 9 of 46 clips done (all cine_01, cine_02_01_shot_01, cine_03_01_shot_01 and 02). About 100 s render per second of video, so about 7 h left. cine_02_01_shot_02 timed out (retry), cine_03_01_shot_03 was interrupted (redo).
+Resume: cd asset_creation/cinematics; node run-video.mjs all (skips finished clips). Cool-down built in: 5 min after each clip, 10 min after every 5th clip (set 2026-11-22 12:24 at the author's request; GAP_MIN and BIG_GAP_MIN env vars change it). Full list in asset_creation/cinematics/VIDEO-STATUS.md. Open: author has not reviewed the cine_01 clips; consider the turbo LoRA to cut time and heat.
+
+## 2026-11-22 | handoff | Video batch paused again at 35 of 46 clips
+Stopped at the author's request after cine_13_01_shot_02 finished. 11 clips left: cine_13_01_shot_03 and 04, cine_14 (3), cine_15 (3), cine_16 (3). Runner stopped, ComfyUI queue empty, nothing committed (asset_creation/cinematics is gitignored).
+Resume: cd asset_creation/cinematics; node run-video.mjs all (skips finished clips). Gaps: 3 min after each clip, 7 min after every 5th, set in gaps.json (read live). About 100 s render per second of video, roughly 2.5 h left with gaps.
+Open: the author has not reviewed any clip (faces, voices, lip movement). Status list: asset_creation/cinematics/VIDEO-STATUS.md.
+
+## 2026-11-23 09:53 | handoff | Video batch paused at 41 of 46 clips
+Completed 6 more clips (cine_13_01_shot_03, cine_13_01_shot_04, cine_14_01_shot_01..03, cine_15_01_shot_01) and stopped cleanly during cool-down at the author's request. ComfyUI queue empty.
+5 clips left: cine_15_01_shot_02, cine_15_02_shot_01, cine_16_01_shot_01, cine_16_01_shot_02, cine_16_02_shot_01 (~1-1.5 h with gaps).
+Resume: cd asset_creation/cinematics; node run-video.mjs all (skips finished clips; gaps.json is 3 min / 7 min every 5th). Status list: asset_creation/cinematics/VIDEO-STATUS.md.
+Open: author has not reviewed any of the 41 clips yet.
+
+## 2026-11-23 13:40 | milestone | All 46 cinematic video clips generated
+Finished the final 5 clips cleanly: cine_15_01_shot_02 (10 s), cine_15_02_shot_01 (10 s), cine_16_01_shot_01 (12 s), cine_16_01_shot_02 (10 s), cine_16_02_shot_01 (5 s). All 46 of 46 clips are now on disk under `asset_creation/cinematics/<shot>/video/` (gitignored).
+Next: author review of the 46 clips (faces, voices, lip movement), re-roll any rejects with `ONLY=<id> FORCE=1 node run-video.mjs all`, then stitch/wire into `apps/client/public/assets/video`.
+
+## 2026-11-28 18:45 | milestone | 16 final cinematic clips wired with a real player
+Clips copied to apps/client/public/assets/video/<clipId>.mp4 (84 MB, H.264/AAC, cin_angel_intro remuxed for faststart). ui/video-player.tsx replaces the placeholder (fallback timer, tap-to-play, rotate overlay, touch hold skip). 10 new clips placed: angel intro, home door, Briggs and Watcher outcomes, Gartner flashback, Watcher appear, Last House entry, ritual entry (trg.ritual.enter). Lines spoken inside clips were removed from the game. Video steps can be conditional (`ifFlag`); hold E in a non-skippable sequence ends only the clip.
+Open: forced-control worst case is ~264 s vs the 180 s PRD cap; author must raise the cap or cut clips (clip-files.test.ts pins 264).
+
+## 2026-11-28 19:30 | milestone | AI-Enhanced Mode works (small scope)
+Server: openai/anthropic/mock adapters (tool -> json_mode -> plain, zod, one repair, 8 s), /api/angel/chat, /api/access/redeem, memory + Upstash REST stores, limits, spend ceiling, fail closed. Client: director, validator (flicker/reveal/restore only), AI locket, top-left credit bar, Classic fallback with dim locket. Real provider (openai protocol from .env) answers in ~1.3-3.6 s via json_mode; tool calling is rejected with a 4xx by that provider.
+Decision (author): login is two matching passphrases (PASSPHRASE_01/02 or ACCESS_CODE_HASHES label:sha256(p1\np2)); JUDGE_ACCOUNTS was empty and is not read. Not built: side quests, glitches, live TTS, /api/config/llm form. Hosted AI needs the Vercel steps in hosting-ops.md section 10.

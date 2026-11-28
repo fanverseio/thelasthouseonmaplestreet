@@ -327,11 +327,13 @@ export function GameView() {
       return;
     }
     // AI mode: the full locket overlay with a text box. It pauses the game and releases pointer lock.
+    // A dim locket re-checks the server first, so a recovered connection re-primes on the next open.
+    if (angel.status === 'degraded' || angel.status === 'unavailable') void refreshAiStatus();
     setAiLocketOpen(true);
     sfx.play('sfx_locket_open');
     gameStore.getState().setPhase('locket'); // freezes the sim; the rig only ticks while playing
     if (document.pointerLockElement) document.exitPointerLock();
-  }, [runtime]);
+  }, [runtime, angel, refreshAiStatus]);
   const closeAiLocket = useCallback(() => {
     sfx.play('sfx_locket_close');
     setAiLocketOpen(false);

@@ -302,13 +302,13 @@ type ErrorCode =
 
 ### `GET /api/config/status`
 
-200 `{ mode: 'local' | 'hosted', aiAvailable: boolean, provider: { protocol: 'openai' | 'anthropic' | 'mock', model: string } | null, session: { active: boolean, expiresAt?: string, chatsRemaining?: number } }`
-In hosted mode `provider` is `null` (the provider is not disclosed). Never includes keys or base URLs.
+200 `{ mode: 'local' | 'hosted', aiAvailable: boolean, provider: { protocol: 'openai' | 'anthropic' | 'mock', model: string } | null, loginRequired: boolean, session: { active: boolean, expiresAt?: string, chatsRemaining?: number }, credits: { remainingPct: number /* 0-100 */, remainingUsd: number /* cents */, ceilingUsd: number } | null }`
+In hosted mode `provider` is `null` (the provider is not disclosed). Never includes keys, base URLs or passphrases. Hosted reports `aiAvailable: false` if the store cannot be read (fail closed).
 
-### `POST /api/access/redeem` (hosted only)
+### `POST /api/access/redeem` (when a login is configured; always hosted)
 
-Request `{ code: string }` (8-64 chars). 200 sets the cookie `tlh_session` and returns `{ expiresAt: string, chatsRemaining: number }`.
-Errors: 401 `access_invalid`, 429 `rate_limited`, 503 `not_configured` or `ceiling_reached`. In local mode: 404 `not_found`.
+Request `{ passphrase1: string, passphrase2: string }` (1-200 chars each; both must match one account). 200 sets the cookie `tlh_session` and returns `{ expiresAt: string, chatsRemaining: number }`.
+Errors: 400 `bad_request`, 401 `access_invalid`, 429 `rate_limited` (5 failures per IP per 10 min), 503 `not_configured` (also when the store is down). With no login configured (local without passphrases): 404 `not_found`. `DELETE` clears the cookie.
 
 ### `POST /api/config/llm` (local only)
 
@@ -335,10 +335,10 @@ Request:
 { speech: string /* <=400 */, tone: 'warm' | 'wry' | 'cold' | 'urgent' | 'playful',
   proposedActions?: Array<{ type: string; targetId?: string; params?: { amount?: number } }> /* <=2 */,
   sideQuestOffer?: { templateId: string; targetId: EntityId },
-  usage: { chatsRemaining?: number } }
+  usage: { chatsRemaining?: number, credits?: { remainingPct, remainingUsd, ceilingUsd } } }
 ```
 
-Errors: 400 `bad_request`; 401 `access_invalid` / `session_expired`; 429 `rate_limited` / `concurrency_limited` (with `retryAfterSec`); 503 `quota_exhausted` / `ceiling_reached` / `not_configured` / `provider_error`; 504 `timeout`. A provider refusal returns 200 with `{ error: 'refused', fallback: 'in_character' }` instead of the success body.
+Errors: 400 `bad_request`; 401 `access_invalid` / `session_expired`; 429 `rate_limited` / `concurrency_limited` (with `retryAfterSec`); 503 `quota_exhausted` / `ceiling_reached` / `not_configured` / `auth` / `quota` / `provider_error`; 502 `invalid` (unparseable after one repair); 504 `timeout`. A provider refusal returns 200 with `{ error: 'refused', fallback: 'in_character' }` instead of the success body. Speech is capped at 400 characters, entity IDs in speech are replaced, and a canon-filter hit replaces the speech with a stock line and drops the actions. This build enables only `flicker_lights`, `reveal_clue` and `restore_magic` in the client validator; the other types parse and are rejected. Side quests are not built (`sideQuestOffer` is never sent).
 
 ### `POST /api/angel/tts` (optional, `FEATURE_LIVE_TTS=true`)
 

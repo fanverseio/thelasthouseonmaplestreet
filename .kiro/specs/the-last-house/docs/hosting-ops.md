@@ -21,29 +21,34 @@ LLM provider (fixed by env)
 - `vercel.json` sets the build command, output directory and per-function `maxDuration` (30 s for chat and TTS).
 - The Marketplace integration may inject `KV_REST_API_URL` and `KV_REST_API_TOKEN`. The server reads `UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN` and falls back to the `KV_*` names.
 
-## 3. Access codes
-- 8 codes by default (one per judge, plus spares). Each is 20+ random characters, generated locally.
-- `tools/hash-access-code` (planned) prints `label:sha256hex` for a code. Only these pairs go into `ACCESS_CODE_HASHES`. Plain codes go only into the Devpost form.
-- Redeem: hash the submitted code, constant-time compare against every entry, then create a session. 5 failed attempts per IP per 10 minutes, then 429.
-- Rotating a code: replace its hash and redeploy. Revoking: remove it.
+## 3. AI login (two passphrases)
+- Author decision (2026-11-28): judges unlock AI with **two passphrases that must both match** one account (replaces the single access code). Quotas are keyed by the account label.
+- Accounts come from either source (both may be set):
+  - `ACCESS_CODE_HASHES`: comma-separated `label:sha256hex`, hash = sha256(passphrase1 + "\n" + passphrase2). Preferred on Vercel, because no plain passphrase sits in env. `node tools/hash-access-code.mjs [label]` reads the pair from `.env` and writes the line to `asset_creation/access-hashes.txt` (gitignored); it prints no secret.
+  - `PASSPHRASE_01` + `PASSPHRASE_02` (lower-case `passphrase_01`/`passphrase_02` also read): one plain pair, label `judges`.
+  - `JUDGE_ACCOUNTS` is not read (it was empty in `.env`; no format was defined).
+- Redeem (`POST /api/access/redeem { passphrase1, passphrase2 }`): hash the pair, constant-time compare against every account, then set the session cookie. 5 failed attempts per IP per 10 minutes, then 429.
+- Rotating: replace the hash (or the plain pair) and redeploy. Revoking: remove it; existing cookies for that label stop working at once.
 
 ## 4. Sessions
-- A random 128-bit ID in cookie `tlh_session`, signed with `SESSION_SECRET`. HttpOnly, Secure, SameSite=Lax, Path `/api`, Max-Age `SESSION_TTL_MINUTES` (120).
-- Redis key `sess:<id>` -> `{ label, createdAt, chats }` with the same TTL.
-- An expired session returns `session_expired`; the player can enter the code again.
+- Stateless signed cookie `tlh_session` = base64url({ sid, label, exp }) + "." + HMAC-SHA256 with `SESSION_SECRET` (32+ chars). HttpOnly, SameSite=Lax, Path `/api`, Max-Age `SESSION_TTL_MINUTES` (120); `Secure` on hosted. Locally an empty secret means a random one per server start.
+- No session record in Redis: the per-session chat count lives at `quota:sess:<sid>` with a 3 h TTL.
+- An expired session returns `session_expired`; the locket then shows the login again.
 
 ## 5. Limits (Redis keys)
 | Limit | Key | Default |
 |---|---|---|
 | Chats per code (lifetime) | `quota:chat:<label>` | `QUOTA_CHAT_PER_CODE` 150 |
-| Chats per session | `sess:<id>.chats` | `QUOTA_CHAT_PER_SESSION` 40 |
+| Chats per session | `quota:sess:<id>` | `QUOTA_CHAT_PER_SESSION` 40 |
 | TTS characters per code | `quota:tts:<label>` | `QUOTA_TTS_CHARS_PER_CODE` 6000 |
 | Rate per session and IP | `rate:<id>:<minute>` | `RATE_LIMIT_PER_MINUTE` 10 |
 | Concurrent chats per code | `conc:<label>` (TTL 15 s) | `CONCURRENCY_PER_CODE` 1 |
 | Concurrent chats overall | `conc:global` (TTL 15 s) | `CONCURRENCY_GLOBAL` 8 |
 | Spend (USD micro-units) | `spend:total` | ceiling `AI_SPEND_CEILING_USD` 25 |
 - Quotas are keyed by the code label, so clearing cookies or refreshing never resets them.
-- Spend per request = inputTokens x `LLM_PRICE_INPUT_PER_MTOK` / 1e6 + outputTokens x `LLM_PRICE_OUTPUT_PER_MTOK` / 1e6. Added after each response. Checked before each request.
+- Spend per request = inputTokens x `LLM_PRICE_INPUT_PER_MTOK` / 1e6 + outputTokens x `LLM_PRICE_OUTPUT_PER_MTOK` / 1e6. Added after each response. Checked before each request. When both prices are 0, a cautious default of 1 / 4 USD per million tokens is used.
+- Rate key is `rate:<sid>:<ip>:<minute>`; redeem failures use `redeem:fail:<ip>:<10-minute window>`.
+- The credit bar shows `remainingPct` of the ceiling (`GET /api/config/status` and every chat response carry `credits`).
 - **Fail closed**: if Redis is unreachable or the ledger cannot be read, return `not_configured` and the game plays Classic.
 - Also set a hard monthly spend limit in the provider's dashboard.
 
@@ -67,7 +72,7 @@ LLM provider (fixed by env)
 8. Codes pasted into the Devpost form and tested from another network.
 9. Keep the deployment up until judging ends; check the spend counter daily; rotate the provider key afterwards.
 
-## 9. Classic-only deploy (current state, 2026-11-28)
+## 9. Classic-only deploy (state before 2026-11-28)
 No AI key, no Redis. `GET /api/config/status` must report `aiAvailable: false` (a test covers this; hosted AI also needs `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`).
 
 What the author does in Vercel (by hand):
@@ -83,3 +88,20 @@ Notes:
 - `npm run check` also runs `scripts/check-asset-case.mjs` (Linux is case-sensitive; Windows is not).
 - Static `/assets/*.js|css` are cached immutable (hashed by Vite). Models, audio, textures and video are cached one day, because their file names are not hashed.
 - `dist` is about 119 MB (84 MB video, 7 MB source maps).
+
+## 10. Turning on hosted AI (by hand, in Vercel)
+
+Code is ready (AI chat, login, Upstash store, limits, fail closed). Until every step below is done, hosted AI stays off and the game plays Classic.
+
+1. **Upstash**: Vercel dashboard > Storage (or Marketplace) > Upstash for Redis > Create > connect it to this project (Production and Preview). The integration injects `KV_REST_API_URL` and `KV_REST_API_TOKEN` (or `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`); the server reads either pair. Nothing to copy by hand.
+2. **Hash for the login pair**: on the author's machine run `node tools/hash-access-code.mjs` (it reads `PASSPHRASE_01`/`PASSPHRASE_02` or the lower-case names from `.env`). Open `asset_creation/access-hashes.txt` and copy its one line.
+3. **Environment variables** (Settings > Environment Variables, Production; names only here, values from `.env` or step 2). Mark the key, secret and hash as Sensitive:
+   - `APP_MODE` = `hosted` (already set)
+   - `LLM_PROTOCOL`, `LLM_BASE_URL`, `LLM_MODEL`, `LLM_API_KEY`
+   - `ACCESS_CODE_HASHES` = the line from step 2 (preferred), **or** `PASSPHRASE_01` and `PASSPHRASE_02` (plain pair)
+   - `SESSION_SECRET` = a new random string of 32+ characters (for example `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`, run in your own terminal)
+   - Optional: `AI_SPEND_CEILING_USD` (default 25), `LLM_PRICE_INPUT_PER_MTOK`, `LLM_PRICE_OUTPUT_PER_MTOK` (defaults 1 and 4 when both are 0), `QUOTA_CHAT_PER_CODE` (150), `QUOTA_CHAT_PER_SESSION` (40), `RATE_LIMIT_PER_MINUTE` (10), `CONCURRENCY_PER_CODE` (1), `CONCURRENCY_GLOBAL` (8), `SESSION_TTL_MINUTES` (120)
+4. **Redeploy** (Deployments > latest > Redeploy) so the functions read the new variables.
+5. **Verify**: `/api/config/status` returns `"aiAvailable":true,"loginRequired":true`; New Game > AI-Enhanced Mode asks for two passphrases; a wrong pair is refused; the right pair starts the game; T, type, Enter gives a reply; the top-left bar shows `AI credits NN%`.
+6. **Give judges access**: put the two passphrases in the private Devpost form (one pair is shared by all judges, so they share one quota label `judges`; raise `QUOTA_CHAT_PER_CODE` if needed, or add more `label:hash` entries for separate quotas).
+7. Remember section 9 step 6: delete the IP firewall rule before judging.
